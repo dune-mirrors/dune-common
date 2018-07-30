@@ -51,6 +51,7 @@ install(FILES
   FindLatexMk.cmake
   FindMathJax2.cmake
   FindMETIS.cmake
+  FindMPFR.cmake
   FindParMETIS.cmake
   FindPTScotch.cmake
   FindQuadMath.cmake

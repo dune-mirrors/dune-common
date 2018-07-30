@@ -15,22 +15,37 @@
 include_guard(GLOBAL)
 
 # set HAVE_GMP for the config.h file
-set(HAVE_GMP ${GMP_FOUND})
+if(GMP_FOUND OR MPFR_FOUND)
+  set(HAVE_GMP TRUE)
+else()
+  set(HAVE_GMP FALSE)
+endif()
 
 # register all GMP related flags
-if(GMP_FOUND)
+if(MPFR_FOUND)
+  dune_register_package_flags(
+    LIBRARIES MPFR::mpreal
+    COMPILE_DEFINITIONS "HAVE_GMP=1;HAVE_MPFR=1"
+  )
+elseif(GMP_FOUND)
+  message(WARNING "The library GMPXX is outdated and deprecated. Use MPFR instead.")
   dune_register_package_flags(
     LIBRARIES GMP::gmpxx
-    COMPILE_DEFINITIONS "HAVE_GMP=1"
+    COMPILE_DEFINITIONS "HAVE_GMP=1;HAVE_GMPXX=1"
   )
 endif()
 
 # add function to link against the GMP library
 function(add_dune_gmp_flags _targets)
-  if(GMP_FOUND)
+  if(MPFR_FOUND)
+    foreach(_target ${_targets})
+      target_link_libraries(${_target} PUBLIC MPFR::mpreal)
+      target_compile_definitions(${_target} PUBLIC HAVE_GMP=1 HAVE_MPFR=1)
+    endforeach(_target ${_targets})
+  elseif(GMP_FOUND)
     foreach(_target ${_targets})
       target_link_libraries(${_target} PUBLIC GMP::gmpxx)
-      target_compile_definitions(${_target} PUBLIC HAVE_GMP=1)
+      target_compile_definitions(${_target} PUBLIC HAVE_GMP=1 HAVE_GMPXX=1)
     endforeach(_target ${_targets})
-  endif(GMP_FOUND)
+  endif()
 endfunction(add_dune_gmp_flags)
