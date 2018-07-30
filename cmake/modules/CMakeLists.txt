@@ -50,6 +50,7 @@ install(FILES
   FindInkscape.cmake
   FindLatexMk.cmake
   FindMETIS.cmake
+  FindMPFR.cmake
   FindParMETIS.cmake
   FindPTScotch.cmake
   FindQuadMath.cmake
