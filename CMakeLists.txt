@@ -11,7 +11,14 @@ list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/modules)
 include(DuneMacros)
 
 # start a dune project with information from dune.module
-dune_project()
+# and create a module library
+dune_project(dunecommon)
+
+# link against LAPACK or BLAS
+add_dune_blas_lapack_flags(dunecommon)
+
+# link against Threading Building Blocks
+add_dune_tbb_flags(dunecommon)
 
 # Create the module library for dune-common
 dune_add_library(dunecommon)

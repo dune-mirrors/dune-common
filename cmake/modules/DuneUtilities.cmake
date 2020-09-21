@@ -13,13 +13,37 @@ Utility functions used by multiple files.
 
   .. code-block:: cmake
 
-    dune_module_to_uppercase(<upper> <module>)
+    dune_module_to_uppercase(<var> <module>)
 
   Convert a module name given by ``<module>`` parameter into an uppercase
-  string stored in the output variable ``<upper>`` where all dashes ``-``
+  string stored in the output variable ``<var>`` where all dashes ``-``
   are replaced by underscores ``_``.
 
   Example: ``dune-common -> DUNE_COMMON``
+
+
+.. cmake:command:: dune_module_to_output_name
+
+  .. code-block:: cmake
+
+    dune_module_to_output_name(<var> <module>)
+
+  Converts a module name given by ``<module>`` into an lowercase string
+  ``<var>`` where all non-alphanumeric characters are removed
+
+  Example: ``dune-common -> dunecommon``
+
+
+.. cmake:command:: dune_module_to_export_name
+
+  .. code-block:: cmake
+
+    dune_module_to_export_name(<var> <module>)
+
+  Converts a module name given by ``<module>`` into an lowercase string
+  ``<var>`` with any dune prefix removed removed
+
+  Example: ``dune-common -> common``
 
 
 .. cmake:command:: dune_module_to_macro
@@ -28,10 +52,10 @@ Utility functions used by multiple files.
 
   .. code-block:: cmake
 
-    dune_module_to_macro(<macroname> <module>)
+    dune_module_to_macro(<var> <module>)
 
   Convert a module name given by ``<module>`` into a string stored in the
-  output variable ``<macroname>`` where all dashes ``-`` are removed and the
+  output variable ``<var>`` where all dashes ``-`` are removed and the
   first letter and all letters following a dash are capitalized.
 
   Example: ``dune-grid-howto -> DuneGridHowto``
@@ -47,6 +71,25 @@ macro(dune_module_to_uppercase _upper _module)
   string(TOUPPER "${_module}" ${_upper})
   string(REPLACE "-" "_" ${_upper} "${${_upper}}")
 endmacro(dune_module_to_uppercase _upper _module)
+
+
+# Converts a module name given by _module into an lowercase string
+# _output where all non-alphanumeric characters are removed
+# Example: dune-common -> dunecommon
+macro(dune_module_to_output_name _output _module)
+  string(TOLOWER "${_module}" ${_output})
+  string(REGEX REPLACE "[^a-zA-Z0-9]+" "" ${_output} "${${_output}}")
+endmacro(dune_module_to_output_name)
+
+
+# Converts a module name given by _module into an lowercase string
+# _output with any dune prefix removed removed
+# Example: dune-common -> common
+macro(dune_module_to_export_name _output _module)
+  string(TOLOWER "${_module}" ${_output})
+  string(REPLACE "dune-" "" ${_output} "${${_output}}")
+  string(REPLACE "dune_" "" ${_output} "${${_output}}")
+endmacro(dune_module_to_export_name)
 
 
 # Converts a module name given by _dune_module into a string _macro_name

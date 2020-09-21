@@ -14,12 +14,22 @@ Initialize and finalize a Dune module.
 
   .. code-block:: cmake
 
-    dune_project()
+    dune_project([<basename>] [INTERFACE]
+      [OUTPUT_NAME <libname>]
+      [EXPORT_NAME <exportname>]
+    )
 
   This function needs to be called from every module top-level
   ``CMakeLists.txt`` file. It sets up the module, defines basic variables and
-  manages dependencies. Don't forget to call :command:`finalize_dune_project`
-  at the end of that ``CMakeLists.txt`` file.
+  manages dependencies and might also create a module library ``<basename>``.
+  Don't forget to call :command:`finalize_dune_project` at the end of that
+  ``CMakeLists.txt`` file.
+
+  ``OUTPUT_NAME``
+    Name of the library file, e.g. ``lib<libname>.so`` or ``lib<libname>.a``.
+
+  ``EXPORT_NAME``
+    Name of the exported target to be used when linking against the library.
 
 
 .. cmake:command:: finalize_dune_project
@@ -94,23 +104,6 @@ macro(dune_project)
     message(FATAL_ERROR "Module name from dune.module does not match the name given in CMakeLists.txt.")
   endif()
 
-  # As default request position independent code if shared libraries are built
-  # This should allow DUNE modules to use CMake's object libraries.
-  # This can be overwritten for targets by setting the target property
-  # POSITION_INDEPENDENT_CODE to false/OFF
-  include(CMakeDependentOption)
-  cmake_dependent_option(CMAKE_POSITION_INDEPENDENT_CODE "Build position independent code" ON "NOT BUILD_SHARED_LIBS" ON)
-
-  # check for C++ features, set compiler flags for C++14 or C++11 mode
-  include(CheckCXXFeatures)
-
-  # set include path and link path for the current project.
-  include_directories("${PROJECT_BINARY_DIR}")
-  include_directories("${PROJECT_SOURCE_DIR}")
-  include_directories("${CMAKE_CURRENT_BINARY_DIR}")
-  include_directories("${CMAKE_CURRENT_SOURCE_DIR}")
-  add_definitions(-DHAVE_CONFIG_H)
-
   # Create custom target for building the documentation
   # and provide macros for installing the docs and force
   # building them before.
@@ -119,8 +112,65 @@ macro(dune_project)
   # activate pkg-config
   include(DunePkgConfig)
 
+  # check for C++ features, set compiler flags for C++14 or C++11 mode
+  include(CheckCXXFeatures)
+
   # Process the macros provided by the dependencies and ourself
   dune_process_dependency_macros()
+
+  # As default request position independent code if shared libraries are built
+  # This should allow DUNE modules to use CMake's object libraries.
+  # This can be overwritten for targets by setting the target property
+  # POSITION_INDEPENDENT_CODE to false/OFF
+  include(CMakeDependentOption)
+  cmake_dependent_option(CMAKE_POSITION_INDEPENDENT_CODE "Build position independent code" ON "NOT BUILD_SHARED_LIBS" ON)
+
+  # if first argument is given, create module library
+  if(${ARGC} GREATER 0)
+    cmake_parse_arguments(DUNE_PROJECT "INTERFACE" "OUTPUT_NAME;EXPORT_NAME" "" ${ARGN})
+
+    if(NOT DUNE_PROJECT_TARGET)
+      list(GET DUNE_PROJECT_UNPARSED_ARGUMENTS 0 DUNE_PROJECT_TARGET)
+    endif()
+
+    if(NOT DUNE_PROJECT_OUTPUT_NAME)
+      dune_module_to_output_name(DUNE_PROJECT_OUTPUT_NAME ${DUNE_PROJECT_TARGET})
+    endif()
+
+    if(NOT DUNE_PROJECT_EXPORT_NAME)
+      dune_module_to_export_name(DUNE_PROJECT_EXPORT_NAME ${DUNE_PROJECT_TARGET})
+    endif()
+
+    set(_interface "")
+    set(_scope "PUBLIC")
+    if(DUNE_PROJECT_INTERFACE)
+      set(_interface "INTERFACE")
+      set(_scope "INTERFACE")
+    endif()
+
+    # create a module library
+    dune_add_library(${DUNE_PROJECT_TARGET} ${_interface}
+      OUTPUT_NAME ${DUNE_PROJECT_OUTPUT_NAME}
+      EXPORT_NAME ${DUNE_PROJECT_EXPORT_NAME}
+      LINK_LIBRARIES ${DUNE_LIBS})
+
+    # set include directories for module library target
+    target_include_directories(${DUNE_PROJECT_TARGET} ${_scope}
+      $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}>
+      $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
+      $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
+
+    target_compile_definitions(${DUNE_PROJECT_TARGET} ${_scope} HAVE_CONFIG_H)
+
+    unset(_interface)
+    unset(_scope)
+  else()
+    # fallback for legacy cmake build system
+    include_directories(${PROJECT_BINARY_DIR})
+    include_directories(${PROJECT_SOURCE_DIR})
+    add_definitions(-DHAVE_CONFIG_H)
+  endif()
+
 
   include(GNUInstallDirs)
   # Set variable where the cmake modules will be installed.
@@ -173,6 +223,11 @@ macro(finalize_dune_project)
   # file section of dune-grid.
   set(DUNE_MODULE_SRC_DOCDIR "\${${ProjectName}_PREFIX}/${CMAKE_INSTALL_DOCDIR}")
 
+  set(FALLBACK_INCLUDE_DIRECTORIES)
+  if(NOT DUNE_PROJECT_TARGET)
+    set(FALLBACK_INCLUDE_DIRECTORIES "include_directories(\${${ProjectName}_INCLUDE_DIRS})")
+  endif()
+
   if(NOT EXISTS ${PROJECT_SOURCE_DIR}/cmake/pkg/${ProjectName}-config.cmake.in)
     # Generate a standard cmake package configuration file
     file(WRITE ${PROJECT_BINARY_DIR}/CMakeFiles/${ProjectName}-config.cmake.in
@@ -199,6 +254,8 @@ set(${ProjectName}_MODULE_PATH \"@PACKAGE_DUNE_INSTALL_MODULEDIR@\")
 set(${ProjectName}_LIBRARIES \"@${ProjectName}_LIBRARIES@\")
 set(${ProjectName}_HASPYTHON @DUNE_MODULE_HASPYTHON@)
 set(${ProjectName}_PYTHONREQUIRES \"@DUNE_MODULE_PYTHONREQUIRES@\")
+
+${FALLBACK_INCLUDE_DIRECTORIES}
 
 # Lines that are set by the CMake build system via the variable DUNE_CUSTOM_PKG_CONFIG_SECTION
 ${DUNE_CUSTOM_PKG_CONFIG_SECTION}
