@@ -24,11 +24,6 @@
 #          The script will be executed using :code:`${Python3_EXECUTABLE} -m MODULE`. If the INTERPRETER
 #          option is given, that interpreter is used instead.
 #
-#    .. cmake_param:: INTERPRETER
-#       :single:
-#
-#       The Python interpreter to use for this test. It defaults to the one found by CMake.
-#
 #    .. cmake_param:: WORKING_DIRECTORY
 #       :single:
 #       :argname: dir
@@ -52,7 +47,7 @@ function(dune_python_add_test)
   # Parse Arguments
   include(CMakeParseArguments)
   set(OPTION)
-  set(SINGLE WORKING_DIRECTORY NAME INTERPRETER)
+  set(SINGLE WORKING_DIRECTORY NAME)
   set(MULTI SCRIPT COMMAND LABELS MODULE)
 
   cmake_parse_arguments(PYTEST "${OPTION}" "${SINGLE}" "${MULTI}" ${ARGN})
@@ -64,9 +59,6 @@ function(dune_python_add_test)
   endif()
 
   # Apply defaults
-  if(NOT PYTEST_INTERPRETER)
-    set(PYTEST_INTERPRETER ${DUNE_PYTHON_VIRTUALENV_EXECUTABLE})
-  endif()
   if(NOT PYTEST_WORKING_DIRECTORY)
     set(PYTEST_WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
   endif()
@@ -90,7 +82,7 @@ function(dune_python_add_test)
 
   # Actually run the command
   add_custom_target(target_${PYTEST_NAME}
-                    COMMAND ${PYTEST_INTERPRETER} ${PYTEST_SCRIPT}
+                    COMMAND ${DUNE_PYTHON_VIRTUALENV_EXECUTABLE} ${PYTEST_SCRIPT}
                     WORKING_DIRECTORY ${PYTEST_WORKING_DIRECTORY})
 
   # Build this during make test_python
@@ -98,9 +90,10 @@ function(dune_python_add_test)
 
   # make sure each label exists and its name is acceptable
   dune_declare_test_label(LABELS ${PYTEST_LABELS})
+
   # Also build this during ctest
   _add_test(NAME ${PYTEST_NAME}
-            COMMAND ${PYTEST_INTERPRETER} ${PYTEST_SCRIPT}
+            COMMAND ${DUNE_PYTHON_VIRTUALENV_EXECUTABLE} ${PYTEST_SCRIPT}
             WORKING_DIRECTORY ${PYTEST_WORKING_DIRECTORY}
             )
   # Set the labels on the test
