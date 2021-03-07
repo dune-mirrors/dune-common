@@ -615,10 +615,6 @@ macro(dune_process_dependency_macros)
         message(STATUS "No module specific tests performed for module '${_mod}' because macro file '${_macro}.cmake' not found in ${CMAKE_MODULE_PATH}.")
       endif()
       dune_module_to_uppercase(_upper_case "${_mod}")
-      if(${_mod}_INCLUDE_DIRS)
-        message(STATUS "Setting ${_mod}_INCLUDE_DIRS=${${_mod}_INCLUDE_DIRS}")
-        include_directories("${${_mod}_INCLUDE_DIRS}")
-      endif()
       if(${_mod}_LIBRARIES)
         message(STATUS "Setting ${_mod}_LIBRARIES=${${_mod}_LIBRARIES}")
         foreach(_lib ${${_mod}_LIBRARIES})
@@ -686,10 +682,6 @@ macro(dune_project)
   include(DuneCxaDemangle)
 
   # set include path and link path for the current project.
-  include_directories("${CMAKE_BINARY_DIR}")
-  include_directories("${CMAKE_SOURCE_DIR}")
-  include_directories("${CMAKE_CURRENT_BINARY_DIR}")
-  include_directories("${CMAKE_CURRENT_SOURCE_DIR}")
   add_definitions(-DHAVE_CONFIG_H)
 
   # Search for MPI and set the relevant variables.
