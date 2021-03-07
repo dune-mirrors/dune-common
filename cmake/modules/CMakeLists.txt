@@ -4,6 +4,7 @@ add_subdirectory(FindPython3)
 install(FILES
   AddGMPFlags.cmake
   AddMETISFlags.cmake
+  AddMPIFlags.cmake
   AddParMETISFlags.cmake
   AddPTScotchFlags.cmake
   AddQuadMathFlags.cmake
