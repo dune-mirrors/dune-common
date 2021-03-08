@@ -28,6 +28,7 @@ dune_add_test(SOURCES syncertest.cc
               LABELS quick)
 
 dune_add_test(SOURCES variablesizecommunicatortest.cc
+              LINK_LIBRARIES dunecommon
               MPI_RANKS 1 2 4
               TIMEOUT 300
               CMAKE_GUARD MPI_FOUND

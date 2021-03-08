@@ -634,7 +634,6 @@ endmacro(dune_process_dependency_macros)
 # depedencies.
 # Don't forget to call finalize_dune_project afterwards.
 macro(dune_project)
-
   # check if CXX flag overloading has been enabled (see OverloadCompilerFlags.cmake)
   initialize_compiler_script()
 
@@ -681,8 +680,24 @@ macro(dune_project)
   include(CheckCXXFeatures)
   include(DuneCxaDemangle)
 
-  # set include path and link path for the current project.
-  add_definitions(-DHAVE_CONFIG_H)
+  if(${ARGC} GREATER 0)
+    # if first argument is given, create module library
+    set(DUNE_MODULE_LIBRARY ${ARGV0})
+    dune_add_library(${DUNE_MODULE_LIBRARY})
+
+    # set include directories for module library target
+    target_include_directories(${DUNE_MODULE_LIBRARY} PUBLIC
+      $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}>
+      $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
+      $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
+
+    target_compile_definitions(${DUNE_MODULE_LIBRARY} PUBLIC HAVE_CONFIG_H)
+  else()
+    # fallback for legacy cmake build system
+    include_directories(${PROJECT_BINARY_DIR})
+    include_directories(${PROJECT_SOURCE_DIR})
+    add_definitions(-DHAVE_CONFIG_H)
+  endif()
 
   # Create custom target for building the documentation
   # and provide macros for installing the docs and force

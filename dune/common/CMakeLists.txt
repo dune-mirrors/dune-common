@@ -3,18 +3,11 @@ add_subdirectory("simd")
 add_subdirectory("std")
 add_subdirectory("test")
 
-#build the library dunecommon
-if(LAPACK_FOUND)
-  set(_additional_libs ${LAPACK_LIBRARIES})
-elseif(BLAS_FOUND)
-  set(_additional_libs ${BLAS_LIBRARIES})
-endif(LAPACK_FOUND)
-
 if(HAVE_MPROTECT)
   set(debugallocator_src "debugallocator.cc")
 endif(HAVE_MPROTECT)
 
-dune_add_library("dunecommon"
+target_sources(dunecommon PRIVATE
   debugalign.cc
   ${debugallocator_src}
   exceptions.cc
@@ -25,16 +18,7 @@ dune_add_library("dunecommon"
   path.cc
   simd/test.cc
   stdstreams.cc
-  stdthread.cc
-  ADD_LIBS "${_additional_libs}")
-
-# set include directories for dune-common target
-target_include_directories(dunecommon PUBLIC ${PROJECT_SOURCE_DIR} ${PROJECT_BINARY_DIR})
-
-# minimal c++ standard required
-target_compile_features(dunecommon PUBLIC cxx_std_17)
-
-add_dune_tbb_flags(dunecommon)
+  stdthread.cc)
 
 #install headers
 install(FILES
