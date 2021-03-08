@@ -28,7 +28,12 @@ dune_add_library("dunecommon"
   stdthread.cc
   ADD_LIBS "${_additional_libs}")
 
+# set include directories for dune-common target
 target_include_directories(dunecommon PUBLIC ${PROJECT_SOURCE_DIR} ${PROJECT_BINARY_DIR})
+
+# minimal c++ standard required
+target_compile_features(dunecommon PUBLIC cxx_std_17)
+
 add_dune_tbb_flags(dunecommon)
 
 #install headers
