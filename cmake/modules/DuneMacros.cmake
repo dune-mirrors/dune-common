@@ -684,10 +684,6 @@ macro(dune_project)
   # set include path and link path for the current project.
   add_definitions(-DHAVE_CONFIG_H)
 
-  # Search for MPI and set the relevant variables.
-  include(DuneMPI)
-
-
   # Create custom target for building the documentation
   # and provide macros for installing the docs and force
   # building them before.

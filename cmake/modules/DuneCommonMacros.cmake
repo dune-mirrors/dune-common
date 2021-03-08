@@ -35,6 +35,10 @@ include(AddThreadsFlags)
 set_package_properties("Threads" PROPERTIES
   DESCRIPTION "Multi-threading library")
 
+# find the MPI library
+find_package(MPI 3.0 COMPONENTS C)
+include(AddMPIFlags)
+
 # find library for Threading Building Blocks
 find_package(TBB)
 include(AddTBBFlags)
