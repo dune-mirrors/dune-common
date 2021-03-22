@@ -15,6 +15,7 @@ install(FILES
   AddVcFlags.cmake
   CheckCXXFeatures.cmake
   CMakeBuiltinFunctionsDocumentation.cmake
+  DuneAddLibrary.cmake
   DuneAddPybind11Module.cmake
   DuneCMakeCompat.cmake
   DuneCommonMacros.cmake
@@ -24,9 +25,12 @@ install(FILES
   DuneExecuteProcess.cmake
   DuneInstance.cmake
   DuneMacros.cmake
+  DuneModuleDependencies.cmake
+  DuneModuleInformation.cmake
   DuneMPI.cmake
   DunePathHelper.cmake
   DunePkgConfig.cmake
+  DuneProject.cmake
   DunePythonCommonMacros.cmake
   DunePythonFindPackage.cmake
   DunePythonInstallPackage.cmake
@@ -38,6 +42,7 @@ install(FILES
   DuneStreams.cmake
   DuneSymlinkOrCopy.cmake
   DuneTestMacros.cmake
+  DuneUtilities.cmake
   FindGMP.cmake
   FindInkscape.cmake
   FindLatexMk.cmake
