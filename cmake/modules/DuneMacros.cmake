@@ -53,20 +53,17 @@ include(DuneUtilities)
 macro(target_link_libraries)
   # do nothing if not at least the two arguments target and scope are passed
   if(${ARGC} GREATER_EQUAL 2)
-    target_link_libraries_helper(${ARGN})
+    set(SCOPE ${ARGV1})
+    if(${SCOPE} MATCHES "^(PRIVATE|INTERFACE|PUBLIC|LINK_PRIVATE|LINK_PUBLIC|LINK_INTERFACE_LIBRARIES)$")
+      _target_link_libraries(${ARGN})
+    else()
+      message(DEPRECATION "Calling target_link_libraries without the <scope> argument is deprecated.")
+      set(ARGUMENTS ${ARGN})
+      list(INSERT ARGUMENTS 1 PUBLIC)
+      _target_link_libraries(${ARGUMENTS})
+    endif()
   endif()
 endmacro(target_link_libraries)
-
-
-# helper for overwritten target_link_libraries to handle arguments more easily
-macro(target_link_libraries_helper TARGET SCOPE)
-  if(${SCOPE} MATCHES "^(PRIVATE|INTERFACE|PUBLIC|LINK_PRIVATE|LINK_PUBLIC|LINK_INTERFACE_LIBRARIES)$")
-    _target_link_libraries(${TARGET} ${SCOPE} ${ARGN})
-  else()
-    message(DEPRECATION "Calling target_link_libraries without the <scope> argument is deprecated.")
-    _target_link_libraries(${TARGET} PUBLIC ${SCOPE} ${ARGN})
-  endif()
-endmacro(target_link_libraries_helper)
 
 
 macro(target_link_dune_default_libraries _target)
