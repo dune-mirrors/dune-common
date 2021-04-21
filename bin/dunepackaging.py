@@ -80,8 +80,8 @@ def main(argv):
     # Generate setup.py
     print("Generate setup.py")
     f = open("setup.py", "w")
+    f.write("import os, sys\n")
     if data.name == 'dune-common':
-        f.write("import os, sys\n")
         f.write("here = os.path.dirname(os.path.abspath(__file__))\n")
         f.write("mods = os.path.join(here, \"python\", \"dune\")\n")
         f.write("sys.path.append(mods)\n\n")
@@ -90,13 +90,14 @@ def main(argv):
     f.write("except ImportError:\n")
     f.write("    from packagemetadata import metaData\n")
     f.write("from skbuild import setup\n")
+
     f.write("setup(**metaData('"+version+"')[1])\n")
     f.close()
 
     # Generate pyproject.toml
     print("Generate pyproject.toml")
     f = open("pyproject.toml", "w")
-    requires = ["setuptools", "wheel", "scikit-build", "cmake", "ninja", "requests"]
+    requires = ["pip", "setuptools", "wheel", "scikit-build", "cmake", "ninja", "requests"]
     requires += [r for r in data.asPythonRequirementString(data.depends + data.python_requires) if r not in requires]
     f.write("[build-system]\n")
     f.write("requires = "+requires.__str__()+"\n")
