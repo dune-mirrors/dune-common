@@ -38,20 +38,12 @@ class Builder:
         result = {}
 
         for package in pkgutil.iter_modules(dune.__path__, dune.__name__ + "."):
-            # Avoid infinite recursion
-            if package.name == "dune.generator":
-                continue
-
             # Avoid the dune.create module - it cannot be imported unconditionally!
             if package.name == "dune.create":
                 continue
 
             # Avoid the dune.utility module - it import dune.create
             if package.name == "dune.utility":
-                continue
-
-            # Avoid the dune.plotting module - it depends on matplotlib without making this explicit
-            if package.name == "dune.plotting":
                 continue
 
             # Check for the existence of the metadata.cmake file in the package
@@ -71,7 +63,6 @@ class Builder:
                         result.setdefault(package.name, {})
                         key, value = match.groups()
                         result[package.name][key] = value
-
         return result
 
     def dunepy_from_template(dunepy_dir):
@@ -89,7 +80,15 @@ class Builder:
         def zip_across_modules(key, value):
             result = {}
             for moddata in data.values():
-                for k, v in zip(moddata[key].split(" "), moddata[value].split(";")):
+                # todo: space is bad separator for list of paths - needs
+                # fixing in cmake module generating the metadata file
+                for k, v in zip(moddata[key].split(" "), moddata[value].split(" ")):
+                    # we don't store paths for module that have not been found (suggested)
+                    # and we also skip the path if it is empty (packaged module)
+                    if v.endswith("NOTFOUND") or v == "": continue
+                    # make sure build directory (if found) is unique across modules
+                    if k in result and not result[k] == v:
+                        raise ValueError(f"build dir {v} for module {k} is expected to be unique across the given metadata")
                     result[k] = v
             return result
 
@@ -105,35 +104,11 @@ class Builder:
         modules   = combine_across_modules("MODULENAME")
         builddirs = zip_across_modules("DEPS", "DEPBUILDDIRS")
 
-        if False:
-          print("#######################")
-          print(modules)
-          print(builddirs)
-          print("#######################")
-
-          # use other means to find modules - especially pkg_config to
-          # replace installed modules builddir
-          _, dirs = select_modules()
-          # if deps is None:
-          #     deps = resolve_dependencies(modules)
-          for name, dir in dirs.items():
-              if is_installed(dir, name):
-                  found = False
-                  # switch prefix to location of name-config.cmake
-                  for l in ['lib','lib32','lib64']:
-                      substr = l + '/cmake'
-                      newpath = dir.replace('lib/dunecontrol', substr)
-                      for _, _, files in os.walk(newpath):
-                          # if name-config.cmake is found
-                          # then this is the correct folder
-                          if name+'-config.cmake' in files:
-                              found = True
-                              builddirs[name] = newpath
-                              break
-                      if found: break
-                  assert found
-              else:
-                  assert name in builddirs
+        # add dune modules which where available during the build of a
+        # python module but don't provide their own python module
+        for k,v in builddirs.items():
+            if k not in modules and not v.endswith("NOTFOUND"):
+                modules += [k]
 
         # Gather and reorganize meta data context that is used to write dune-py
         context = {}

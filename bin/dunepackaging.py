@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
 
+try:
+    import skbuild
+except ImportError:
+    print("skbuild needed for packaging, run 'pip install scikit-build'")
+    import sys
+    sys.exit(0)
+
 import sys, os, io, getopt, re, shutil
 import importlib, subprocess
 import email.utils
