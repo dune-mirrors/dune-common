@@ -95,6 +95,15 @@ function(dune_python_install_package)
   # Install the Python Package into the Dune virtual environment in the build stage
   string(REPLACE "/" "_" envtargetname "env_install_python_${CMAKE_CURRENT_SOURCE_DIR}_${PYINST_PATH}")
   # todo: added extra-index-url to simplify use with ci (but it should hurt normal usage)
+
+  # A hack which shouldn't be necesary once the ci is updated
+  # https://gitlab.dune-project.org/docker/ci/-/merge_requests/101
+  if(DUNE_RUNNING_IN_CI)
+      message("using gitlab registry instead of pypi")
+      set(PACKAGE_INDEX "--index-url=https://gitlab.dune-project.org/api/v4/projects/133/packages/pypi/simple")
+  else()
+      set(PACKAGE_INDEX "")
+  endif()
   add_custom_target(
     ${envtargetname}
     ALL
@@ -102,6 +111,7 @@ function(dune_python_install_package)
       --no-warn-script-location # supress warnings that dune-env/bin not in path
       "${WHEEL_OPTION}"
       ${PYINST_ADDITIONAL_PIP_PARAMS} ${DUNE_PYTHON_ADDITIONAL_PIP_PARAMS}
+      "${PACKAGE_INDEX}"        # stopgap solution until ci repo fixed
       --editable                # Installations into the internal env are always editable
       "${PYINST_FULLPATH}"
     COMMENT "Installing Python package at ${PYINST_FULLPATH} into Dune virtual environment..."
@@ -124,6 +134,7 @@ function(dune_python_install_package)
     add_custom_target(${targetname}
                       COMMAND ${Python3_EXECUTABLE} -m pip install
                         "${USER_INSTALL_OPTION}"
+                       "${PACKAGE_INDEX}"
                         --upgrade
                         "${WHEEL_OPTION}"
                         ${PYINST_ADDITIONAL_PIP_PARAMS} ${DUNE_PYTHON_ADDITIONAL_PIP_PARAMS}
