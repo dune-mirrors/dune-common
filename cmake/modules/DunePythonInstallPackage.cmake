@@ -98,8 +98,8 @@ function(dune_python_install_package)
 
   # A hack which shouldn't be necesary once the ci is updated
   # https://gitlab.dune-project.org/docker/ci/-/merge_requests/101
+  option(DUNE_RUNNING_IN_CI "This is turned on if running in dune gitlab ci" OFF)
   if(DUNE_RUNNING_IN_CI)
-      message("using gitlab registry instead of pypi")
       set(PACKAGE_INDEX "--index-url=https://gitlab.dune-project.org/api/v4/projects/133/packages/pypi/simple")
   else()
       set(PACKAGE_INDEX "")
@@ -111,12 +111,13 @@ function(dune_python_install_package)
       --no-warn-script-location # supress warnings that dune-env/bin not in path
       "${WHEEL_OPTION}"
       ${PYINST_ADDITIONAL_PIP_PARAMS} ${DUNE_PYTHON_ADDITIONAL_PIP_PARAMS}
-      "${PACKAGE_INDEX}"        # stopgap solution until ci repo fixed
-      --editable                # Installations into the internal env are always editable
+      "${PACKAGE_INDEX}"          # stopgap solution until ci repo fixed
+      --editable                  # Installations into the internal env are always editable
       "${PYINST_FULLPATH}"
-    COMMENT "Installing Python package at ${PYINST_FULLPATH} into Dune virtual environment..."
+    COMMENT "Installing Python package at ${PYINST_FULLPATH} into Dune virtual environment (${PACKAGE_INDEX})."
     DEPENDS ${PYINST_DEPENDS}
   )
+
   #
   # Now define rules for `make install_python`.
   #
@@ -135,6 +136,7 @@ function(dune_python_install_package)
                       COMMAND ${Python3_EXECUTABLE} -m pip install
                         "${USER_INSTALL_OPTION}"
                        "${PACKAGE_INDEX}"
+                        --use-feature=in-tree-build
                         --upgrade
                         "${WHEEL_OPTION}"
                         ${PYINST_ADDITIONAL_PIP_PARAMS} ${DUNE_PYTHON_ADDITIONAL_PIP_PARAMS}
