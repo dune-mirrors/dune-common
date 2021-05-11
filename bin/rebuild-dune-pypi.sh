@@ -19,6 +19,7 @@ set -e
 export TWINE_USERNAME=__token__
 
 # Make sure that TWINE_PASSWORD was set
+export TWINE_PASSWORD=...
 if [ -z "$TWINE_PASSWORD" ]
 then
   echo "TWINE_PASSWORD was not set!"
@@ -34,20 +35,30 @@ source env/bin/activate
 python -m pip install pip-download twine
 
 pip-download -d $(pwd)/downloads \
-  dune-common \
-  dune-geometry \
-  dune-grid \
-  dune-istl \
-  dune-localfunctions \
-  pyparsing \
-  mpi4py
+#  dune-common \
+#  dune-geometry \
+#  dune-grid \
+#  dune-istl \
+#  dune-localfunctions \
+#  dune-alugrid \
+#  dune-fem
+#  pyparsing \
+#  mpi4py \
+#  wheel \
+#  setuptools \
+#  jinja2 \
+#  portalocker \
+#  fenics-ufl==2019.1.0 \
+#  matplotlib \
+#  scipy \
+#  pip>=2.1
 
 
 # Upload the packages to the index
 for filename in downloads/*
 do
   # NB: The 133 here is the Gitlab project ID of dune-common.
-  python -m twine upload --skip-existing --repository-url https://gitlab.dune-project.org/api/v4/projects/133/packages/pypi $filename
+  python -m twine upload --verbose --skip-existing --repository-url https://gitlab.dune-project.org/api/v4/projects/133/packages/pypi $filename
 done
 
 # Clean up the temporary directory
