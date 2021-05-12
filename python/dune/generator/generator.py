@@ -62,7 +62,7 @@ class SimpleGenerator(object):
     def main(self, nr, includes, duneType, *args,
             options=None, bufferProtocol=False, dynamicAttr=False,
             holder="default",
-            baseClasses=None ):
+            baseClasses=None):
         if options is None: options=[]
         if baseClasses is None: baseClasses=[]
         source = "  using pybind11::operator\"\"_a;\n"
@@ -111,19 +111,21 @@ class SimpleGenerator(object):
         source += '  }\n'
         return source
 
-    def post(self, moduleName, source):
+    def post(self, moduleName, source, extraCMake):
         source += "}\n"
         source += '#endif'
-        module = builder.load(moduleName, source, self.typeName[0])
+        module = builder.load(moduleName, source, self.typeName[0], extraCMake)
         return module
 
     def load(self, includes, typeName, moduleName, *args,
             defines=None, preamble=None,
             options=None, bufferProtocol=False, dynamicAttr=False,
-            baseClasses=None ):
+            baseClasses=None,
+            extraCMake=None):
         if defines is None: defines = []
         if options is None: options = []
         if baseClasses is None: baseClasses = []
+        if extraCMake is None: extraCMake = []
         if self.single:
             typeName = (typeName,)
             options = (options,)
@@ -152,11 +154,11 @@ class SimpleGenerator(object):
         allIncludes = sorted(set(allIncludes))
         includes = sorted(set(includes))
         source  = self.pre(allIncludes, typeName[0], moduleName, defines, preamble)
-        for nr, (tn, a, o, b, d, bc)  in enumerate( zip(typeName, args, options, bufferProtocol, dynamicAttr, baseClasses) ):
+        for nr, (tn, a, o, b, d, bc) in enumerate( zip(typeName, args, options, bufferProtocol, dynamicAttr, baseClasses) ):
             source += self.main(nr, includes, tn, *a, options=o,
                                 bufferProtocol=b, dynamicAttr=d,
                                 baseClasses=bc)
-        return self.post(moduleName, source)
+        return self.post(moduleName, source, extraCMake)
 
 def simpleGenerator(inc, baseType, namespace, pythonname=None, filename=None):
     generator = SimpleGenerator(baseType, namespace, pythonname, filename)
