@@ -116,10 +116,10 @@ function(dune_python_install_package)
       set(PACKAGE_INDEX "")
   endif()
 
-  # install requirements once at configure stage - install of package is
-  # only carried out if this succeeded and with --no-deps
-  string(REPLACE " " "\n" RequiredPythonModules "${RequiredPythonModules}")
-  file(WRITE "${PYINST_FULLPATH}/requirements.txt" "${RequiredPythonModules}")
+  # install external requirements (i.e. not dune packages) once at configure stage - install of package is
+  # only carried out if this succeeded and with --no-index, i.e., without using any package indices but only local wheels
+  string(REPLACE " " "\n" RequiredPypiModules "${ProjectPythonRequires}")
+  file(WRITE "${PYINST_FULLPATH}/requirements.txt" "${RequiredPypiModules}")
   dune_execute_process(COMMAND ${DUNE_PYTHON_VIRTUALENV_EXECUTABLE} -m pip install
                                 "${WHEEL_OPTION}"
                                 # we can't use the same additional parameters for both internal
@@ -137,18 +137,20 @@ function(dune_python_install_package)
   # Install the Python Package into the Dune virtual environment in the build stage
   string(REPLACE "/" "_" envtargetname "env_install_python_${CMAKE_CURRENT_SOURCE_DIR}_${PYINST_PATH}")
 
+  # installation target for dune package into local env - external requirements are already sorted and we want this step to not require
+  # internet access. Dune packages need to be installed at this stage and should not be optained from pypi (those packages include the C++ part
+  # of the module which we don't want to install. So only use available wheels.
   add_custom_target(
     ${envtargetname}
     ALL
     COMMAND ${DUNE_PYTHON_VIRTUALENV_EXECUTABLE} -m pip install
       --no-build-isolation      # avoid looking for packages during 'make' if they in the internal venv from previous 'make'
       --no-warn-script-location # supress warnings that dune-env/bin not in path
-      --no-deps
+      --no-index
       "${WHEEL_OPTION}"
       # we can't use the same additional parameters for both internal
       # install and normal install so not including these flags at the moment
       # ${PYINST_ADDITIONAL_PIP_PARAMS} ${DUNE_PYTHON_ADDITIONAL_PIP_PARAMS}
-      "${PACKAGE_INDEX}"          # stopgap solution until ci repo fixed
       --editable                  # Installations into the internal env are always editable
       "${PYINST_FULLPATH}"
     COMMENT "Installing Python package at ${PYINST_FULLPATH} into Dune virtual environment (${PACKAGE_INDEX})."
