@@ -4,19 +4,48 @@ DuneUtilities
 
 Utility functions used by multiple files.
 
-  dune_module_to_uppercase(<upper> <module>)
+.. cmake:command:: dune_module_to_uppercase
 
-  dune_module_to_macro(<macroname> <module>)
+  Convert a module name into an uppercase string.
 
-  replace_properties(<replacements>...
-    [GLOBAL]
-    [DIRECTORY <dir>]
-    [PROPERTY <prop>]
-    [TARGET <targets>...]
-    [SOURCE <sources>...]
-    [TEST <tests>...]
-    [CACHE <cache>...]
-  )
+  .. code-block:: cmake
+
+    dune_module_to_uppercase(<upper> <module>)
+
+  Converts a module name given by ``<module>`` parameter into an uppercase
+  string stored in the output variable ``<upper>`` where all dashes ``-``
+  are replaced by underscores ``_``.
+
+  Example: ``dune-common -> DUNE_COMMON``
+
+
+.. cmake:command:: dune_module_to_macro
+
+  Converts a module name into a capitalized string.
+
+  .. code-block:: cmake
+
+    dune_module_to_macro(<macroname> <module>)
+
+  Converts a module name given by ``<module>`` into a string stored in the
+  output variable ``<macroname>`` where all dashes ``-`` are removed and the
+  first letter and all letters following a dash are capitalized.
+
+  Example: ``dune-grid-howto -> DuneGridHowto``
+
+.. cmake:command:: replace_properties
+
+  .. code-block:: cmake
+
+    replace_properties(<replacements>...
+      [GLOBAL]
+      [DIRECTORY <dir>]
+      [PROPERTY <prop>]
+      [TARGET <targets>...]
+      [SOURCE <sources>...]
+      [TEST <tests>...]
+      [CACHE <cache>...]
+    )
 
 #]=======================================================================]
 include_guard(GLOBAL)

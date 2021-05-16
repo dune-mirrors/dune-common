@@ -2,26 +2,39 @@
 DuneProject
 -----------
 
-Initialize and finalize a Dune module
+Initialize and finalize a Dune module.
+
+.. cmake:command:: dune_project
+
+  The ``dune_project()`` starts a new Dune module by setting several variables
+  and loading necessary dependencies.
+
+  .. code-block:: cmake
+
+    dune_project()
+
+  This function needs to be called from every module top-level ``CMakeLists.txt``
+  file. It sets up the module, defines basic variables and manages depedencies.
+  Don't forget to call :command:`finalize_dune_project` at the end of that
+  ``CMakeLists.txt`` file.
 
 
-  dune_project([<target>])
+.. cmake:command:: finalize_dune_project
 
-This function starts a new Dune module by setting several variables and
-optionally creating a library target that is added to the export list.
-This function needs to be run from every module top-level `CMakeLists.txt`
-file. It sets up the module, defines basic variables and manages
-depedencies. Don't forget to call :ref:`finalize_dune_project` at the end
-of that `CMakeLists.txt` file.
+  Finalize the creation of the Dune module by creating package config files.
 
+  .. code-block:: cmake
 
-  finalize_dune_project([<generate-config-h>])
+    finalize_dune_project([<generate-config-h>])
 
-Finalize a Dune module. This function needs to be run at the end of every
-top-level CMakeLists.txt file. Among other things it creates the cmake
-package configuration files. Modules can add additional entries to these
-files by setting the variable @${ProjectName}_INIT. If an argument is
-passed to this macro, a `config.h` file is created.
+  This function needs to be run at the end of every top-level ``CMakeLists.txt``
+  file. Among other things it creates the cmake package configuration file and
+  package version file. Modules can add additional entries to these files by
+  setting the variable :variable:`@${ProjectName}_INIT`.
+
+  If any argument ``<generate-config-h>`` is passed to this macro, a
+  ``config.h`` file is created containg preprocessor definitions about found
+  packages and module information.
 
 #]=======================================================================]
 include_guard(GLOBAL)
@@ -89,10 +102,6 @@ macro(dune_project)
   include_directories("${CMAKE_CURRENT_BINARY_DIR}")
   include_directories("${CMAKE_CURRENT_SOURCE_DIR}")
   add_definitions(-DHAVE_CONFIG_H)
-
-  # Search for MPI and set the relevant variables.
-  include(DuneMPI)
-
 
   # Create custom target for building the documentation
   # and provide macros for installing the docs and force

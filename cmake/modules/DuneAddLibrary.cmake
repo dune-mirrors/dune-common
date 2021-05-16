@@ -4,38 +4,42 @@ DuneAddLibrary
 
 Add a library to a Dune module.
 
-  dune_add_library(<basename>
-    [SOURCES <sources...>]
-    [ADD_LIBS <targets>...]
-    [COMPILE_FLAGS "<flags>;..."]
-    [APPEND]
-    [NO_EXPORT]
-    [OBJECT]
-  )
+.. cmake:command:: dune_add_library
 
-Create a new library target with `<basename>` for the library name. On Unix
-this created `lib<basename>.so` and `lib<basename>.a`.
+  .. code-block:: cmake
 
-``SOURCES``
-  The source files from which to build the library.
+    dune_add_library(<basename>
+      [SOURCES <sources...>]
+      [ADD_LIBS <targets>...]
+      [COMPILE_FLAGS "<flags>;..."]
+      [APPEND]
+      [NO_EXPORT]
+      [OBJECT]
+    )
 
-``ADD_LIBS``
-  A list of libraries that should be incorporated into this library.
+  Create a new library target with ``<basename>`` for the library name. On Unix
+  this created ``lib<basename>.so`` and ``lib<basename>.a``.
 
-``COMPILE_FLAGS``
-  Any additional compile flags for building the library.
+  ``SOURCES``
+    The source files from which to build the library.
 
-``APPEND``
-  Whether the library should be appended to the exported libraries. If
-  a DUNE module must make several libraries available, then first one
-  must not use this option but the others have to use it. Otherwise only
-  the last library will be exported as the others will be overwritten.
+  ``ADD_LIBS``
+    A list of libraries that should be incorporated into this library.
 
-``NO_EXPORT``
-  If omitted the library is exported for usage in other modules.
+  ``COMPILE_FLAGS``
+    Any additional compile flags for building the library.
 
-``OBJECT``
-  This feature will very likely vanish in Dune 3.0
+  ``APPEND``
+    Whether the library should be appended to the exported libraries. If
+    a DUNE module must make several libraries available, then first one
+    must not use this option but the others have to use it. Otherwise only
+    the last library will be exported as the others will be overwritten.
+
+  ``NO_EXPORT``
+    If omitted the library is exported for usage in other modules.
+
+  ``OBJECT``
+    This feature will very likely vanish in Dune 3.0
 
 #]=======================================================================]
 include_guard(GLOBAL)

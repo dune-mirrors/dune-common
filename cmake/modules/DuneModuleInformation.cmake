@@ -2,12 +2,16 @@
 DuneModuleInformation
 ---------------------
 
-Information about Dune Modules.
+Collect information about Dune Modules.
 
-  dune_module_information(MODULE_DIR [QUIET])
+.. cmake:command:: dune_module_information
 
-Parse `${MODULE_DIR}/dune.module` and provide that information. If the
-second argument is QUIET no status message is printed.
+  .. code-block:: cmake
+
+    dune_module_information(MODULE_DIR [QUIET])
+
+  Parse ``<MODULE_DIR>/dune.module`` and provide that information. If the
+  second argument is ``<QUIET>`` no status message is printed.
 
 #]=======================================================================]
 include_guard(GLOBAL)

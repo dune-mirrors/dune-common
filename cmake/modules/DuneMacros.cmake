@@ -4,28 +4,43 @@ DuneMacros
 
 Core DUNE module for CMake.
 
+.. cmake:command:: target_link_libraries
 
-  target_link_libraries(<target> [<scope>] <libs>...)
+  .. code-block:: cmake
 
-Overwrite of CMake's :code:`target_link_libraries`. If no `<scope>`
-keyword (like PUBLIC, INTERFACE, PRIVATE etc.) is given, PUBLIC is added.
-This is to fix problems with CMP0023.
+    target_link_libraries(<target> [<scope>] <libs>...)
 
-
-  dune_target_link_libraries(<target> <library>)
-
-Alias for `target_link_libraries(<target> PUBLIC <library>)`
+  Overwrite of CMake's ``target_link_libraries``. If no ``<scope>``
+  keyword (like ``PUBLIC``, ``INTERFACE``, ``PRIVATE`` etc.) is given, ``PUBLIC``
+  is added. This is to fix problems with cmake policy ``CMP0023``.
 
 
-  add_dune_all_flags(<target>)
+.. cmake:command:: dune_target_link_libraries
 
-Add the flags of all registered packages to the given `<target>`.
-This function is superseded by :ref:`dune_target_enable_all_packages`.
+  .. code-block:: cmake
+
+    dune_target_link_libraries(<target> <library>)
+
+  Alias for ``target_link_libraries(<target> PUBLIC <library>)``
 
 
-  target_link_dune_default_libraries(<target>)
+.. cmake:command:: add_dune_all_flags
 
-Alias for `target_link_libraries(<target> PUBLIC ${DUNE_DEFAULT_LIBS})`
+  .. code-block:: cmake
+
+    add_dune_all_flags(<target>)
+
+  Add the flags of all registered packages to the given ``<target>``.
+  This function is superseded by :command:`dune_target_enable_all_packages`.
+
+
+.. cmake:command:: target_link_dune_default_libraries
+
+  .. code-block:: cmake
+
+    target_link_dune_default_libraries(<target>)
+
+  Alias for ``target_link_libraries(<target> PUBLIC ${DUNE_DEFAULT_LIBS})``
 
 #]=======================================================================]
 include_guard(GLOBAL)

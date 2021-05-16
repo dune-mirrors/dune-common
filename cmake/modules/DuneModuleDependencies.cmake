@@ -3,11 +3,26 @@ DuneModuleDependencies
 ----------------------
 
 Macros to extract dependencies between Dune modules by inspecting the
-`dune.module` files.
+``dune.module`` files.
 
-  dune_create_dependency_tree()
+.. cmake:command:: dune_create_dependency_tree
 
-  dune_process_dependency_macros()
+  .. code-block:: cmake
+
+    dune_create_dependency_tree()
+
+  Create a tree of dune module dependencies by inspecting the ``dune.module``
+  files recursively.
+
+
+.. cmake:command:: dune_process_dependency_macros
+
+  .. code-block:: cmake
+
+    dune_process_dependency_macros()
+
+  Include the corresponding ``Dune<module>Macros.cmake`` file of all
+  dependencies if this file exists.
 
 #]=======================================================================]
 include_guard(GLOBAL)

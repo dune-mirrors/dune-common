@@ -24,7 +24,10 @@ def get_args():
 
 def write_line(f, line):
     if len(line) > 2:
-        f.write(line[2:])
+        if line.startswith('#'):
+            f.write(line[2:])
+        else:
+            f.write(line)
     else:
         f.write('\n')
 
@@ -50,17 +53,32 @@ def read_module(args=get_args()):
 
 #         listHeader = False
         o = None
+        multiline_comment = False
 
         for l in i:
-            if not l.startswith('#'):
+            if l.startswith('#[=='):    # start of multiline comments
+                multiline_comment = True
+                if o:
+                    o.close()
+                modpath = os.path.join(args['builddir'], 'modules')
+                makedirs_if_not_exists(modpath)
+                modfile = os.path.join(modpath, modname + ".rst")
+                o = open(modfile, 'w')
+                continue
+            elif l.startswith('#]=='):    # end of multiline comment
+                multiline_comment = False
+                continue
+            elif not multiline_comment and not l.startswith('#'):
                 return
-            if l.startswith('# .. cmake_function'):
+
+            comment = re.sub(r'^#?[ \t]*', '', l)
+            if comment.startswith('.. cmake_function'):
                 if o:
                     o.close()
                 cmdpath = os.path.join(args['builddir'], 'commands')
                 makedirs_if_not_exists(cmdpath)
                 try:
-                    cmd = re.findall(r'# .. cmake_function:: (.*)', l)[0]
+                    cmd = re.findall(r'\.\. cmake_function:: (.*)', l)[0]
                 except IndexError as e:
                     print("CMake doc syntax error in {}: cannot parse function on line {}".format(args['module'], l))
                     raise e
@@ -74,13 +92,13 @@ def read_module(args=get_args()):
                 o.write(cmd + "\n")
                 o.write("="*len(cmd) + "\n\n")
                 write_line(o, l)
-            elif l.startswith('# .. cmake_variable'):
+            elif comment.startswith('.. cmake_variable'):
                 if o:
                     o.close()
                 varpath = os.path.join(args['builddir'], 'variables')
                 makedirs_if_not_exists(varpath)
                 try:
-                    var = re.findall(r'# .. cmake_variable:: (.*)', l)[0]
+                    var = re.findall(r'\.\. cmake_variable:: (.*)', l)[0]
                 except IndexError as e:
                     print("CMake doc syntax error in {}: cannot parse variable on line".format(args['module'], l))
                     raise e
@@ -90,7 +108,7 @@ def read_module(args=get_args()):
                 o.write(var + "\n")
                 o.write("="*len(var) + "\n\n")
                 write_line(o, l)
-            elif l.startswith('# .. cmake_module'):
+            elif comment.startswith('.. cmake_module'):
                 if o:
                     o.close()
                 modpath = os.path.join(args['builddir'], 'modules')
