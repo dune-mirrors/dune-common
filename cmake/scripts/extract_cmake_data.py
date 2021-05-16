@@ -45,19 +45,21 @@ def read_module(args=get_args()):
     makedirs_if_not_exists(modpath)
     modfile = os.path.join(modpath, modname + '.rst')
     with open(args['module'], 'r') as i:
-#         mod = open(modfile, 'w')
-#         # Write the first block into the module rst file
-#         mod.write(".. _" + modname + ":\n\n")
-#         mod.write(modname + "\n")
-#         mod.write("="*len(modname) + "\n\n")
-
-#         listHeader = False
         o = None
-        multiline_comment = False
+        ml_block = 0
 
         for l in i:
-            if l.startswith('#[=='):    # start of multiline comments
-                multiline_comment = True
+            if ml_block > 0 and l.startswith('#]=='):
+                ml_end = re.match(r'^#](=+)]', l)
+                if len(ml_end.group(0)) == ml_block:
+                    # end of multiline comment
+                    return
+            elif ml_block == 0 and l.startswith('#[==') and l.strip().endswith('.rst:'):
+                # start of multiline comments
+                ml_begin = re.match(r'^#\[(=+)\[', l)
+                ml_block = len(ml_begin.group(0))
+
+                # multiline comments always start the documentation of a module
                 if o:
                     o.close()
                 modpath = os.path.join(args['builddir'], 'modules')
@@ -65,13 +67,16 @@ def read_module(args=get_args()):
                 modfile = os.path.join(modpath, modname + ".rst")
                 o = open(modfile, 'w')
                 continue
-            elif l.startswith('#]=='):    # end of multiline comment
-                multiline_comment = False
-                continue
-            elif not multiline_comment and not l.startswith('#'):
+            elif ml_block == 0 and not l.startswith('#'):
+                # a line after a contiguous sequence of comments
                 return
 
-            comment = re.sub(r'^#?[ \t]*', '', l)
+            # if not l.startswith('#'):
+            #     # a line after a contiguous sequence of comments
+            #     return
+
+            comment = re.sub(r'^#?[ \t]*', '', l) # strip comment sign an spaces
+
             if comment.startswith('.. cmake_function'):
                 if o:
                     o.close()
@@ -83,10 +88,6 @@ def read_module(args=get_args()):
                     print("CMake doc syntax error in {}: cannot parse function on line {}".format(args['module'], l))
                     raise e
                 cmdfile = os.path.join(cmdpath, cmd + ".rst")
-#                 if not listHeader:
-#                     mod.write("\nThis module defines the following functions or macros:\n\n")
-#                     listHeader = True
-#                 mod.write("* :ref:`{}`\n".format(cmd))
                 o = open(cmdfile, 'w')
                 o.write(".. _" + cmd + ":\n\n")
                 o.write(cmd + "\n")

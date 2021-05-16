@@ -2,16 +2,18 @@
 FindMETIS
 ---------
 
-Find Serial Graph Partitioning library METIS
-(see http://glaros.dtc.umn.edu/gkhome/metis/metis/overview)
+Find Serial Graph Partitioning library
+`METIS <http://glaros.dtc.umn.edu/gkhome/metis/metis/overview>`_
 
 Imported targets
 ^^^^^^^^^^^^^^^^
 
-This module defines the following :prop_tgt:`IMPORTED` target:
+This module defines the following `IMPORTED`_ target:
 
 ``METIS::METIS``
   The libraries, flags, and includes to use for METIS, if found.
+
+.. _IMPORTED: https://cmake.org/cmake/help/latest/command/add_library.html#id5
 
 Result Variables
 ^^^^^^^^^^^^^^^^

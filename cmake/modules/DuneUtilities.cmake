@@ -12,7 +12,7 @@ Utility functions used by multiple files.
 
     dune_module_to_uppercase(<upper> <module>)
 
-  Converts a module name given by ``<module>`` parameter into an uppercase
+  Convert a module name given by ``<module>`` parameter into an uppercase
   string stored in the output variable ``<upper>`` where all dashes ``-``
   are replaced by underscores ``_``.
 
@@ -21,13 +21,13 @@ Utility functions used by multiple files.
 
 .. cmake:command:: dune_module_to_macro
 
-  Converts a module name into a capitalized string.
+  Convert a module name into a capitalized string.
 
   .. code-block:: cmake
 
     dune_module_to_macro(<macroname> <module>)
 
-  Converts a module name given by ``<module>`` into a string stored in the
+  Convert a module name given by ``<module>`` into a string stored in the
   output variable ``<macroname>`` where all dashes ``-`` are removed and the
   first letter and all letters following a dash are capitalized.
 

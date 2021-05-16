@@ -6,17 +6,17 @@ Initialize and finalize a Dune module.
 
 .. cmake:command:: dune_project
 
-  The ``dune_project()`` starts a new Dune module by setting several variables
-  and loading necessary dependencies.
+  The command ``dune_project()`` starts a new Dune module by setting several
+  variables and loading necessary dependencies.
 
   .. code-block:: cmake
 
     dune_project()
 
-  This function needs to be called from every module top-level ``CMakeLists.txt``
-  file. It sets up the module, defines basic variables and manages depedencies.
-  Don't forget to call :command:`finalize_dune_project` at the end of that
-  ``CMakeLists.txt`` file.
+  This function needs to be called from every module top-level
+  ``CMakeLists.txt`` file. It sets up the module, defines basic variables and
+  manages dependencies. Don't forget to call :command:`finalize_dune_project`
+  at the end of that ``CMakeLists.txt`` file.
 
 
 .. cmake:command:: finalize_dune_project
@@ -27,13 +27,13 @@ Initialize and finalize a Dune module.
 
     finalize_dune_project([<generate-config-h>])
 
-  This function needs to be run at the end of every top-level ``CMakeLists.txt``
-  file. Among other things it creates the cmake package configuration file and
-  package version file. Modules can add additional entries to these files by
-  setting the variable :variable:`@${ProjectName}_INIT`.
+  This function needs to be run at the end of every top-level
+  ``CMakeLists.txt`` file. Among other things it creates the cmake package
+  configuration file and package version file. Modules can add additional
+  entries to these files by setting the variable ``${ProjectName}_INIT``.
 
   If any argument ``<generate-config-h>`` is passed to this macro, a
-  ``config.h`` file is created containg preprocessor definitions about found
+  ``config.h`` file is created containing preprocessor definitions about found
   packages and module information.
 
 #]=======================================================================]

@@ -10,9 +10,12 @@ Core DUNE module for CMake.
 
     target_link_libraries(<target> [<scope>] <libs>...)
 
-  Overwrite of CMake's ``target_link_libraries``. If no ``<scope>``
+  Overwrite of CMake's `target_link_libraries`_. If no ``<scope>``
   keyword (like ``PUBLIC``, ``INTERFACE``, ``PRIVATE`` etc.) is given, ``PUBLIC``
-  is added. This is to fix problems with cmake policy ``CMP0023``.
+  is added. This is to fix problems with cmake policy `CMP0023`_.
+
+  .. _target_link_libraries: https://cmake.org/cmake/help/latest/command/target_link_libraries.html
+  .. _CMP0023: https://cmake.org/cmake/help/latest/policy/CMP0023.html
 
 
 .. cmake:command:: dune_target_link_libraries
