@@ -342,13 +342,6 @@ function(dune_add_test)
     set(ADDTEST_SOURCES ${dummymain})
   endif()
 
-  # Link against the dune module library if available
-  if(DUNE_PROJECT_TARGET)
-    list(APPEND ADDTEST_LINK_LIBRARIES ${DUNE_PROJECT_TARGET})
-  else()
-    list(APPEND ADDTEST_LINK_LIBRARIES ${DUNE_LIBS})
-  endif()
-
   # Add the executable if it is not already present
   if(ADDTEST_SOURCES)
     add_executable(${ADDTEST_NAME} ${ADDTEST_SOURCES})
@@ -359,6 +352,13 @@ function(dune_add_test)
     target_compile_options(${ADDTEST_NAME} PUBLIC ${ADDTEST_COMPILE_FLAGS})
     target_link_libraries(${ADDTEST_NAME} PUBLIC ${ADDTEST_LINK_LIBRARIES})
     set(ADDTEST_TARGET ${ADDTEST_NAME})
+  endif()
+
+  # Link against the dune module library if available
+  if(DUNE_PROJECT_TARGET)
+    target_link_libraries(${ADDTEST_TARGET} PUBLIC ${DUNE_PROJECT_TARGET})
+  else()
+    target_link_libraries(${ADDTEST_TARGET} PUBLIC ${DUNE_LIBS})
   endif()
 
   # Make sure to exclude the target from all, even when it is user-provided

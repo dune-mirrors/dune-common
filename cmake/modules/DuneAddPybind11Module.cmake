@@ -86,8 +86,14 @@ function(dune_add_pybind11_module)
   endif()
 
   target_compile_definitions(${PYBIND11_MODULE_NAME} PRIVATE ${PYBIND11_MODULE_COMPILE_DEFINITIONS})
-  target_link_libraries(${PYBIND11_MODULE_NAME} PUBLIC dunecommon)
   dune_target_enable_all_packages(${PYBIND11_MODULE_NAME})
+
+  # Link against the dune module library if available
+  if(DUNE_PROJECT_TARGET)
+    target_link_libraries(${PYBIND11_MODULE_NAME} PUBLIC ${DUNE_PROJECT_TARGET})
+  else()
+    target_link_libraries(${PYBIND11_MODULE_NAME} PUBLIC ${DUNE_LIBS})
+  endif()
 
   if(PYBIND11_MODULE_EXCLUDE_FROM_ALL)
     set_property(TARGET ${PYBIND11_MODULE_NAME} PROPERTY EXCLUDE_FROM_ALL 1)

@@ -160,17 +160,15 @@ macro(dune_project)
       $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
       $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
-    target_compile_definitions(${DUNE_PROJECT_TARGET} ${_scope} HAVE_CONFIG_H)
-
     unset(_interface)
     unset(_scope)
   else()
     # fallback for legacy cmake build system
     include_directories(${PROJECT_BINARY_DIR})
     include_directories(${PROJECT_SOURCE_DIR})
-    add_definitions(-DHAVE_CONFIG_H)
   endif()
 
+  add_definitions(-DHAVE_CONFIG_H)
 
   include(GNUInstallDirs)
   # Set variable where the cmake modules will be installed.
