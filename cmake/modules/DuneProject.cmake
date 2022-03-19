@@ -221,11 +221,6 @@ macro(finalize_dune_project)
   # file section of dune-grid.
   set(DUNE_MODULE_SRC_DOCDIR "\${${ProjectName}_PREFIX}/${CMAKE_INSTALL_DOCDIR}")
 
-  set(FALLBACK_INCLUDE_DIRECTORIES)
-  if(NOT DUNE_PROJECT_TARGET)
-    set(FALLBACK_INCLUDE_DIRECTORIES "include_directories(\${${ProjectName}_INCLUDE_DIRS})")
-  endif()
-
   if(NOT EXISTS ${PROJECT_SOURCE_DIR}/cmake/pkg/${ProjectName}-config.cmake.in)
     # Generate a standard cmake package configuration file
     file(WRITE ${PROJECT_BINARY_DIR}/CMakeFiles/${ProjectName}-config.cmake.in
@@ -252,8 +247,7 @@ set(${ProjectName}_MODULE_PATH \"@PACKAGE_DUNE_INSTALL_MODULEDIR@\")
 set(${ProjectName}_LIBRARIES \"@${ProjectName}_LIBRARIES@\")
 set(${ProjectName}_HASPYTHON @DUNE_MODULE_HASPYTHON@)
 set(${ProjectName}_PYTHONREQUIRES \"@DUNE_MODULE_PYTHONREQUIRES@\")
-
-${FALLBACK_INCLUDE_DIRECTORIES}
+set(${ProjectName}_TARGET \"@DUNE_PROJECT_TARGET@\")
 
 # Lines that are set by the CMake build system via the variable DUNE_CUSTOM_PKG_CONFIG_SECTION
 ${DUNE_CUSTOM_PKG_CONFIG_SECTION}
