@@ -60,7 +60,13 @@ system-test:
     project: infrastructure/dune-nightly-test
     branch: core
     strategy: depend
-  allow_failure: true
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "push"
+      when: manual
+      allow_failure: true
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: always
+      allow_failure: false
 
 # Check for spelling mistakes in text
 code-spelling-check:
