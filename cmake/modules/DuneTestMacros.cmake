@@ -351,14 +351,13 @@ function(dune_add_test)
     target_compile_definitions(${ADDTEST_NAME} PUBLIC ${ADDTEST_COMPILE_DEFINITIONS})
     target_compile_options(${ADDTEST_NAME} PUBLIC ${ADDTEST_COMPILE_FLAGS})
     target_link_libraries(${ADDTEST_NAME} PUBLIC ${ADDTEST_LINK_LIBRARIES})
-    set(ADDTEST_TARGET ${ADDTEST_NAME})
-  endif()
 
-  # Link against the dune module library if available
-  if(DUNE_PROJECT_TARGET)
-    target_link_libraries(${ADDTEST_TARGET} PUBLIC ${DUNE_PROJECT_TARGET})
-  else()
-    target_link_libraries(${ADDTEST_TARGET} PUBLIC ${DUNE_LIBS})
+    # Link against the dune module library if available
+    if(DUNE_PROJECT_TARGET)
+      target_link_libraries(${ADDTEST_NAME} PUBLIC ${DUNE_PROJECT_TARGET})
+    endif()
+
+    set(ADDTEST_TARGET ${ADDTEST_NAME})
   endif()
 
   # Make sure to exclude the target from all, even when it is user-provided
