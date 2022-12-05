@@ -274,6 +274,7 @@ dune_add_test(SOURCES powertest.cc
 dune_add_test(SOURCES quadmathtest.cc
               LINK_LIBRARIES dunecommon
               CMAKE_GUARD HAVE_QUADMATH)
+add_dune_quadmath_flags(quadmathtest)
 
 dune_add_test(SOURCES rangeutilitiestest.cc
               LINK_LIBRARIES dunecommon
