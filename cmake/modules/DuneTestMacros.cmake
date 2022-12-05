@@ -349,6 +349,7 @@ function(dune_add_test)
     target_compile_definitions(${ADDTEST_NAME} PUBLIC ${ADDTEST_COMPILE_DEFINITIONS})
     target_compile_options(${ADDTEST_NAME} PUBLIC ${ADDTEST_COMPILE_FLAGS})
     target_link_libraries(${ADDTEST_NAME} PUBLIC ${ADDTEST_LINK_LIBRARIES})
+    target_link_libraries(${ADDTEST_NAME} PRIVATE ${DUNE_LIBS})
     set(ADDTEST_TARGET ${ADDTEST_NAME})
   endif()
 
