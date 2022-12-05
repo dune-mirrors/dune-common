@@ -345,8 +345,6 @@ function(dune_add_test)
   # Add the executable if it is not already present
   if(ADDTEST_SOURCES)
     add_executable(${ADDTEST_NAME} ${ADDTEST_SOURCES})
-    # add all flags to the target!
-    add_dune_all_flags(${ADDTEST_NAME})
     # This is just a placeholder
     target_compile_definitions(${ADDTEST_NAME} PUBLIC ${ADDTEST_COMPILE_DEFINITIONS})
     target_compile_options(${ADDTEST_NAME} PUBLIC ${ADDTEST_COMPILE_FLAGS})
