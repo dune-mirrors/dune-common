@@ -152,6 +152,15 @@ class ParameterizedObjectFactory<TypeT(Args...), KeyT>
             return registry_.count(key);
         }
 
+        //! Get a list of the available keys to the object factory
+        std::vector<std::string> keys() const {
+            std::vector<std::string> keys_;
+            keys_.reserve(registry_.size());
+            for (auto [key, _] : registry_)
+                keys_.push_back(key);
+            return keys_;
+        }
+
     private:
 
         template<class T>
