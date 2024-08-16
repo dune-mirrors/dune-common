@@ -23,6 +23,7 @@
 #include <dune/common/typetraits.hh>
 #include <dune/common/scalarvectorview.hh>
 #include <dune/common/std/iterator.hh>
+#include <dune/common/std/type_traits.hh>
 
 namespace Dune
 {
@@ -79,6 +80,12 @@ namespace Dune
         std::fill( denseMatrix.begin(), denseMatrix.end(), static_cast< field_type >( rhs ) );
       }
     };
+
+    template <class A, class B>
+    using MatrixElementsAssignable = decltype(
+        std::declval<A const>().N(), std::declval<B const>().N(),
+        std::declval<A const>().M(), std::declval<B const>().M(),
+        *std::begin(*std::begin(std::declval<A>())) = *std::begin(*std::begin(std::declval<B const>())));
 
     template< class DenseMatrix, class RHS >
       requires Std::indirectly_copyable<
