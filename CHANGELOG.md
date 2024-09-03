@@ -333,6 +333,9 @@ In order to build the DUNE core modules you need at least the following software
 
 ## Build system: Changelog
 
+- `dune-common` now builds a dynamic library by default, because using a shared library
+  together with the Python just-in-time compilation lead to hard-to-diagnose crashes.
+
 - Add a `REQUIRED` parameter to `dune_python_configure_bindings`. If set to
   `TRUE` the functions throws an error instead of a warning if the package
   setup fails. The default behavior (or setting `REQUIRE` to `FALSE`) is to

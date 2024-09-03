@@ -9,6 +9,21 @@ if (CMAKE_VERSION VERSION_EQUAL 3.29.1)
   message(FATAL_ERROR "CMake 3.29.1 is not compatible with Dune. Use a different CMake version.")
 endif()
 
+# Build shared libraries by default.
+#
+# Rationale: When using Dune via its C++ interface you can use static
+# or dynamic libraries as you like.  However, for the Python bindings
+# you have to use dynamic libraries.  That is because dune-common
+# contains a few global variables, for example 'DebugStream'.
+# The just-in-time compiler that builds the Dune Python bindings
+# produces a collection of dynamic libraries. If dune-common is built
+# as a static library, then a copy of this static library is included
+# in each of the JIT-compiled dynamic libraries.
+# As a consequence, the global variables of dune-common exist not once,
+# but once in every JIT-compiled dynamic library, which leads to
+# hard-to-diagnose crashes and wrong results.
+option(BUILD_SHARED_LIBS "Build shared libraries" ON)
+
 # make sure our own modules are found
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/modules)
 
@@ -72,6 +87,9 @@ if(DUNE_ENABLE_PYTHONBINDINGS)
   include(DuneProvidePybind11)
   dune_provide_pybind11(dunecommon)
 
+  if (NOT BUILD_SHARED_LIBS)
+    message(FATAL_ERROR "The option BUILD_SHARED_LIBS is required for the Python bindings to work correctly. Set this option on the command line or in your Dune options file.")
+  endif()
   add_subdirectory(python)
 endif()
 
