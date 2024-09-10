@@ -68,6 +68,9 @@ public:
   using tensorspan_type = TensorSpan<element_type,extents_type,layout_type>;
   using const_tensorspan_type = TensorSpan<const element_type,extents_type,layout_type>;
 
+  using tensorspan_type = TensorSpan<element_type,extents_type,layout_type>;
+  using const_tensorspan_type = TensorSpan<const element_type,extents_type,layout_type>;
+
 public:
   /// \brief Inherit constructor from TensorMixin
   using base_type::base_type;

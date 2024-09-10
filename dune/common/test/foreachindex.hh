@@ -13,7 +13,6 @@
 #include <dune/common/forceinline.hh>
 #include <dune/common/std/extents.hh>
 #include <dune/common/std/span.hh>
-#include <dune/common/std/functional.hh>
 
 namespace Dune {
 namespace Impl {
