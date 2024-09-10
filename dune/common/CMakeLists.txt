@@ -41,6 +41,9 @@ install(FILES
         debugstream.hh
         deprecated.hh
         densematrix.hh
+        densetensor.hh
+        densetensormixin.hh
+        densetensorspan.hh
         densevector.hh
         diagonalmatrix.hh
         documentation.hh
