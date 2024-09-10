@@ -132,6 +132,10 @@ void checkConstructors(Dune::TestSuite& testSuite)
     Dune::DenseTensor t3{tensor1.toTensorSpan()};
   }
 
+
+  Tensor tensor9(tensor1.toTensorSpan());
+
+
   testSuite.subTest(subTestSuite);
 }
 
