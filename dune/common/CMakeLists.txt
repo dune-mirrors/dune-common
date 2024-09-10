@@ -104,6 +104,9 @@ install(FILES
         stdthread.hh
         streamoperators.hh
         stringutility.hh
+        tensor.hh
+        tensorinterface.hh
+        tensorspan.hh
         timer.hh
         transpose.hh
         tupleutility.hh
