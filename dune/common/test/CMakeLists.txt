@@ -283,6 +283,10 @@ dune_add_test(SOURCES streamtest.cc
 dune_add_test(SOURCES stringutilitytest.cc
               LABELS quick)
 
+dune_add_test(SOURCES tensordottest.cc
+              LINK_LIBRARIES dunecommon
+              LABELS quick)
+
 dune_add_test(SOURCES testdebugallocator.cc
               LABELS quick)
 
