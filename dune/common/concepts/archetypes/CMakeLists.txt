@@ -2,10 +2,5 @@
 # SPDX-License-Identifier: LicenseRef-GPL-2.0-only-with-DUNE-exception
 
 install(FILES
-  container.hh
-  hashable.hh
-  number.hh
   tensor.hh
-DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/dune/common/concepts)
-
-add_subdirectory(archetypes)
+DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/dune/common/concepts/archetypes)
