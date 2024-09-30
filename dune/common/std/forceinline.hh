@@ -27,7 +27,7 @@
   #define DUNE_FORCE_INLINE __attribute__((always_inline)) inline
 
 #elif defined(__GNUC__)
-  // GCC would generate an error if it cant always_inline
+  // GCC would generate an error if it can't always_inline
   #define DUNE_FORCE_INLINE __attribute__((always_inline)) inline
 
 #elif defined(_MSC_VER)
