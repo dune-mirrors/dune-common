@@ -139,9 +139,9 @@ void tensorDotImpl (const A& a, ASeq aSeq, ASeqInv aSeqInv,
  * The product might be accumulated to the output tensor using the `Updater`
  * function, which by default implements an axpy operation.
  */
-template <Concept::Tensor A, std::size_t... II,
-          Concept::Tensor B, std::size_t... JJ,
-          Concept::Tensor C,
+template <Concept::RandomAccessTensor A, std::size_t... II,
+          Concept::RandomAccessTensor B, std::size_t... JJ,
+          Concept::RandomAccessTensor C,
           class BinaryOp1 = std::plus<>, class BinaryOp2 = std::multiplies<>>
 constexpr auto tensordotOut (const A& a, std::index_sequence<II...> aSeq,
                              const B& b, std::index_sequence<JJ...> bSeq,
@@ -152,19 +152,15 @@ constexpr auto tensordotOut (const A& a, std::index_sequence<II...> aSeq,
   // create integer sequences that do not include the contraction indices
   const auto aSeqInv = difference<A::rank()>(aSeq);
   const auto bSeqInv = difference<B::rank()>(bSeq);
+  static_assert(aSeqInv.size() + bSeqInv.size() == C::rank());
 
   // the extents of a and the extents of b must be compatible to c
   using EA = typename A::extents_type;
   using EB = typename B::extents_type;
-  using EC = typename C::extents_type;
-  using SeqK = std::make_index_sequence<C::rank()>;
   static_assert(Impl::checkStaticExtents<EA,EB>(aSeq, bSeq));
-  static_assert(Impl::checkStaticExtents<EA,EC>(aSeqInv, SeqK{}));
-  static_assert(Impl::checkStaticExtents<EB,EC>(bSeqInv, SeqK{}));
   assert((Impl::checkExtents(a.extents(), aSeq, b.extents(), bSeq)));
-  assert((Impl::checkExtents(a.extents(), aSeqInv, c.extents(), SeqK{})));
-  assert((Impl::checkExtents(b.extents(), bSeqInv, c.extents(), SeqK{})));
 
+  assert((void*)(&a) != (void*)(&c) && (void*)(&b) != (void*)(&c));
   Impl::tensorDotImpl(a,aSeq,aSeqInv,b,bSeq,bSeqInv,c,std::ref(op1),std::ref(op2));
 }
 
@@ -177,10 +173,14 @@ constexpr auto tensordotOut (const A& a, std::index_sequence<II...> aSeq,
  * of `A` and first `N` positions of `B`. The output tensor `C` must have a rank
  * corresponding to the number of indices remaining in `A` and `B`.
  *
- * The product might be accumulated to the output tensor using the `Updater`
- * function, which by default implements an axpy operation.
+ * The product might be accumulated to the output tensor using outer binary operation
+ * `op1`, e.g., a plus functor, and the inner binary operation `op2`, e.g., a
+ * multiplies functor, see also the `std::inner_product` algorithm.
  */
-template <std::size_t N, Concept::Tensor A, Concept::Tensor B, Concept::Tensor C,
+template <std::size_t N,
+          Concept::RandomAccessTensor A,
+          Concept::RandomAccessTensor B,
+          Concept::RandomAccessTensor C,
           class BinaryOp1 = std::plus<>, class BinaryOp2 = std::multiplies<>>
 constexpr void tensordotOut (const A& a, const B& b, C& c,
                              std::integral_constant<std::size_t,N> axes = {},
@@ -190,19 +190,15 @@ constexpr void tensordotOut (const A& a, const B& b, C& c,
   using InvSeqI = std::make_index_sequence<A::rank()-N>;
   using SeqJ = std::make_index_sequence<N>;
   using InvSeqJ = typename StaticIntegralRange<std::size_t,B::rank(),N>::integer_sequence;
-  using SeqK = std::make_index_sequence<C::rank()>;
+  static_assert(InvSeqI::size() + InvSeqJ::size() == C::rank());
 
   // the extents of a and the extents of b must be compatible to c
   using EA = typename A::extents_type;
   using EB = typename B::extents_type;
-  using EC = typename C::extents_type;
   static_assert(Impl::checkStaticExtents<EA,EB>(SeqI{}, SeqJ{}));
-  static_assert(Impl::checkStaticExtents<EA,EC>(InvSeqI{}, SeqK{}));
-  static_assert(Impl::checkStaticExtents<EB,EC>(InvSeqJ{}, SeqK{}));
   assert((Impl::checkExtents(a.extents(), SeqI{}, b.extents(), SeqJ{})));
-  assert((Impl::checkExtents(a.extents(), InvSeqI{}, c.extents(), SeqK{})));
-  assert((Impl::checkExtents(b.extents(), InvSeqJ{}, c.extents(), SeqK{})));
 
+  assert((void*)(&a) != (void*)(&c) && (void*)(&b) != (void*)(&c));
   Impl::tensorDotImpl(a,SeqI{},InvSeqI{},b,SeqJ{},InvSeqJ{},c,std::ref(op1),std::ref(op2));
 }
 
@@ -214,8 +210,9 @@ constexpr void tensordotOut (const A& a, const B& b, C& c,
  * of `A` and positions `JJ...` of `B`. And output tensor is constructed with
  * rank corresponding to the number of indices remaining in `A` and `B`.
  *
- * The product might be accumulated to the output tensor using the `Updater`
- * function, which by default implements an axpy operation.
+ * The product might be accumulated to the output tensor using outer binary operation
+ * `op1`, e.g., a plus functor, and the inner binary operation `op2`, e.g., a
+ * multiplies functor, see also the `std::inner_product` algorithm.
  *
  * \b Examples:
  * - outer product of 2-tensors: `c(i,j,k,l) = a(i,j) * b(k,l)`
@@ -225,8 +222,8 @@ constexpr void tensordotOut (const A& a, const B& b, C& c,
  * - inner product of 2-tensors: `c = a(i,j) * b(i,j)`
  *     is `tensordot(a,index_sequence<0,1>{},b,index_sequence<0,1>{})`
  */
-template <Concept::Tensor A, std::size_t... II,
-          Concept::Tensor B, std::size_t... JJ,
+template <Concept::RandomAccessTensor A, std::size_t... II,
+          Concept::RandomAccessTensor B, std::size_t... JJ,
           class BinaryOp1 = std::plus<>, class BinaryOp2 = std::multiplies<>>
 constexpr auto tensordot (const A& a, std::index_sequence<II...> aSeq,
                           const B& b, std::index_sequence<JJ...> bSeq,
@@ -267,7 +264,9 @@ constexpr auto tensordot (const A& a, std::index_sequence<II...> aSeq,
  * - matrix-matrix product: `c(i,j) = a(i,k) * b(k,j)` is `tensordot<1>(a,b)`
  * - inner product of 2-tensors: `c = a(i,j) * b(i,j)` is `tensordot<2>(a,b)`
  **/
-template <std::size_t N, Concept::Tensor A, Concept::Tensor B,
+template <std::size_t N,
+          Concept::RandomAccessTensor A,
+          Concept::RandomAccessTensor B,
           class BinaryOp1 = std::plus<>, class BinaryOp2 = std::multiplies<>>
 constexpr auto tensordot (const A& a, const B& b,
                           std::integral_constant<std::size_t,N> axes = {},

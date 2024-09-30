@@ -9,18 +9,26 @@
 
 namespace Dune::Concept::Archetypes {
 
-template <class V, std::size_t r>
-struct Tensor
+template <std::size_t r>
+struct Extents
 {
-  using element_type = V;
-  using reference = V&;
-  using const_reference = const V&;
-  using rank_type = std::size_t;
   using index_type = std::size_t;
 
   static constexpr std::size_t rank () { return r; }
-  static constexpr std::size_t static_extent (rank_type) { return 0; }
-  index_type extent (rank_type) const;
+  static constexpr std::size_t static_extent (std::size_t) { return 0; }
+  index_type extent (std::size_t) const;
+};
+
+template <class V, std::size_t r>
+struct Tensor : Archetypes::Extents<r>
+{
+  using reference = V&;
+  using const_reference = const V&;
+
+  using extents_type = Archetypes::Extents<r>;
+  using index_type = typename extents_type::index_type;
+
+  const extents_type& extents ();
 
   reference operator[] (std::array<index_type,r>);
   const_reference operator[] (std::array<index_type,r>) const;
