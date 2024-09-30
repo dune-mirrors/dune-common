@@ -16,184 +16,196 @@ int main(int argc, char** argv)
 
   TestSuite testSuite;
 
-  auto dTensor0 = Dune::Tensor<double>{};
-  auto dTensor1 = Dune::Tensor<double,Dune::dynamic>{2};
-  auto dTensor2 = Dune::Tensor<double,Dune::dynamic,Dune::dynamic>{2,2};
-  auto dTensor3 = Dune::Tensor<double,Dune::dynamic,Dune::dynamic,Dune::dynamic>{2,2,2};
+  auto dTensor = Dune::Tensor<double>{};
+  auto dTensor2 = Dune::Tensor<double,Dune::dynamic>{2};
+  auto dTensor3 = Dune::Tensor<double,Dune::dynamic>{3};
+  auto dTensor23 = Dune::Tensor<double,Dune::dynamic,Dune::dynamic>{2,3};
+  auto dTensor32 = Dune::Tensor<double,Dune::dynamic,Dune::dynamic>{3,2};
+  auto dTensor234 = Dune::Tensor<double,Dune::dynamic,Dune::dynamic,Dune::dynamic>{2,3,4};
 
-  auto fTensor0 = Dune::Tensor<double>{};
-  auto fTensor1 = Dune::Tensor<double,2>{};
-  auto fTensor2 = Dune::Tensor<double,2,2>{};
-  auto fTensor3 = Dune::Tensor<double,2,2,2>{};
+  auto fTensor = Dune::Tensor<double>{};
+  auto fTensor2 = Dune::Tensor<double,2>{};
+  auto fTensor3 = Dune::Tensor<double,3>{};
+  auto fTensor23 = Dune::Tensor<double,2,3>{};
+  auto fTensor32 = Dune::Tensor<double,3,2>{};
+  auto fTensor234 = Dune::Tensor<double,2,3,4>{};
 
   // test dynamic tensors
   {
-    auto dScalar = tensordot<0>(dTensor0,dTensor0);
-    testSuite.check(dScalar.rank() == 0);
+    auto d = tensordot<0>(dTensor,dTensor);
+    testSuite.check(d.rank() == 0);
   }
 
   {
-    auto dVec0 = tensordot<0>(dTensor0,dTensor1);
-    testSuite.check(dVec0.rank() == 1);
-    testSuite.check(dVec0.extent(0) == 2);
+    auto d = tensordot<1>(dTensor2,dTensor2);
+    testSuite.check(d.rank() == 0);
 
-    auto dVec1 = tensordot<0>(dTensor1,dTensor0);
-    testSuite.check(dVec1.rank() == 1);
-    testSuite.check(dVec1.extent(0) == 2);
+    auto d2 = tensordot<0>(dTensor,dTensor2);
+    testSuite.check(d2.rank() == 1);
+    testSuite.check(d2.extent(0) == 2);
 
-    auto dMat = tensordot<0>(dTensor1,dTensor1);
-    testSuite.check(dMat.rank() == 2);
-    testSuite.check(dMat.extent(0) == 2);
-    testSuite.check(dMat.extent(1) == 2);
+    auto d3 = tensordot<0>(dTensor3,dTensor);
+    testSuite.check(d3.rank() == 1);
+    testSuite.check(d3.extent(0) == 3);
 
-    auto dScalar = tensordot<1>(dTensor1,dTensor1);
-    testSuite.check(dScalar.rank() == 0);
+    auto d23 = tensordot<0>(dTensor2,dTensor3);
+    testSuite.check(d23.rank() == 2);
+    testSuite.check(d23.extent(0) == 2);
+    testSuite.check(d23.extent(1) == 3);
   }
 
   {
-    auto dMat0 = tensordot<0>(dTensor0,dTensor2);
-    testSuite.check(dMat0.rank() == 2);
-    testSuite.check(dMat0.extent(0) == 2);
-    testSuite.check(dMat0.extent(1) == 2);
+    auto d = tensordot<2>(dTensor23,dTensor23);
+    testSuite.check(d.rank() == 0);
 
-    auto dMat1 = tensordot<0>(dTensor2,dTensor0);
-    testSuite.check(dMat1.rank() == 2);
-    testSuite.check(dMat1.extent(0) == 2);
-    testSuite.check(dMat1.extent(1) == 2);
+    auto d2 = tensordot<1>(dTensor23,dTensor3);
+    testSuite.check(d2.rank() == 1);
+    testSuite.check(d2.extent(0) == 2);
 
-    auto dVec0 = tensordot<1>(dTensor1,dTensor2);
-    testSuite.check(dVec0.rank() == 1);
-    testSuite.check(dVec0.extent(0) == 2);
+    auto d3 = tensordot<1>(dTensor2,dTensor23);
+    testSuite.check(d3.rank() == 1);
+    testSuite.check(d3.extent(0) == 3);
 
-    auto dVec1 = tensordot<1>(dTensor2,dTensor1);
-    testSuite.check(dVec1.rank() == 1);
-    testSuite.check(dVec1.extent(0) == 2);
+    auto d22 = tensordot<1>(dTensor23,dTensor32);
+    testSuite.check(d22.rank() == 2);
+    testSuite.check(d22.extent(0) == 2);
+    testSuite.check(d22.extent(1) == 2);
 
-    auto dTen0 = tensordot<0>(dTensor1,dTensor2);
-    testSuite.check(dTen0.rank() == 3);
-    testSuite.check(dTen0.extent(0) == 2);
-    testSuite.check(dTen0.extent(1) == 2);
-    testSuite.check(dTen0.extent(2) == 2);
+    auto d23 = tensordot<0>(dTensor,dTensor23);
+    testSuite.check(d23.rank() == 2);
+    testSuite.check(d23.extent(0) == 2);
+    testSuite.check(d23.extent(1) == 3);
 
-    auto dTen1 = tensordot<0>(dTensor2,dTensor1);
-    testSuite.check(dTen1.rank() == 3);
-    testSuite.check(dTen1.extent(0) == 2);
-    testSuite.check(dTen1.extent(1) == 2);
-    testSuite.check(dTen1.extent(2) == 2);
+    auto d32 = tensordot<0>(dTensor32,dTensor);
+    testSuite.check(d32.rank() == 2);
+    testSuite.check(d32.extent(0) == 3);
+    testSuite.check(d32.extent(1) == 2);
 
-    auto dScalar = tensordot<2>(dTensor2,dTensor2);
-    testSuite.check(dScalar.rank() == 0);
+    auto d223 = tensordot<0>(dTensor2,dTensor23);
+    testSuite.check(d223.rank() == 3);
+    testSuite.check(d223.extent(0) == 2);
+    testSuite.check(d223.extent(1) == 2);
+    testSuite.check(d223.extent(2) == 3);
 
-    auto dMat2 = tensordot<1>(dTensor2,dTensor2);
-    testSuite.check(dMat2.rank() == 2);
-    testSuite.check(dMat2.extent(0) == 2);
-    testSuite.check(dMat2.extent(1) == 2);
+    auto d233 = tensordot<0>(dTensor23,dTensor3);
+    testSuite.check(d233.rank() == 3);
+    testSuite.check(d233.extent(0) == 2);
+    testSuite.check(d233.extent(1) == 3);
+    testSuite.check(d233.extent(2) == 3);
 
-    auto dTen2 = tensordot<0>(dTensor2,dTensor2);
-    testSuite.check(dTen2.rank() == 4);
-    testSuite.check(dTen2.extent(0) == 2);
-    testSuite.check(dTen2.extent(1) == 2);
-    testSuite.check(dTen2.extent(2) == 2);
-    testSuite.check(dTen2.extent(3) == 2);
+    auto d2332 = tensordot<0>(dTensor23,dTensor32);
+    testSuite.check(d2332.rank() == 4);
+    testSuite.check(d2332.extent(0) == 2);
+    testSuite.check(d2332.extent(1) == 3);
+    testSuite.check(d2332.extent(2) == 3);
+    testSuite.check(d2332.extent(3) == 2);
   }
 
   // test mixed static/dynamic tensors
   {
-    auto dScalar = tensordot<0>(fTensor0,dTensor0);
-    testSuite.check(dScalar.rank() == 0);
+    auto d = tensordot<0>(fTensor,dTensor);
+    testSuite.check(d.rank() == 0);
   }
 
   {
-    auto dVec0 = tensordot<0>(fTensor0,dTensor1);
-    testSuite.check(dVec0.rank() == 1);
-    testSuite.check(dVec0.extent(0) == 2);
+    auto d = tensordot<1>(fTensor2,dTensor2);
+    testSuite.check(d.rank() == 0);
 
-    auto dVec1 = tensordot<0>(fTensor1,dTensor0);
-    testSuite.check(dVec1.rank() == 1);
-    testSuite.check(dVec1.extent(0) == 2);
+    auto d2 = tensordot<0>(fTensor,dTensor2);
+    testSuite.check(d2.rank() == 1);
+    testSuite.check(d2.extent(0) == 2);
 
-    auto dMat = tensordot<0>(fTensor1,dTensor1);
-    testSuite.check(dMat.rank() == 2);
-    testSuite.check(dMat.extent(0) == 2);
-    testSuite.check(dMat.extent(1) == 2);
+    auto d3 = tensordot<0>(fTensor3,dTensor);
+    testSuite.check(d3.rank() == 1);
+    testSuite.check(d3.extent(0) == 3);
 
-    auto dScalar = tensordot<1>(fTensor1,dTensor1);
-    testSuite.check(dScalar.rank() == 0);
+    auto d23 = tensordot<0>(fTensor2,dTensor3);
+    testSuite.check(d23.rank() == 2);
+    testSuite.check(d23.extent(0) == 2);
+    testSuite.check(d23.extent(1) == 3);
   }
 
   {
-    auto dMat0 = tensordot<0>(fTensor0,dTensor2);
-    testSuite.check(dMat0.rank() == 2);
-    testSuite.check(dMat0.extent(0) == 2);
-    testSuite.check(dMat0.extent(1) == 2);
+    auto d = tensordot<2>(fTensor23,dTensor23);
+    testSuite.check(d.rank() == 0);
 
-    auto dMat1 = tensordot<0>(fTensor2,dTensor0);
-    testSuite.check(dMat1.rank() == 2);
-    testSuite.check(dMat1.extent(0) == 2);
-    testSuite.check(dMat1.extent(1) == 2);
+    auto d2 = tensordot<1>(fTensor23,dTensor3);
+    testSuite.check(d2.rank() == 1);
+    testSuite.check(d2.extent(0) == 2);
 
-    auto dVec0 = tensordot<1>(fTensor1,dTensor2);
-    testSuite.check(dVec0.rank() == 1);
-    testSuite.check(dVec0.extent(0) == 2);
+    auto d3 = tensordot<1>(fTensor2,dTensor23);
+    testSuite.check(d3.rank() == 1);
+    testSuite.check(d3.extent(0) == 3);
 
-    auto dVec1 = tensordot<1>(fTensor2,dTensor1);
-    testSuite.check(dVec1.rank() == 1);
-    testSuite.check(dVec1.extent(0) == 2);
+    auto d22 = tensordot<1>(fTensor23,dTensor32);
+    testSuite.check(d22.rank() == 2);
+    testSuite.check(d22.extent(0) == 2);
+    testSuite.check(d22.extent(1) == 2);
 
-    auto dTen0 = tensordot<0>(fTensor1,dTensor2);
-    testSuite.check(dTen0.rank() == 3);
-    testSuite.check(dTen0.extent(0) == 2);
-    testSuite.check(dTen0.extent(1) == 2);
-    testSuite.check(dTen0.extent(2) == 2);
+    auto d23 = tensordot<0>(fTensor,dTensor23);
+    testSuite.check(d23.rank() == 2);
+    testSuite.check(d23.extent(0) == 2);
+    testSuite.check(d23.extent(1) == 3);
 
-    auto dTen1 = tensordot<0>(fTensor2,dTensor1);
-    testSuite.check(dTen1.rank() == 3);
-    testSuite.check(dTen1.extent(0) == 2);
-    testSuite.check(dTen1.extent(1) == 2);
-    testSuite.check(dTen1.extent(2) == 2);
+    auto d32 = tensordot<0>(fTensor32,dTensor);
+    testSuite.check(d32.rank() == 2);
+    testSuite.check(d32.extent(0) == 3);
+    testSuite.check(d32.extent(1) == 2);
 
-    auto dScalar = tensordot<2>(fTensor2,dTensor2);
-    testSuite.check(dScalar.rank() == 0);
+    auto d223 = tensordot<0>(fTensor2,dTensor23);
+    testSuite.check(d223.rank() == 3);
+    testSuite.check(d223.extent(0) == 2);
+    testSuite.check(d223.extent(1) == 2);
+    testSuite.check(d223.extent(2) == 3);
 
-    auto dMat2 = tensordot<1>(fTensor2,dTensor2);
-    testSuite.check(dMat2.rank() == 2);
-    testSuite.check(dMat2.extent(0) == 2);
-    testSuite.check(dMat2.extent(1) == 2);
+    auto d233 = tensordot<0>(fTensor23,dTensor3);
+    testSuite.check(d233.rank() == 3);
+    testSuite.check(d233.extent(0) == 2);
+    testSuite.check(d233.extent(1) == 3);
+    testSuite.check(d233.extent(2) == 3);
 
-    auto dTen2 = tensordot<0>(fTensor2,dTensor2);
-    testSuite.check(dTen2.rank() == 4);
-    testSuite.check(dTen2.extent(0) == 2);
-    testSuite.check(dTen2.extent(1) == 2);
-    testSuite.check(dTen2.extent(2) == 2);
-    testSuite.check(dTen2.extent(3) == 2);
+    auto d2332 = tensordot<0>(fTensor23,dTensor32);
+    testSuite.check(d2332.rank() == 4);
+    testSuite.check(d2332.extent(0) == 2);
+    testSuite.check(d2332.extent(1) == 3);
+    testSuite.check(d2332.extent(2) == 3);
+    testSuite.check(d2332.extent(3) == 2);
   }
 
   // test interaction with TensorSpan
   {
-    auto dMat0 = tensordot<1>(fTensor2,dTensor2.toTensorSpan());
-    auto dMat1 = tensordot<1>(fTensor2.toTensorSpan(),dTensor2);
-    auto dMat2 = tensordot<1>(fTensor2.toTensorSpan(),dTensor2.toTensorSpan());
+    auto dMat0 = tensordot<1>(fTensor23,dTensor32.toTensorSpan());
+    auto dMat1 = tensordot<1>(fTensor23.toTensorSpan(),dTensor32);
+    auto dMat2 = tensordot<1>(fTensor23.toTensorSpan(),dTensor32.toTensorSpan());
   }
 
   // test output-tensor
   {
-    tensordotOut<1>(dTensor2,dTensor2,fTensor2);
-    tensordotOut<1>(fTensor2,fTensor2,dTensor2);
+    auto fTensor22 = Tensor<double,2,2>{};
+    tensordotOut<1>(dTensor23,dTensor32,fTensor22);
+    auto dTensor22 = Tensor<double,Dune::dynamic,Dune::dynamic>{2,2};
+    tensordotOut<1>(fTensor23,fTensor32,dTensor22);
   }
 
   // test arbitrary index contractions
   {
-    auto dScalar = tensordot(fTensor2,std::index_sequence<0,1>{}, dTensor2,std::index_sequence<1,0>{});
-    testSuite.check(dScalar.rank() == 0);
-    tensordotOut(fTensor2,std::index_sequence<0,1>{}, dTensor2,std::index_sequence<1,0>{}, dScalar);
+    auto d = tensordot(fTensor23,std::index_sequence<0,1>{}, dTensor32,std::index_sequence<1,0>{});
+    testSuite.check(d.rank() == 0);
+    tensordotOut(fTensor23,std::index_sequence<0,1>{}, dTensor23,std::index_sequence<1,0>{}, d);
 
-    auto dMat = tensordot(fTensor2,std::index_sequence<0>{}, dTensor2,std::index_sequence<0>{});
-    testSuite.check(dMat.rank() == 2);
-    tensordotOut(fTensor2,std::index_sequence<0>{}, dTensor2,std::index_sequence<0>{}, dMat);
+    auto d33 = tensordot(fTensor23,std::index_sequence<0>{}, dTensor23,std::index_sequence<0>{});
+    testSuite.check(d33.rank() == 2);
+    testSuite.check(d33.extent(0) == 3);
+    testSuite.check(d33.extent(1) == 3);
+    tensordotOut(fTensor23,std::index_sequence<0>{}, dTensor23,std::index_sequence<0>{}, d33);
 
-    auto dTen = tensordot(fTensor2,std::index_sequence<>{}, dTensor2,std::index_sequence<>{});
-    testSuite.check(dTen.rank() == 4);
-    tensordotOut(fTensor2,std::index_sequence<>{}, dTensor2,std::index_sequence<>{}, dTen);
+    auto d2323 = tensordot(fTensor23,std::index_sequence<>{}, dTensor23,std::index_sequence<>{});
+    testSuite.check(d2323.rank() == 4);
+    testSuite.check(d2323.extent(0) == 2);
+    testSuite.check(d2323.extent(1) == 3);
+    testSuite.check(d2323.extent(2) == 2);
+    testSuite.check(d2323.extent(3) == 3);
+    tensordotOut(fTensor23,std::index_sequence<>{}, dTensor23,std::index_sequence<>{}, d2323);
   }
 
   return testSuite.exit();
