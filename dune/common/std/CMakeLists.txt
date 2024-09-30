@@ -8,6 +8,7 @@ install(FILES
   compare.hh
   default_accessor.hh
   extents.hh
+  forceinline.hh
   functional.hh
   iterator.hh
   layout_left.hh
