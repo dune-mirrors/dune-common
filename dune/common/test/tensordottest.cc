@@ -191,7 +191,7 @@ int main(int argc, char** argv)
   {
     auto d = tensordot(fTensor23,std::index_sequence<0,1>{}, dTensor32,std::index_sequence<1,0>{});
     testSuite.check(d.rank() == 0);
-    tensordotOut(fTensor23,std::index_sequence<0,1>{}, dTensor23,std::index_sequence<1,0>{}, d);
+    tensordotOut(fTensor23,std::index_sequence<0,1>{}, dTensor32,std::index_sequence<1,0>{}, d);
 
     auto d33 = tensordot(fTensor23,std::index_sequence<0>{}, dTensor23,std::index_sequence<0>{});
     testSuite.check(d33.rank() == 2);
