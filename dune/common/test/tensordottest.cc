@@ -26,8 +26,7 @@ int main(int argc, char** argv)
   auto fTensor2 = Dune::Tensor<double,2,2>{};
   auto fTensor3 = Dune::Tensor<double,2,2,2>{};
 
-  // dynamic tensors
-
+  // test dynamic tensors
   {
     auto dScalar = tensordot<0>(dTensor0,dTensor0);
     testSuite.check(dScalar.rank() == 0);
@@ -98,8 +97,7 @@ int main(int argc, char** argv)
     testSuite.check(dTen2.extent(3) == 2);
   }
 
-  // mixed static/dynamic tensors
-
+  // test mixed static/dynamic tensors
   {
     auto dScalar = tensordot<0>(fTensor0,dTensor0);
     testSuite.check(dScalar.rank() == 0);
@@ -170,6 +168,33 @@ int main(int argc, char** argv)
     testSuite.check(dTen2.extent(3) == 2);
   }
 
+  // test interaction with TensorSpan
+  {
+    auto dMat0 = tensordot<1>(fTensor2,dTensor2.toTensorSpan());
+    auto dMat1 = tensordot<1>(fTensor2.toTensorSpan(),dTensor2);
+    auto dMat2 = tensordot<1>(fTensor2.toTensorSpan(),dTensor2.toTensorSpan());
+  }
+
+  // test output-tensor
+  {
+    tensordotOut<1>(dTensor2,dTensor2,fTensor2);
+    tensordotOut<1>(fTensor2,fTensor2,dTensor2);
+  }
+
+  // test arbitrary index contractions
+  {
+    auto dScalar = tensordot(fTensor2,std::index_sequence<0,1>{}, dTensor2,std::index_sequence<1,0>{});
+    testSuite.check(dScalar.rank() == 0);
+    tensordotOut(fTensor2,std::index_sequence<0,1>{}, dTensor2,std::index_sequence<1,0>{}, dScalar);
+
+    auto dMat = tensordot(fTensor2,std::index_sequence<0>{}, dTensor2,std::index_sequence<0>{});
+    testSuite.check(dMat.rank() == 2);
+    tensordotOut(fTensor2,std::index_sequence<0>{}, dTensor2,std::index_sequence<0>{}, dMat);
+
+    auto dTen = tensordot(fTensor2,std::index_sequence<>{}, dTensor2,std::index_sequence<>{});
+    testSuite.check(dTen.rank() == 4);
+    tensordotOut(fTensor2,std::index_sequence<>{}, dTensor2,std::index_sequence<>{}, dTen);
+  }
 
   return testSuite.exit();
 }
