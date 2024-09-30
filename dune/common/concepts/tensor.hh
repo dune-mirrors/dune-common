@@ -70,6 +70,18 @@ static_assert(Concept::TensorWithRank<Archetypes::Tensor<double,0>,0>);
 static_assert(Concept::Vector<Archetypes::Tensor<double,1>>);
 static_assert(Concept::Matrix<Archetypes::Tensor<double,2>>);
 
+
+template <class T>
+concept RandomAccessTensor = Tensor<T> &&
+requires(T tensor, std::array<typename T::index_type, T::rank()> indices)
+{
+  tensor[indices];
+};
+
+static_assert(Concept::RandomAccessTensor<Archetypes::Tensor<double,0>>);
+static_assert(Concept::RandomAccessTensor<Archetypes::Tensor<double,1>>);
+static_assert(Concept::RandomAccessTensor<Archetypes::Tensor<double,2>>);
+
 } // end namespace Dune::Concept
 
 #endif // DUNE_COMMON_CONCEPTS_TENSOR_HH
