@@ -6,6 +6,7 @@
 #define DUNE_COMMON_TENSORDOT_HH
 
 #include <array>
+#include <cassert>
 #include <functional>
 #include <type_traits>
 #include <utility>
