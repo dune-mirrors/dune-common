@@ -12,21 +12,36 @@
 
 namespace Dune::Concept {
 
+template <class E>
+concept Extents = requires(E extents, std::size_t i)
+{
+  { E::rank() } -> std::convertible_to<std::size_t>;
+  { E::static_extent(i) } -> std::same_as<std::size_t>;
+  { extents.extent(i) } -> std::convertible_to<typename E::index_type>;
+};
+
 template <class T>
-concept Tensor = requires(T tensor, typename T::rank_type r)
+concept Tensor = Extents<T> && requires(T tensor)
 {
-  { T::rank() } -> std::convertible_to<std::size_t>;
-  { T::static_extent(r) } -> std::same_as<std::size_t>;
-  { tensor.extent(r) } -> std::convertible_to<typename T::index_type>;
-}
-&& requires(T tensor, std::array<typename T::index_type, T::rank()> indices)
-{
-  { tensor[indices] } -> std::convertible_to<typename T::reference>;
+  requires Extents<typename T::extents_type>;
+  { tensor.extents() } -> std::convertible_to<typename T::extents_type>;
 };
 
 static_assert(Concept::Tensor<Archetypes::Tensor<double,0>>);
 static_assert(Concept::Tensor<Archetypes::Tensor<double,1>>);
 static_assert(Concept::Tensor<Archetypes::Tensor<double,2>>);
+
+
+template <class T>
+concept RandomAccessTensor = Tensor<T> &&
+requires(T tensor, std::array<typename T::index_type, T::rank()> indices)
+{
+  tensor[indices];
+};
+
+static_assert(Concept::RandomAccessTensor<Archetypes::Tensor<double,0>>);
+static_assert(Concept::RandomAccessTensor<Archetypes::Tensor<double,1>>);
+static_assert(Concept::RandomAccessTensor<Archetypes::Tensor<double,2>>);
 
 } // end namespace Dune::Concept
 
