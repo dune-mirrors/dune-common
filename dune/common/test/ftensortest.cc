@@ -71,11 +71,9 @@ void checkConstructors(Dune::TestSuite& testSuite)
   Tensor tensor;
   checkEqualValue(subTestSuite, tensor, 0.0);
 
-#if 0 // not yet implemented
   std::cout << "assignment of value..." << std::endl;
   tensor = 1.0;
   checkEqualValue(subTestSuite, tensor, 1.0);
-#endif
 
   // constructor with a default value
   std::cout << "value constructor..." << std::endl;
@@ -251,7 +249,6 @@ void checkArithmetic(Dune::TestSuite& testSuite)
   checkEqualValue(subTestSuite, tensor, 1.0);
   checkEqualValue(subTestSuite, tensor2, 2.0);
 
-#if 0 // not yet implemented
   tensor *= 2.0;
   checkEqualValue(subTestSuite, tensor, 2.0);
 
@@ -266,7 +263,6 @@ void checkArithmetic(Dune::TestSuite& testSuite)
 
   tensor -= tensor2;
   checkEqualValue(subTestSuite, tensor, 48.0);
-#endif
 
   testSuite.subTest(subTestSuite);
 }

@@ -11,12 +11,31 @@
 #include <utility>
 
 #include <dune/common/boundschecking.hh>
+#include <dune/common/dotproduct.hh>
 #include <dune/common/ftraits.hh>
 #include <dune/common/indices.hh>
+#include <dune/common/math.hh>
+#include <dune/common/tensordot.hh>
 #include <dune/common/concepts/number.hh>
+#include <dune/common/concepts/tensor.hh>
 #include <dune/common/std/type_traits.hh>
+#include <dune/common/test/foreachindex.hh>
 
 namespace Dune {
+namespace Impl {
+
+// Take the extents from both index spaces and use as many static extents as possible
+template <class I1, std::size_t... exts1, class I2, std::size_t... exts2>
+constexpr auto combinedExtents (const Std::extents<I1,exts1...>& e1,
+                                const Std::extents<I2,exts2...>& e2)
+{
+  using I = std::common_type_t<I1,I2>;
+  return [&]<std::size_t... II, std::size_t... JJ>(std::index_sequence<II...>, std::index_sequence<JJ...>) {
+    return Std::extents<I, (exts1 == Std::dynamic_extent ? exts2 : exts1)...>{I(e1.extent(II))...};
+  }(std::make_index_sequence<sizeof...(exts1)>{},std::make_index_sequence<sizeof...(exts2)>{});
+}
+
+} // end namespace Impl
 
 /**
  * \brief A tensor interface-class providing common functionality.
@@ -54,6 +73,16 @@ public:
 protected:
   /// Derive constructors from base class
   using base_type::base_type;
+
+public:
+  /// \brief Assign `value` to each component of the tensor
+  constexpr derived_type& operator= (const value_type& value)
+  {
+    forEachIndex(base_type::extents(), [&](auto&& index) {
+      (*this)[index] = value;
+    });
+    return asDerived();
+  }
 
 public:
   /// \name Multi index access
@@ -187,7 +216,337 @@ public:
   /// @}
 
 
-  /// \brief Comparison of two DenseTensorMixins for equality
+  /// \name Elementwise operations
+  // @{
+
+  /// \brief Vector space operation ( *this += x )
+  template <Concept::RandomAccessTensor T>
+    requires (extents_type::rank() == T::rank() &&
+      Impl::checkStaticExtents<T::rank(), extents_type, typename T::extents_type>())
+  constexpr derived_type& operator+= (const T& x)
+  {
+    assert(base_type::extents() == x.extents());
+    forEachIndex(base_type::extents(), [&](auto&& index) {
+      (*this)[index] += x[index];
+    });
+    return asDerived();
+  }
+
+  /// \brief Binary elementwise addition of two tensors
+  template <Concept::RandomAccessTensor T>
+    requires (extents_type::rank() == T::rank() &&
+      Impl::checkStaticExtents<T::rank(), extents_type, typename T::extents_type>())
+  constexpr Concept::RandomAccessTensor auto operator+ (const T& x) const
+  {
+    assert(base_type::extents() == x.extents());
+    using I1 = std::array<index_type,extents_type::rank()>;
+    using I2 = std::array<typename T::index_type,T::rank()>;
+    using V = std::decay_t<decltype((*this)[std::declval<I1>()] + x[std::declval<I2>()])>;
+
+    // create a copy of *this with as many static extents as possible
+    auto result = [&]<class I, std::size_t... exts>(const Std::extents<I,exts...>&) {
+      return Tensor<V,exts...>{*this};
+    }(Impl::combinedExtents(base_type::extents(), x.extents()));
+
+    result += x;
+    return result;
+  }
+
+  /// \brief Vector space operation ( *this -= x )
+  template <Concept::RandomAccessTensor T>
+    requires (extents_type::rank() == T::rank() &&
+      Impl::checkStaticExtents<T::rank(), extents_type, typename T::extents_type>())
+  constexpr derived_type& operator-= (const T& x)
+  {
+    assert(base_type::extents() == x.extents());
+    forEachIndex(base_type::extents(), [&](auto&& index) {
+      (*this)[index] -= x[index];
+    });
+    return asDerived();
+  }
+
+  /// \brief Binary elementwise subtraction of two tensors
+  template <Concept::RandomAccessTensor T>
+    requires (extents_type::rank() == T::rank() &&
+      Impl::checkStaticExtents<T::rank(), extents_type, typename T::extents_type>())
+  constexpr Concept::RandomAccessTensor auto operator- (const T& x) const
+  {
+    assert(base_type::extents() == x.extents());
+    using I1 = std::array<index_type,extents_type::rank()>;
+    using I2 = std::array<typename T::index_type,T::rank()>;
+    using V = std::decay_t<decltype((*this)[std::declval<I1>()] - x[std::declval<I2>()])>;
+
+    // create a copy of *this with as many static extents as possible
+    auto result = [&]<class I, std::size_t... exts>(const Std::extents<I,exts...>&) {
+      return Tensor<V,exts...>{*this};
+    }(Impl::combinedExtents(base_type::extents(), x.extents()));
+
+    result -= x;
+    return result;
+  }
+
+  /// \brief Elementwise negation of the tensor
+  constexpr Concept::RandomAccessTensor auto operator- () const
+  {
+    // create a copy of *this
+    auto result = Tensor{base_type::extents(), value_type(0)};
+    forEachIndex(base_type::extents(), [&](auto&& index) {
+      result[index] = -(*this)[index];
+    });
+    return result;
+  }
+
+  /// \brief Vector space axpy operation ( *this += alpha x )
+  template <Concept::RandomAccessTensor T>
+    requires (extents_type::rank() == T::rank() &&
+      Impl::checkStaticExtents<T::rank(), extents_type, typename T::extents_type>())
+  constexpr derived_type& axpy (const field_type& alpha, const T& x)
+  {
+    assert(base_type::extents() == x.extents());
+    forEachIndex(base_type::extents(), [&](auto&& index) {
+      (*this)[index] += alpha * x[index];
+    });
+    return asDerived();
+  }
+
+  /// \brief Vector space aypx operation ( *this = alpha * (*this) + x )
+  template <Concept::RandomAccessTensor T>
+    requires (extents_type::rank() == T::rank() &&
+      Impl::checkStaticExtents<T::rank(), extents_type, typename T::extents_type>())
+  constexpr derived_type& aypx (const field_type& alpha, const T& x)
+  {
+    assert(base_type::extents() == x.extents());
+    forEachIndex(base_type::extents(), [&](auto&& index) {
+      (*this)[index] = alpha * (*this)[index] + x[index];
+    });
+    return asDerived();
+  }
+
+  /// \brief Vector space operation ( *this *= scalar )
+  constexpr derived_type& operator*= (const field_type& scalar)
+  {
+    forEachIndex(base_type::extents(), [&](auto&& index) {
+      (*this)[index] *= scalar;
+    });
+    return asDerived();
+  }
+
+  /// \brief Elementwise scalar multiplication of the tensor
+  constexpr friend Concept::RandomAccessTensor auto operator* (const self_type& self, const field_type& scalar)
+  {
+    auto result = Tensor{self};
+    result *= scalar;
+    return result;
+  }
+
+  /// \brief Elementwise scalar multiplication of the tensor
+  constexpr friend Concept::RandomAccessTensor auto operator* (const field_type& scalar, const self_type& self)
+  {
+    auto result = Tensor{self};
+    result *= scalar;
+    return result;
+  }
+
+  /// @}
+
+
+  /// \name tensor dot-products
+  // @{
+
+  /// \brief Returns the tensor product with contraction over a single index `A_{ij} B_{jkl}`
+  template <Concept::RandomAccessTensor T>
+    requires (extents_type::rank() >= 1 && T::rank() >= 1 &&
+      Impl::checkStaticExtents<1, extents_type, typename T::extents_type>())
+  constexpr Concept::RandomAccessTensor auto operator* (const T& tensor) const
+  {
+    return tensordot<1>(*this, tensor);
+  }
+
+  /// \brief Returns the Hermitian tensor product with contraction over a single index `conj(A_{ij}) B_{jkl}`
+  template <Concept::RandomAccessTensor T>
+    requires (extents_type::rank() >= 1 && T::rank() >= 1 &&
+      Impl::checkStaticExtents<1, extents_type, typename T::extents_type>())
+  constexpr Concept::RandomAccessTensor auto dot (const T& tensor) const
+  {
+    return tensordot(*this, tensor, std::integral_constant<std::size_t,1>{},
+      std::plus<>{}, DotProduct{});
+  }
+
+  /// \brief Returns the Hermitian tensor product with contraction over two indices `conj(A_{ijk}) B_{jkl}`
+  template <Concept::RandomAccessTensor T>
+    requires (extents_type::rank() >= 2 && T::rank() >= 2 &&
+      Impl::checkStaticExtents<1, extents_type, typename T::extents_type>())
+  constexpr Concept::RandomAccessTensor auto ddot (const T& tensor) const
+  {
+    return tensordot(*this, tensor, std::integral_constant<std::size_t,2>{},
+      std::plus<>{}, DotProduct{});
+  }
+
+
+  /// \brief y = A x
+  template <Concept::RandomAccessVector VectorIn,
+            Concept::RandomAccessVector VectorOut>
+  constexpr void mv (const VectorIn& x, VectorOut& y) const requires (extents_type::rank() == 2)
+  {
+    y = 0;
+    tensordotOut<1>(*this,x,y);
+  }
+
+  /// \brief y = A^T x
+  template <Concept::RandomAccessVector VectorIn,
+            Concept::RandomAccessVector VectorOut>
+  constexpr void mtv (const VectorIn& x, VectorOut& y) const  requires (extents_type::rank() == 2)
+  {
+    y = 0;
+    tensordotOut<1>(x,*this,y);
+  }
+
+  /// \brief y = A^H x
+  template <Concept::RandomAccessVector VectorIn,
+            Concept::RandomAccessVector VectorOut>
+  constexpr void mhv (const VectorIn& x, VectorOut& y) const  requires (extents_type::rank() == 2)
+  {
+    y = 0;
+    tensordotOut(x,*this,y, std::integral_constant<std::size_t, 1>{},
+      std::plus<>{}, [](auto&& a, auto&& b) { return a * conjugateComplex(b); });
+  }
+
+  /// \brief y += A x
+  template <Concept::RandomAccessVector VectorIn,
+            Concept::RandomAccessVector VectorOut>
+  constexpr void umv (const VectorIn& x, VectorOut& y) const requires (extents_type::rank() == 2)
+  {
+    tensordotOut<1>(*this,x,y);
+  }
+
+  /// \brief y -= A x
+  template <Concept::RandomAccessVector VectorIn,
+            Concept::RandomAccessVector VectorOut>
+  constexpr void mmv (const VectorIn& x, VectorOut& y) const requires (extents_type::rank() == 2)
+  {
+    tensordotOut(*this,x,y, std::integral_constant<std::size_t, 1>{},
+      std::minus<>{}, std::multiplies<>{});
+  }
+
+  /// \brief y += A^T x
+  template <Concept::RandomAccessVector VectorIn,
+            Concept::RandomAccessVector VectorOut>
+  constexpr void umtv (const VectorIn& x, VectorOut& y) const requires (extents_type::rank() == 2)
+  {
+    tensordotOut<1>(x,*this,y);
+  }
+
+  /// \brief y -= A^T x
+  template <Concept::RandomAccessVector VectorIn,
+            Concept::RandomAccessVector VectorOut>
+  constexpr void mmtv (const VectorIn& x, VectorOut& y) const requires (extents_type::rank() == 2)
+  {
+    tensordotOut<1>(x,*this,y, std::integral_constant<std::size_t, 1>{},
+      std::minus<>{}, std::multiplies<>{});
+  }
+
+  /// \brief y += A^H x
+  template <Concept::RandomAccessVector VectorIn,
+            Concept::RandomAccessVector VectorOut>
+  constexpr void umhv (const VectorIn& x, VectorOut& y) const requires (extents_type::rank() == 2)
+  {
+    tensordotOut(x,*this,y, std::integral_constant<std::size_t, 1>{},
+      std::plus<>{}, [](auto&& a, auto&& b) { return a * conjugateComplex(b); });
+  }
+
+  /// \brief y -= A^H x
+  template <Concept::RandomAccessVector VectorIn,
+            Concept::RandomAccessVector VectorOut>
+  constexpr void mmhv (const VectorIn& x, VectorOut& y) const requires (extents_type::rank() == 2)
+  {
+    tensordotOut(x,*this,y, std::integral_constant<std::size_t, 1>{},
+      std::minus<>{}, [](auto&& a, auto&& b) { return a * conjugateComplex(b); });
+  }
+
+  /// \brief y += alpha A x
+  template <Concept::RandomAccessVector VectorIn,
+            Concept::RandomAccessVector VectorOut>
+  constexpr void usmv (const typename FieldTraits<VectorOut>::field_type& alpha,
+                       const VectorIn& x, VectorOut& y) const requires (extents_type::rank() == 2)
+  {
+    tensordotOut(*this,x, y, std::integral_constant<std::size_t, 1>{},
+      std::plus<>{}, [alpha](auto&& a, auto&& b) { return alpha * a * b; });
+  }
+
+  /// \brief y += alpha A^T x
+  template <Concept::RandomAccessVector VectorIn,
+            Concept::RandomAccessVector VectorOut>
+  constexpr void usmtv (const typename FieldTraits<VectorOut>::field_type& alpha,
+                        const VectorIn& x, VectorOut& y) const requires (extents_type::rank() == 2)
+  {
+    tensordotOut(x,*this,y, std::integral_constant<std::size_t, 1>{},
+      std::plus<>{}, [alpha](auto&& a, auto&& b) { return alpha * a * b; });
+  }
+
+  /// \brief y += alpha A^H x
+  template <Concept::RandomAccessVector VectorIn,
+            Concept::RandomAccessVector VectorOut>
+  constexpr void usmhv (const typename FieldTraits<VectorOut>::field_type& alpha,
+                        const VectorIn& x, VectorOut& y) const requires (extents_type::rank() == 2)
+  {
+    tensordotOut(x,*this,y, std::integral_constant<std::size_t, 1>{},
+      std::plus<>{}, [alpha](auto&& a, auto&& b) { return alpha * a * conjugateComplex(b); });
+  }
+
+  /// @}
+
+
+  /// \name tensor norms and inner products
+  // @{
+
+  /// \brief Returns the Hermitian tensor inner product with contraction over all indices `conj(A_{ij}) B_{ij}`
+  template <Concept::RandomAccessTensor T>
+    requires (extents_type::rank() == T::rank() &&
+      Impl::checkStaticExtents<T::rank(), extents_type, typename T::extents_type>())
+  constexpr auto inner (const T& tensor) const
+  {
+    auto result = tensordot(*this, tensor, std::integral_constant<std::size_t,T::rank()>{},
+      std::plus<>{}, DotProduct{});
+    using F = typename FieldTraits<typename decltype(result)::value_type>::field_type;
+    return F(result);
+  }
+
+  /// \brief Square of 2-norm
+  typename FieldTraits<value_type>::real_type two_norm2 () const
+    requires (extents_type::rank() == 1)
+  {
+    using std::abs;
+    using R = typename FieldTraits<value_type>::real_type;
+    return R(abs(this->inner(*this)));
+  }
+
+  /// \brief 2-norm
+  typename FieldTraits<value_type>::real_type two_norm () const
+    requires (extents_type::rank() == 1)
+  {
+    using std::sqrt;
+    return sqrt(two_norm2());
+  }
+
+  /// \brief Square of Frobenius norm
+  typename FieldTraits<value_type>::real_type frobenius_norm2 () const
+  {
+    using std::abs;
+    using R = typename FieldTraits<value_type>::real_type;
+    return R(abs(this->inner(*this)));
+  }
+
+  /// \brief Frobenius norm
+  typename FieldTraits<value_type>::real_type frobenius_norm () const
+  {
+    using std::sqrt;
+    return sqrt(frobenius_norm2());
+  }
+
+  /// @}
+
+
+  /// \brief Comparison of two TensorMixins for equality
   friend constexpr bool operator== (const DenseTensorMixin& lhs, const DenseTensorMixin& rhs) noexcept
   {
     return static_cast<const base_type&>(lhs) == static_cast<const base_type&>(rhs);

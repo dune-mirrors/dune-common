@@ -27,9 +27,15 @@ concept Tensor = Extents<T> && requires(T tensor)
   { tensor.extents() } -> std::convertible_to<typename T::extents_type>;
 };
 
+template <class T>
+concept Vector = Tensor<T> && T::rank() == 1;
+
+template <class T>
+concept Matrix = Tensor<T> && T::rank() == 2;
+
 static_assert(Concept::Tensor<Archetypes::Tensor<double,0>>);
-static_assert(Concept::Tensor<Archetypes::Tensor<double,1>>);
-static_assert(Concept::Tensor<Archetypes::Tensor<double,2>>);
+static_assert(Concept::Vector<Archetypes::Tensor<double,1>>);
+static_assert(Concept::Matrix<Archetypes::Tensor<double,2>>);
 
 
 template <class T>
@@ -39,9 +45,15 @@ requires(T tensor, std::array<typename T::index_type, T::rank()> indices)
   tensor[indices];
 };
 
+template <class T>
+concept RandomAccessVector = RandomAccessTensor<T> && T::rank() == 1;
+
+template <class T>
+concept RandomAccessMatrix = RandomAccessTensor<T> && T::rank() == 2;
+
 static_assert(Concept::RandomAccessTensor<Archetypes::Tensor<double,0>>);
-static_assert(Concept::RandomAccessTensor<Archetypes::Tensor<double,1>>);
-static_assert(Concept::RandomAccessTensor<Archetypes::Tensor<double,2>>);
+static_assert(Concept::RandomAccessVector<Archetypes::Tensor<double,1>>);
+static_assert(Concept::RandomAccessMatrix<Archetypes::Tensor<double,2>>);
 
 } // end namespace Dune::Concept
 

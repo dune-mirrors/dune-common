@@ -208,5 +208,69 @@ int main(int argc, char** argv)
     tensordotOut(fTensor23,std::index_sequence<>{}, dTensor23,std::index_sequence<>{}, d2323);
   }
 
+  // test tensor mixin methods
+  {
+    Concept::Tensor auto d = fTensor2 * dTensor2;
+    Concept::Tensor auto d3 = fTensor32 * dTensor2;
+    Concept::Tensor auto d34 = fTensor2 * dTensor234;
+  }
+
+  {
+    Concept::Tensor auto d = fTensor2.dot(dTensor2);
+    Concept::Tensor auto d3 = fTensor32.dot(dTensor2);
+    Concept::Tensor auto d34 = fTensor2.dot(dTensor234);
+  }
+
+  {
+    Concept::Tensor auto d = dTensor23.ddot(fTensor23);
+    Concept::Tensor auto d4 = dTensor23.ddot(fTensor234);
+  }
+
+  {
+    fTensor32.mv(dTensor2, fTensor3);
+    fTensor23.mtv(dTensor2, fTensor3);
+    fTensor23.mhv(dTensor2, fTensor3);
+
+    fTensor32.umv(dTensor2, fTensor3);
+    fTensor23.umtv(dTensor2, fTensor3);
+    fTensor23.umhv(dTensor2, fTensor3);
+
+    fTensor32.mmv(dTensor2, fTensor3);
+    fTensor23.mmtv(dTensor2, fTensor3);
+    fTensor23.mmhv(dTensor2, fTensor3);
+
+    fTensor32.usmv(2.0, dTensor2, fTensor3);
+    fTensor23.usmtv(2.0, dTensor2, fTensor3);
+    fTensor23.usmhv(2.0, dTensor2, fTensor3);
+  }
+
+  {
+    std::floating_point auto x1 = dTensor23.inner(fTensor23);
+    std::floating_point auto x2 = dTensor23.frobenius_norm2();
+    std::floating_point auto x3 = dTensor23.frobenius_norm();
+
+    std::floating_point auto x4 = fTensor3.two_norm2();
+    std::floating_point auto x5 = fTensor3.two_norm();
+  }
+
+  {
+    // a tensor of complex number initialized with initilizer-lists
+    Dune::Tensor<std::complex<double>, 2,2> cTensor22{
+      {std::complex<double>(1.0,2.0), std::complex<double>(-1.0,0.5)},
+      {std::complex<double>(-1.0,0.4), std::complex<double>( 1.0,3.0)}
+    };
+
+    // construct the complex numbers using brace-init lists
+    Dune::Tensor<std::complex<double>, 2,2> cTensor22_{
+      { {1.0,2.0},  {-1.0,0.5} },
+      { {-1.0,0.4}, {1.0,3.0}  }
+    };
+
+    // the dot product and Hermitian product are different
+    auto x1 = cTensor22 * cTensor22;
+    auto x2 = cTensor22.dot(cTensor22);
+    testSuite.check(x1 != x2);
+  }
+
   return testSuite.exit();
 }
