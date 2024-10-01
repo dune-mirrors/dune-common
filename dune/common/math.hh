@@ -182,7 +182,6 @@ namespace Dune
     return (val < 0 ? -1 : 1);
   }
 
-
   namespace Impl {
     // Returns whether a given type behaves like std::complex<>, i.e. whether
     // real() and imag() are defined
