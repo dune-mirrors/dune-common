@@ -190,6 +190,11 @@ public:
 
   /// @}
 
+  using base_type::operator=;
+
+  constexpr Tensor& operator= (const Tensor&) = default;
+  constexpr Tensor& operator= (Tensor&&) = default;
+
 
   /// \name Multi index access
   /// @{

@@ -14,13 +14,16 @@
 #include <dune/common/integersequence.hh>
 #include <dune/common/std/extents.hh>
 #include <dune/common/rangeutilities.hh>
-#include <dune/common/tensor.hh>
 #include <dune/common/typetraits.hh>
 #include <dune/common/concepts/tensor.hh>
 #include <dune/common/std/extents.hh>
 #include <dune/common/std/forceinline.hh>
 
 namespace Dune {
+
+// forward declaration
+template <class V, std::size_t... exts>
+class Tensor;
 
 namespace Impl {
 
@@ -33,8 +36,8 @@ constexpr auto slicedExtents (const E& extents, std::index_sequence<II...> dims)
 
 // Concatenate the given extents to define a new index space
 template <class I1, std::size_t... exts1, class I2, std::size_t... exts2>
-constexpr auto combinedExtents (const Std::extents<I1,exts1...>& e1,
-                                const Std::extents<I2,exts2...>& e2)
+constexpr auto concatExtents (const Std::extents<I1,exts1...>& e1,
+                              const Std::extents<I2,exts2...>& e2)
 {
   using I = std::common_type_t<I1,I2>;
   return [&]<std::size_t... II, std::size_t... JJ>(std::index_sequence<II...>, std::index_sequence<JJ...>) {
@@ -61,6 +64,18 @@ constexpr bool checkStaticExtents (std::index_sequence<II...>, std::index_sequen
            E2::static_extent(JJ) == Std::dynamic_extent) && ...);
 }
 
+// Check the extents for the special case that we contract over N indices
+template <std::size_t N, class E1, class E2>
+constexpr bool checkStaticExtents ()
+{
+  if constexpr (E1::rank() < N || E2::rank() < N)
+    return false;
+  else {
+    using SeqI = typename StaticIntegralRange<std::size_t,E1::rank(),E1::rank()-N>::integer_sequence;
+    using SeqJ = std::make_index_sequence<N>;
+    return checkStaticExtents<E1,E2>(SeqI{},SeqJ{});
+  }
+}
 
 /**
  * \brief Perform a recursive nested loop over all indices:
@@ -241,7 +256,7 @@ constexpr auto tensordot (const A& a, std::index_sequence<II...> aSeq,
   const auto bSeqInv = difference<B::rank()>(bSeq);
 
   // create result extents by collecting the extents of a and b that are not contracted
-  auto cExtents = Impl::combinedExtents(
+  auto cExtents = Impl::concatExtents(
     Impl::slicedExtents(a.extents(), aSeqInv),
     Impl::slicedExtents(b.extents(), bSeqInv));
 

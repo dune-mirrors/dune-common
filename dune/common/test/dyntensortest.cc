@@ -61,10 +61,8 @@ void checkConstructors(Dune::TestSuite& testSuite)
     subTestSuite.check(tensor0.size() == tensor.size());
   }
 
-#if 0 // not yet implemented
   tensor = 1.0;
   checkEqualValue(subTestSuite, tensor, 1.0);
-#endif
 
   // constructor with a default value
   Tensor tensor1(ext, T(1));
@@ -208,9 +206,8 @@ void checkArithmetic(Dune::TestSuite& testSuite)
   checkEqualValue(subTestSuite, tensor, T(1));
   checkEqualValue(subTestSuite, tensor2, T(2));
 
-#if 0 // not yet implemented
   if constexpr(std::is_floating_point_v<T>) {
-    tensor *= 2.0;
+    tensor *= 2;
     checkEqualValue(subTestSuite, tensor, T(2));
 
     tensor += tensor2;
@@ -225,7 +222,6 @@ void checkArithmetic(Dune::TestSuite& testSuite)
     tensor -= tensor2;
     checkEqualValue(subTestSuite, tensor, T(48.0));
   }
-#endif
 
   testSuite.subTest(subTestSuite);
 }

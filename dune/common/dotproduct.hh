@@ -5,8 +5,9 @@
 #ifndef DUNE_DOTPRODUCT_HH
 #define DUNE_DOTPRODUCT_HH
 
-#include "ftraits.hh"
-#include "typetraits.hh"
+#include <dune/common/ftraits.hh>
+#include <dune/common/math.hh>
+#include <dune/common/typetraits.hh>
 
 namespace Dune {
   /**
@@ -90,6 +91,24 @@ namespace Dune {
   {
     return a*b;
   }
+
+  /// \brief Functor implementing the dot product with specialization for number types
+  struct DotProduct
+  {
+    template <class A, class B>
+      requires (Dune::IsNumber<A>::value && Dune::IsNumber<B>::value)
+    constexpr auto operator() (const A& a, const B& b) const noexcept
+    {
+      return conjugateComplex(a) * b;
+    }
+
+    template <class A, class B>
+    constexpr auto operator() (const A& a, const B& b) const
+      -> decltype(std::declval<A>().dot(std::declval<B>()))
+    {
+      return a.dot(b);
+    }
+  };
 
   /** @} */
 } // end namespace DUNE
