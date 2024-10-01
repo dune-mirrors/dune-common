@@ -347,6 +347,23 @@ public:
     return result;
   }
 
+  /// \brief Vector space operation ( *this /= scalar )
+  constexpr derived_type& operator/= (const field_type& scalar)
+  {
+    forEachIndex(base_type::extents(), [&](auto&& index) {
+      (*this)[index] /= scalar;
+    });
+    return asDerived();
+  }
+
+  /// \brief Elementwise scalar division of the tensor
+  constexpr friend Concept::RandomAccessTensor auto operator/ (const self_type& self, const field_type& scalar)
+  {
+    auto result = Tensor{self};
+    result /= scalar;
+    return result;
+  }
+
   /// @}
 
 
