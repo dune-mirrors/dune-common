@@ -242,15 +242,6 @@ namespace Dune {
     /// \name Comparison operators
     /// @{
 
-    //! comparison of FieldVectors for equality
-    template<class T>
-      requires (std::equality_comparable_with<K,T>)
-    friend constexpr bool operator== (const FieldVector& a, const FieldVector<T,SIZE>& b)
-        noexcept
-    {
-      return a._data == b._data;
-    }
-
     //! comparing FieldVectors<1> with scalar for equality
     template<class T>
       requires (IsNumber<T>::value)
