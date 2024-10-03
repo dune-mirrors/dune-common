@@ -17,6 +17,7 @@
 
 #include <dune/common/boundschecking.hh>
 #include <dune/common/densevector.hh>
+#include <dune/common/filledarray.hh>
 #include <dune/common/ftraits.hh>
 #include <dune/common/math.hh>
 #include <dune/common/promotiontraits.hh>
@@ -107,105 +108,93 @@ namespace Dune {
     typedef const value_type& const_reference;
 
     //! Default constructor, making value-initialized vector with all components set to zero
-    constexpr FieldVector () noexcept
+    constexpr FieldVector ()
+        noexcept(std::is_nothrow_default_constructible_v<K>)
       : _data{}
     {}
 
-    //! Constructor making vector with identical coordinates
-    template <int S = SIZE,
-      std::enable_if_t<(S != 1), int> = 0>
-    explicit constexpr FieldVector (const K& k)
-        noexcept(std::is_nothrow_copy_assignable_v<K>)
-    {
-      std::fill(_data.begin(), _data.end(), k);
-    }
-
     //! Constructor with a given scalar
-    template <class T, int S = SIZE,
-      std::enable_if_t<(S == 1), int> = 0,
-      std::enable_if_t<std::is_constructible_v<K, T>, int> = 0>
-    /* implicit */ constexpr FieldVector (const T& t)
-        noexcept(std::is_nothrow_constructible_v<K, T>)
-      : _data{K(t)}
+    template<class T>
+      requires (IsNumber<T>::value && std::constructible_from<K,T>)
+    explicit(SIZE > 1) constexpr FieldVector (const T& value)
+      : _data{filledArray<SIZE,K>(K(value))}
     {}
 
     //! Construct from a std::initializer_list
     constexpr FieldVector (const std::initializer_list<K>& l)
       : _data{}
     {
-      assert(l.size() == dimension);
-      for (int i = 0; i < dimension; ++i)
+      assert(l.size() == size());
+      for (int i = 0; i < SIZE; ++i)
         _data[i] = std::data(l)[i];
     }
 
     //! Constructor from another dense vector if the elements are assignable to K
-    template<class T,
-      std::enable_if_t<IsFieldVectorSizeCorrect<T,dimension>::value, int> = 0,
-      decltype(std::declval<K&>() = std::declval<const T&>()[0], bool{}) = true>
+    template<class T>
+      requires (IsFieldVectorSizeCorrect<T,SIZE>::value &&
+        std::assignable_from<K&, decltype(std::declval<const T&>()[0])>)
     FieldVector (const DenseVector<T>& x)
     {
-      assert(x.size() == dimension);
-      for (int i = 0; i < dimension; ++i)
+      assert(x.size() == size());
+      for (int i = 0; i < SIZE; ++i)
         _data[i] = x[i];
     }
 
     //! Converting constructor from FieldVector with different element type
-    template<class T,
-      std::enable_if_t<std::is_assignable_v<K&, const T&>, int> = 0>
+    template<class T>
+      requires (std::assignable_from<K&, const T&>)
     explicit constexpr FieldVector (const FieldVector<T, SIZE>& x)
         noexcept(std::is_nothrow_assignable_v<K&, const T&>)
     {
-      for (int i = 0; i < dimension; ++i)
+      for (int i = 0; i < SIZE; ++i)
         _data[i] = x[i];
     }
 
     //! Converting constructor with FieldVector of different size (deleted)
-    template<class K1, int SIZE1,
-      std::enable_if_t<(SIZE1 != SIZE), int> = 0>
-    explicit FieldVector (const FieldVector<K1, SIZE1>&) = delete;
+    template<class K1, int SIZE1>
+      requires (SIZE1 != SIZE)
+    FieldVector (const FieldVector<K1, SIZE1>&) = delete;
 
     //! Copy constructor with default behavior
     constexpr FieldVector (const FieldVector&) = default;
 
 
     //! Assignment from another dense vector
-    template<class T,
-      std::enable_if_t<IsFieldVectorSizeCorrect<T,dimension>::value, int> = 0,
-      decltype(std::declval<K&>() = std::declval<const T&>()[0], bool{}) = true>
+    template<class T>
+      requires (IsFieldVectorSizeCorrect<T,SIZE>::value &&
+        std::assignable_from<K&, decltype(std::declval<const T&>()[0])>)
     FieldVector& operator= (const DenseVector<T>& x)
     {
-      assert(x.size() == dimension);
-      for (int i = 0; i < dimension; ++i)
+      assert(x.size() == size());
+      for (int i = 0; i < SIZE; ++i)
         _data[i] = x[i];
       return *this;
     }
 
     //! Assignment operator from scalar
-    template<class T, int S = SIZE,
-      std::enable_if_t<(S == 1), int> = 0,
-      std::enable_if_t<std::is_assignable_v<K&, const T&>, int> = 0>
-    constexpr FieldVector& operator= (const T& t)
-        noexcept(std::is_nothrow_assignable_v<K&, const T&>)
+    template <class T>
+      requires (IsNumber<T>::value && std::assignable_from<K&, const T&>)
+    constexpr FieldVector& operator= (const T& value)
     {
-      for (int i = 0; i < dimension; ++i)
-        _data[i] = t;
+      for (int i = 0; i < SIZE; ++i)
+        _data[i] = value;
       return *this;
     }
 
     //! Converting assignment operator from FieldVector with different element type
-    template<class T,
-      std::enable_if_t<std::is_assignable_v<K&, const T&>, int> = 0>
+    template<class T>
+      requires (std::assignable_from<K&, const T&>)
     FieldVector& operator= (const FieldVector<T, SIZE>& x)
         noexcept(std::is_nothrow_assignable_v<K&, const T&>)
     {
-      for (int i = 0; i < dimension; ++i)
+      for (int i = 0; i < SIZE; ++i)
         _data[i] = x[i];
       return *this;
     }
 
     //! Converting assignment operator with FieldVector of different size (deleted)
-    template<class K1, int SIZE1,
-      std::enable_if_t<(SIZE1 != SIZE), int> = 0>
+    template<class K1, int SIZE1>
+      requires (SIZE1 != SIZE)
     FieldVector& operator= (const FieldVector<K1, SIZE1>&) = delete;
 
     //! Copy assignment operator with default behavior
@@ -214,19 +203,19 @@ namespace Dune {
     using Base::operator=;
 
     //! Obtain the number of elements stored in the vector
-    static constexpr size_type size () noexcept { return dimension; }
+    static constexpr size_type size () noexcept { return SIZE; }
 
     //! Return a reference to the `i`th element
     reference operator[] (size_type i)
     {
-      DUNE_ASSERT_BOUNDS(i < dimension);
+      DUNE_ASSERT_BOUNDS(i < size());
       return _data[i];
     }
 
     //! Return a (const) reference to the `i`th element
     const_reference operator[] (size_type i) const
     {
-      DUNE_ASSERT_BOUNDS(i < dimension);
+      DUNE_ASSERT_BOUNDS(i < size());
       return _data[i];
     }
 
@@ -243,55 +232,155 @@ namespace Dune {
     }
 
     //! Conversion operator
-    constexpr operator std::conditional_t<(SIZE==1),const_reference,void> () const noexcept(SIZE == 1)
-      /* requires(SIZE == 1) */
+    constexpr operator const_reference () const
+        noexcept requires(SIZE == 1)
     {
-      if constexpr(SIZE == 1)
-        return _data[0];
-      else
-        return;
+      return _data[0];
     }
 
-    //! Vector space multiplication with scalar
-    template<class Scalar,
-      std::enable_if_t<IsNumber<Scalar>::value, int> = 0>
-    friend constexpr auto operator* (const FieldVector& vector, Scalar scalar)
-    {
-      using T = typename PromotionTraits<value_type,Scalar>::PromotedType;
-      FieldVector<T,SIZE> result;
 
-      for (size_type i = 0; i < vector.size(); ++i)
+    /// \name Comparsion operators
+    /// @{
+
+    //! comparison of FieldVectors for equality
+    template<class T>
+      requires (std::equality_comparable_with<K,T>)
+    friend constexpr bool operator== (const FieldVector& a, const FieldVector<T,SIZE>& b)
+        noexcept
+    {
+      return a._data == b._data;
+    }
+
+    //! comparing FieldVectors<1> with scalar for equality
+    template<class T>
+      requires (IsNumber<T>::value)
+    friend constexpr bool operator== (const FieldVector& a, const T& b)
+        noexcept requires(SIZE == 1)
+    {
+      return a._data[0] == b;
+    }
+
+    //! comparing FieldVectors<1> with scalar for equality
+    template<class T>
+      requires (IsNumber<T>::value)
+    friend constexpr bool operator== (const T& a, const FieldVector& b)
+        noexcept requires(SIZE == 1)
+    {
+      return a == b._data[0];
+    }
+
+    //! (lexicographic) comparison of FieldVectors
+    template<class T>
+      requires (std::three_way_comparable_with<K,T>)
+    friend constexpr auto operator<=> (const FieldVector& a, const FieldVector<T,SIZE>& b)
+        noexcept
+    {
+      return a._data <=> b._data;
+    }
+
+    //! (lexicographic) comparison of FieldVectors<1> with scalar
+    template<class T>
+      requires (IsNumber<T>::value)
+    friend constexpr auto operator<=> (const FieldVector& a, const T& b)
+        noexcept requires(SIZE == 1)
+    {
+      return a._data[0] <=> b;
+    }
+
+    //! (lexicographic) comparison of FieldVectors<1> with scalar
+    template<class T>
+      requires (IsNumber<T>::value)
+    friend constexpr auto operator<=> (const T& a, const FieldVector& b)
+        noexcept requires(SIZE == 1)
+    {
+      return a <=> b._data[0];
+    }
+
+    /// @}
+
+
+    /// \name Vector space operations
+    /// @{
+
+    //! Vector space multiplication with scalar
+    template<class T>
+      requires (IsNumber<T>::value)
+    friend constexpr FieldVector operator* (const FieldVector& vector, const T& scalar)
+    {
+      FieldVector result;
+      for (int i = 0; i < SIZE; ++i)
         result[i] = vector[i] * scalar;
       return result;
     }
 
     //! Vector space multiplication with scalar
-    template<class Scalar,
-      std::enable_if_t<IsNumber<Scalar>::value, int> = 0>
-    friend constexpr auto operator* (Scalar scalar, const FieldVector& vector)
+    template<class T>
+      requires (IsNumber<T>::value)
+    friend constexpr FieldVector operator* (const T& scalar, const FieldVector& vector)
     {
-      using T = typename PromotionTraits<value_type,Scalar>::PromotedType;
-      FieldVector<T,SIZE> result;
-
-      for (size_type i = 0; i < vector.size(); ++i)
+      FieldVector result;
+      for (int i = 0; i < SIZE; ++i)
         result[i] = scalar * vector[i];
       return result;
     }
 
     //! Vector space division by scalar
-    template<class Scalar,
-      std::enable_if_t<IsNumber<Scalar>::value, int> = 0>
-    friend constexpr auto operator/ (const FieldVector& vector, Scalar scalar)
+    template<class T>
+      requires (IsNumber<T>::value)
+    friend constexpr FieldVector operator/ (const FieldVector& vector, const T& scalar)
     {
-      using T = typename PromotionTraits<value_type,Scalar>::PromotedType;
-      FieldVector<T,SIZE> result;
-
-      for (size_type i = 0; i < vector.size(); ++i)
+      FieldVector result;
+      for (int i = 0; i < SIZE; ++i)
         result[i] = vector[i] / scalar;
-
       return result;
     }
 
+    //! Binary division, when using FieldVector<K,1> like K
+    template<class T>
+      requires (IsNumber<T>::value)
+    friend constexpr FieldVector operator/ (const T& a, const FieldVector& b)
+        noexcept requires(SIZE == 1)
+    {
+      return FieldVector{a / b[0]};
+    }
+
+    //! Binary addition, when using FieldVector<K,1> like K
+    template<class T>
+      requires (IsNumber<T>::value)
+    friend constexpr FieldVector operator+ (const FieldVector& a, const T& b)
+        noexcept requires(SIZE == 1)
+    {
+      return FieldVector{a[0] + b};
+    }
+
+    //! Binary addition, when using FieldVector<K,1> like K
+    template<class T>
+      requires (IsNumber<T>::value)
+    friend constexpr FieldVector operator+ (const T& a, const FieldVector& b)
+        noexcept requires(SIZE == 1)
+    {
+      return FieldVector{a + b[0]};
+    }
+
+    //! Binary subtraction, when using FieldVector<K,1> like K
+    template<class T>
+      requires (IsNumber<T>::value)
+    friend constexpr FieldVector operator- (const FieldVector& a, const T& b)
+        noexcept requires(SIZE == 1)
+    {
+      return FieldVector{a[0] - b};
+    }
+
+    //! Binary subtraction, when using FieldVector<K,1> like K
+    template<class T>
+      requires (IsNumber<T>::value)
+    friend constexpr FieldVector operator- (const T& a, const FieldVector& b)
+        noexcept requires(SIZE == 1)
+    {
+      return FieldVector{a - b[0]};
+    }
+
+    /// @}
   };
 
   /** \brief Read a FieldVector from an input stream
@@ -315,159 +404,6 @@ namespace Dune {
       v = w;
     return in;
   }
-
-#ifndef DOXYGEN
-  //! Binary compare, when using FieldVector<K,1> like K
-  template<class K>
-  constexpr bool operator> (const FieldVector<K,1>& a, const FieldVector<K,1>& b) noexcept
-  {
-    return a[0]>b[0];
-  }
-
-  //! Binary compare, when using FieldVector<K,1> like K
-  template<class K>
-  constexpr bool operator>= (const FieldVector<K,1>& a, const FieldVector<K,1>& b) noexcept
-  {
-    return a[0]>=b[0];
-  }
-
-  //! Binary compare, when using FieldVector<K,1> like K
-  template<class K>
-  constexpr bool operator< (const FieldVector<K,1>& a, const FieldVector<K,1>& b) noexcept
-  {
-    return a[0]<b[0];
-  }
-
-  //! Binary compare, when using FieldVector<K,1> like K
-  template<class K>
-  constexpr bool operator<= (const FieldVector<K,1>& a, const FieldVector<K,1>& b) noexcept
-  {
-    return a[0]<=b[0];
-  }
-
-  /* ----- FV / scalar ----- */
-
-  //! Binary addition, when using FieldVector<K,1> like K
-  template<class K>
-  constexpr FieldVector<K,1> operator+ (const FieldVector<K,1>& a, const K b) noexcept
-  {
-    return a[0]+b;
-  }
-
-  //! Binary subtraction, when using FieldVector<K,1> like K
-  template<class K>
-  constexpr FieldVector<K,1> operator- (const FieldVector<K,1>& a, const K b) noexcept
-  {
-    return a[0]-b;
-  }
-
-  //! Binary compare, when using FieldVector<K,1> like K
-  template<class K>
-  constexpr bool operator> (const FieldVector<K,1>& a, const K b) noexcept
-  {
-    return a[0]>b;
-  }
-
-  //! Binary compare, when using FieldVector<K,1> like K
-  template<class K>
-  constexpr bool operator>= (const FieldVector<K,1>& a, const K b) noexcept
-  {
-    return a[0]>=b;
-  }
-
-  //! Binary compare, when using FieldVector<K,1> like K
-  template<class K>
-  constexpr bool operator< (const FieldVector<K,1>& a, const K b) noexcept
-  {
-    return a[0]<b;
-  }
-
-  //! Binary compare, when using FieldVector<K,1> like K
-  template<class K>
-  constexpr bool operator<= (const FieldVector<K,1>& a, const K b) noexcept
-  {
-    return a[0]<=b;
-  }
-
-  //! Binary compare, when using FieldVector<K,1> like K
-  template<class K>
-  constexpr bool operator== (const FieldVector<K,1>& a, const K b) noexcept
-  {
-    return a[0]==b;
-  }
-
-  //! Binary compare, when using FieldVector<K,1> like K
-  template<class K>
-  constexpr bool operator!= (const FieldVector<K,1>& a, const K b) noexcept
-  {
-    return a[0]!=b;
-  }
-
-  /* ----- scalar / FV ------ */
-
-  //! Binary addition, when using FieldVector<K,1> like K
-  template<class K>
-  constexpr FieldVector<K,1> operator+ (const K a, const FieldVector<K,1>& b) noexcept
-  {
-    return a+b[0];
-  }
-
-  //! Binary subtraction, when using FieldVector<K,1> like K
-  template<class K>
-  constexpr FieldVector<K,1> operator- (const K a, const FieldVector<K,1>& b) noexcept
-  {
-    return a-b[0];
-  }
-
-  //! Binary division, when using FieldVector<K,1> like K
-  template<class K>
-  constexpr FieldVector<K,1> operator/ (const K a, const FieldVector<K,1>& b) noexcept
-  {
-    return a/b[0];
-  }
-
-  //! Binary compare, when using FieldVector<K,1> like K
-  template<class K>
-  constexpr bool operator> (const K a, const FieldVector<K,1>& b) noexcept
-  {
-    return a>b[0];
-  }
-
-  //! Binary compare, when using FieldVector<K,1> like K
-  template<class K>
-  constexpr bool operator>= (const K a, const FieldVector<K,1>& b) noexcept
-  {
-    return a>=b[0];
-  }
-
-  //! Binary compare, when using FieldVector<K,1> like K
-  template<class K>
-  constexpr bool operator< (const K a, const FieldVector<K,1>& b) noexcept
-  {
-    return a<b[0];
-  }
-
-  //! Binary compare, when using FieldVector<K,1> like K
-  template<class K>
-  constexpr bool operator<= (const K a, const FieldVector<K,1>& b) noexcept
-  {
-    return a<=b[0];
-  }
-
-  //! Binary compare, when using FieldVector<K,1> like K
-  template<class K>
-  constexpr bool operator== (const K a, const FieldVector<K,1>& b) noexcept
-  {
-    return a==b[0];
-  }
-
-  //! Binary compare, when using FieldVector<K,1> like K
-  template<class K>
-  constexpr bool operator!= (const K a, const FieldVector<K,1>& b) noexcept
-  {
-    return a!=b[0];
-  }
-#endif
 
   /* Overloads for common classification functions */
   namespace MathOverloads {
