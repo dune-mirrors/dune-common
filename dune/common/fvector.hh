@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <concepts>
 #include <cstdlib>
 #include <cstring>
 #include <stdexcept>
@@ -116,7 +117,7 @@ namespace Dune {
     //! Constructor with a given scalar
     template<class T>
       requires (IsNumber<T>::value && std::constructible_from<K,T>)
-    explicit(SIZE > 1) constexpr FieldVector (const T& value)
+    explicit(SIZE != 1) constexpr FieldVector (const T& value)
       : _data{filledArray<SIZE,K>(K(value))}
     {}
 
@@ -132,7 +133,7 @@ namespace Dune {
     //! Constructor from another dense vector if the elements are assignable to K
     template<class T>
       requires (IsFieldVectorSizeCorrect<T,SIZE>::value &&
-        std::assignable_from<K&, decltype(std::declval<const T&>()[0])>)
+        std::is_assignable_v<K&, decltype(std::declval<const T&>()[0])>)
     FieldVector (const DenseVector<T>& x)
     {
       assert(x.size() == size());
@@ -142,7 +143,7 @@ namespace Dune {
 
     //! Converting constructor from FieldVector with different element type
     template<class T>
-      requires (std::assignable_from<K&, const T&>)
+      requires (std::is_assignable_v<K&, const T&>)
     explicit constexpr FieldVector (const FieldVector<T, SIZE>& x)
         noexcept(std::is_nothrow_assignable_v<K&, const T&>)
     {
@@ -162,7 +163,7 @@ namespace Dune {
     //! Assignment from another dense vector
     template<class T>
       requires (IsFieldVectorSizeCorrect<T,SIZE>::value &&
-        std::assignable_from<K&, decltype(std::declval<const T&>()[0])>)
+        std::is_assignable_v<K&, decltype(std::declval<const T&>()[0])>)
     FieldVector& operator= (const DenseVector<T>& x)
     {
       assert(x.size() == size());
@@ -173,8 +174,9 @@ namespace Dune {
 
     //! Assignment operator from scalar
     template <class T>
-      requires (IsNumber<T>::value && std::assignable_from<K&, const T&>)
+      requires (IsNumber<T>::value && std::is_assignable_v<K&, const T&>)
     constexpr FieldVector& operator= (const T& value)
+        noexcept(std::is_nothrow_assignable_v<K&, const T&>)
     {
       for (int i = 0; i < SIZE; ++i)
         _data[i] = value;
@@ -183,7 +185,7 @@ namespace Dune {
 
     //! Converting assignment operator from FieldVector with different element type
     template<class T>
-      requires (std::assignable_from<K&, const T&>)
+      requires (std::is_assignable_v<K&, const T&>)
     FieldVector& operator= (const FieldVector<T, SIZE>& x)
         noexcept(std::is_nothrow_assignable_v<K&, const T&>)
     {
