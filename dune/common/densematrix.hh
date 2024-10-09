@@ -81,10 +81,6 @@ namespace Dune
       }
     };
 
-    template <class A, class B>
-    using MatrixElementsAssignable = decltype(
-        *std::begin(*std::declval<typename A::iterator>()) = *std::begin(*std::declval<typename B::const_iterator>()));
-
     template< class DenseMatrix, class RHS >
       requires Std::indirectly_copyable<
           decltype(std::begin(*std::declval<typename RHS::const_iterator>())),
