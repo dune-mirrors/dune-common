@@ -5,43 +5,19 @@
 #ifndef DUNE_COMMON_CONCEPTS_SCALAR_HH
 #define DUNE_COMMON_CONCEPTS_SCALAR_HH
 
-// check whether c++20 concept can be used
-#if __has_include(<version>) && __has_include(<concepts>)
-  #include <version>
-  #if  __cpp_concepts >= 201907L && __cpp_lib_concepts >= 202002L
-    #ifndef DUNE_ENABLE_CONCEPTS
-    #define DUNE_ENABLE_CONCEPTS 1
-    #endif
-  #endif
-#endif
-
-#if DUNE_ENABLE_CONCEPTS
-
 #include <complex>
+
 #include <dune/common/typetraits.hh>
 
 namespace Dune::Concept {
 
+/**
+ * \brief Whether this type acts as a scalar in the context of
+ *        (hierarchically blocked) containers
+ */
 template <class N>
 concept Scalar = Dune::IsNumber<N>::value;
 
-static_assert(Scalar<short>);
-static_assert(Scalar<unsigned short>);
-static_assert(Scalar<int>);
-static_assert(Scalar<unsigned int>);
-static_assert(Scalar<long>);
-static_assert(Scalar<unsigned long>);
-
-static_assert(Scalar<float>);
-static_assert(Scalar<double>);
-static_assert(Scalar<long double>);
-
-static_assert(Scalar<std::complex<float>>);
-static_assert(Scalar<std::complex<double>>);
-static_assert(Scalar<std::complex<long double>>);
-
 } // end namespace Dune::Concept
-
-#endif // DUNE_ENABLE_CONCEPTS
 
 #endif // DUNE_COMMON_CONCEPTS_SCALAR_HH
