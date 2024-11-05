@@ -54,6 +54,7 @@ constexpr auto lexicographical_compare_three_way(I1 f1, I1 l1, I2 f2, I2 l2, Cmp
          !exhaust2 ? std::strong_ordering::less:
                      std::strong_ordering::equal;
 }
+#endif // __cpp_lib_three_way_comparison
 
 #endif // __cpp_lib_three_way_comparison
 

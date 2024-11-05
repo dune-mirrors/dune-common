@@ -5,7 +5,11 @@
 #ifndef DUNE_COMMON_STD_COMPARE_HH
 #define DUNE_COMMON_STD_COMPARE_HH
 
-#include <compare>
+#include <version>
+#if !(__cpp_lib_concepts && __has_include(<concepts>))
+  #error "Concept not supported!"
+#endif
+
 #include <concepts>
 #include <type_traits>
 #include <utility>
