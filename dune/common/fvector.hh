@@ -25,6 +25,7 @@
 #include <dune/common/typetraits.hh>
 #include <dune/common/typeutilities.hh>
 #include <dune/common/concepts/scalar.hh>
+#include <dune/common/std/algorithm.hh>
 #include <dune/common/std/compare.hh>
 
 namespace Dune {
@@ -288,7 +289,11 @@ namespace Dune {
       requires (Std::three_way_comparable_with<K,T>)
     friend constexpr auto operator<=> (const FieldVector& a, const FieldVector<T,SIZE>& b) noexcept
     {
+#if __cpp_lib_three_way_comparison
       return a._data <=> b._data;
+#else
+      return Std::lexicographical_compare_three_way(a.begin(), a.end(), b.begin(), b.end());
+#endif
     }
 
     //! three-way comparison of FieldVectors<1> with scalar
