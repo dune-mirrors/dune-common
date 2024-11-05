@@ -5,8 +5,6 @@
 #ifndef DUNE_COMMON_CONCEPTS_SCALAR_HH
 #define DUNE_COMMON_CONCEPTS_SCALAR_HH
 
-#include <complex>
-
 #include <dune/common/typetraits.hh>
 
 namespace Dune::Concept {
