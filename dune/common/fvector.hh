@@ -24,8 +24,8 @@
 #include <dune/common/promotiontraits.hh>
 #include <dune/common/typetraits.hh>
 #include <dune/common/typeutilities.hh>
-#include <dune/common/concepts/compare.hh>
 #include <dune/common/concepts/scalar.hh>
+#include <dune/common/std/compare.hh>
 
 namespace Dune {
 
