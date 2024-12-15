@@ -158,11 +158,6 @@ namespace Dune {
         _data[i] = x[i];
     }
 
-    //! Converting constructor with FieldVector of different size (deleted)
-    template<class OtherK, int OTHER_SIZE>
-      requires (OTHER_SIZE != SIZE)
-    FieldVector (const FieldVector<OtherK, OTHER_SIZE>&) = delete;
-
     //! Copy constructor with default behavior
     constexpr FieldVector (const FieldVector&) = default;
 
@@ -200,11 +195,6 @@ namespace Dune {
         _data[i] = x[i];
       return *this;
     }
-
-    //! Converting assignment operator with FieldVector of different size (deleted)
-    template<class OtherK, int OTHER_SIZE>
-      requires (OTHER_SIZE != SIZE)
-    FieldVector& operator= (const FieldVector<OtherK, OTHER_SIZE>&) = delete;
 
     //! Copy assignment operator with default behavior
     constexpr FieldVector& operator= (const FieldVector&) = default;
