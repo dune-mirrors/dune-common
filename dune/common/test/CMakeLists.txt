@@ -118,10 +118,6 @@ dune_add_test(SOURCES dynmatrixtest.cc
 dune_add_test(SOURCES dyntensortest.cc
               LABELS quick)
 
-dune_add_test(SOURCES dyntensortest.cc
-              LINK_LIBRARIES dunecommon
-              LABELS quick)
-
 dune_add_test(SOURCES dynvectortest.cc
               LABELS quick)
 
