@@ -130,10 +130,6 @@ dune_add_test(SOURCES dynmatrixtest.cc
 dune_add_test(SOURCES dyntensortest.cc
               LABELS quick)
 
-dune_add_test(SOURCES dyntensortest.cc
-              LINK_LIBRARIES dunecommon
-              LABELS quick)
-
 dune_add_test(SOURCES dynvectortest.cc
               LABELS quick)
 
@@ -284,7 +280,6 @@ dune_add_test(SOURCES stringutilitytest.cc
               LABELS quick)
 
 dune_add_test(SOURCES tensordottest.cc
-              LINK_LIBRARIES dunecommon
               LABELS quick)
 
 dune_add_test(SOURCES testdebugallocator.cc
