@@ -5,20 +5,10 @@
 #ifndef DUNE_COMMON_STD_COMPARE_HH
 #define DUNE_COMMON_STD_COMPARE_HH
 
-#include <version>
-#if !(__cpp_lib_concepts && __has_include(<concepts>))
-  #error "Concept not supported!"
-#endif
-
+#include <compare>
 #include <concepts>
 #include <type_traits>
 #include <utility>
-
-/**
- * \file This file provides some concepts introduced in the c++ standard library
- * <compare> and <concepts> not yet available in all library implementation.
- * The code is partially extracted from https://en.cppreference.com/w/cpp/utility/compare.
- */
 
 /**
  * \file This file provides some concepts introduced in the c++ standard library

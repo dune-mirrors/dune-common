@@ -24,7 +24,7 @@
 #include <dune/common/promotiontraits.hh>
 #include <dune/common/typetraits.hh>
 #include <dune/common/typeutilities.hh>
-#include <dune/common/concepts/scalar.hh>
+#include <dune/common/concepts/number.hh>
 #include <dune/common/std/algorithm.hh>
 #include <dune/common/std/compare.hh>
 
@@ -122,7 +122,7 @@ namespace Dune {
     {}
 
     //! Constructor with a given scalar initializing all entries to this value
-    template<Concept::Scalar S>
+    template<Concept::Number S>
       requires (std::constructible_from<K,S>)
     explicit(SIZE != 1) constexpr FieldVector (const S& scalar)
       : _data{filledArray<SIZE,K>(K(scalar))}
@@ -175,7 +175,7 @@ namespace Dune {
     }
 
     //! Assignment operator from scalar
-    template <Concept::Scalar S>
+    template <Concept::Number S>
       requires (std::is_assignable_v<K&, const S&>)
     constexpr FieldVector& operator= (const S& scalar)
         noexcept(std::is_nothrow_assignable_v<K&, const S&>)
@@ -259,7 +259,7 @@ namespace Dune {
     /// @{
 
     //! comparing FieldVectors<1> with scalar for equality
-    template<Concept::Scalar S>
+    template<Concept::Number S>
     friend constexpr bool operator== (const FieldVector& a, const S& b) noexcept
         requires(SIZE == 1)
     {
@@ -267,7 +267,7 @@ namespace Dune {
     }
 
     //! comparing FieldVectors<1> with scalar for equality
-    template<Concept::Scalar S>
+    template<Concept::Number S>
     friend constexpr bool operator== (const S& a, const FieldVector& b) noexcept
         requires(SIZE == 1)
     {
@@ -287,7 +287,7 @@ namespace Dune {
     }
 
     //! three-way comparison of FieldVectors<1> with scalar
-    template<Concept::Scalar S>
+    template<Concept::Number S>
     friend constexpr auto operator<=> (const FieldVector& a, const S& b) noexcept
         requires(SIZE == 1)
     {
@@ -295,7 +295,7 @@ namespace Dune {
     }
 
     //! three-way comparison of FieldVectors<1> with scalar
-    template<Concept::Scalar S>
+    template<Concept::Number S>
     friend constexpr auto operator<=> (const S& a, const FieldVector& b) noexcept
         requires(SIZE == 1)
     {
@@ -309,7 +309,7 @@ namespace Dune {
     /// @{
 
     //! Vector space multiplication with scalar
-    template<Concept::Scalar S>
+    template<Concept::Number S>
     friend constexpr FieldVector operator* (const FieldVector& a, const S& b) noexcept
     {
       FieldVector result;
@@ -319,7 +319,7 @@ namespace Dune {
     }
 
     //! Vector space multiplication with scalar
-    template<Concept::Scalar S>
+    template<Concept::Number S>
     friend constexpr FieldVector operator* (const S& a, const FieldVector& b) noexcept
     {
       FieldVector result;
@@ -329,7 +329,7 @@ namespace Dune {
     }
 
     //! Vector space division by scalar
-    template<Concept::Scalar S>
+    template<Concept::Number S>
     friend constexpr FieldVector operator/ (const FieldVector& a, const S& b) noexcept
     {
       FieldVector result;
@@ -339,7 +339,7 @@ namespace Dune {
     }
 
     //! Binary division, when using FieldVector<K,1> like K
-    template<Concept::Scalar S>
+    template<Concept::Number S>
     friend constexpr FieldVector operator/ (const S& a, const FieldVector& b) noexcept
         requires(SIZE == 1)
     {
@@ -347,7 +347,7 @@ namespace Dune {
     }
 
     //! Binary addition, when using FieldVector<K,1> like K
-    template<Concept::Scalar S>
+    template<Concept::Number S>
     friend constexpr FieldVector operator+ (const FieldVector& a, const S& b) noexcept
         requires(SIZE == 1)
     {
@@ -355,7 +355,7 @@ namespace Dune {
     }
 
     //! Binary addition, when using FieldVector<K,1> like K
-    template<Concept::Scalar S>
+    template<Concept::Number S>
     friend constexpr FieldVector operator+ (const S& a, const FieldVector& b) noexcept
         requires(SIZE == 1)
     {
@@ -363,7 +363,7 @@ namespace Dune {
     }
 
     //! Binary subtraction, when using FieldVector<K,1> like K
-    template<Concept::Scalar S>
+    template<Concept::Number S>
     friend constexpr FieldVector operator- (const FieldVector& a, const S& b) noexcept
         requires(SIZE == 1)
     {
@@ -371,7 +371,7 @@ namespace Dune {
     }
 
     //! Binary subtraction, when using FieldVector<K,1> like K
-    template<Concept::Scalar S>
+    template<Concept::Number S>
     friend constexpr FieldVector operator- (const S& a, const FieldVector& b) noexcept
         requires(SIZE == 1)
     {

@@ -23,7 +23,6 @@
 #include <dune/common/typetraits.hh>
 #include <dune/common/scalarvectorview.hh>
 #include <dune/common/std/iterator.hh>
-#include <dune/common/std/type_traits.hh>
 
 namespace Dune
 {
