@@ -180,7 +180,7 @@ namespace Dune {
     }
 
     //! Assignment operator from scalar
-    template <Concept::Number S>
+    template<Concept::Number S>
       requires std::constructible_from<K,S>
     constexpr FieldVector& operator= (const S& scalar)
         noexcept(std::is_nothrow_constructible_v<K,S>)
