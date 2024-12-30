@@ -97,9 +97,12 @@ namespace Dune {
     public DenseVector< FieldVector<K,SIZE> >
   {
     using Base = DenseVector< FieldVector<K,SIZE> >;
+
+    //! The container storage
     std::array<K,SIZE> _data;
 
   public:
+
     //! The size of this vector.
     static constexpr int dimension = SIZE;
 
@@ -109,11 +112,13 @@ namespace Dune {
     //! The type of the elements stored in the vector
     using value_type = typename Base::value_type;
 
-    //! The type used for references to the vector entry
+    //! The type used for references to the vector entries
     using reference = value_type&;
 
-    //! The type used for const references to the vector entry
+    //! The type used for const references to the vector entries
     using const_reference = const value_type&;
+
+  public:
 
     //! Default constructor, making value-initialized vector with all components set to zero
     constexpr FieldVector ()
@@ -133,7 +138,7 @@ namespace Dune {
       : _data{}
     {
       assert(l.size() == size());
-      for (int i = 0; i < SIZE; ++i)
+      for (size_type i = 0; i < size(); ++i)
         _data[i] = std::data(l)[i];
     }
 
@@ -144,7 +149,7 @@ namespace Dune {
     FieldVector (const DenseVector<V>& x)
     {
       assert(x.size() == size());
-      for (int i = 0; i < SIZE; ++i)
+      for (size_type i = 0; i < size(); ++i)
         _data[i] = x[i];
     }
 
@@ -154,7 +159,7 @@ namespace Dune {
     explicit constexpr FieldVector (const FieldVector<OtherK, SIZE>& x)
         noexcept(std::is_nothrow_assignable_v<K&, const OtherK&>)
     {
-      for (int i = 0; i < SIZE; ++i)
+      for (size_type i = 0; i < size(); ++i)
         _data[i] = x[i];
     }
 
@@ -169,19 +174,18 @@ namespace Dune {
     FieldVector& operator= (const DenseVector<V>& x)
     {
       assert(x.size() == size());
-      for (int i = 0; i < SIZE; ++i)
+      for (size_type i = 0; i < size(); ++i)
         _data[i] = x[i];
       return *this;
     }
 
     //! Assignment operator from scalar
     template <Concept::Number S>
-      requires (std::is_assignable_v<K&, const S&>)
+      requires std::constructible_from<K,S>
     constexpr FieldVector& operator= (const S& scalar)
-        noexcept(std::is_nothrow_assignable_v<K&, const S&>)
+        noexcept(std::is_nothrow_constructible_v<K,S>)
     {
-      for (int i = 0; i < SIZE; ++i)
-        _data[i] = scalar;
+      _data.fill(K(scalar));
       return *this;
     }
 
@@ -191,7 +195,7 @@ namespace Dune {
     constexpr FieldVector& operator= (const FieldVector<OtherK, SIZE>& x)
         noexcept(std::is_nothrow_assignable_v<K&, const OtherK&>)
     {
-      for (int i = 0; i < SIZE; ++i)
+      for (size_type i = 0; i < size(); ++i)
         _data[i] = x[i];
       return *this;
     }
@@ -212,15 +216,23 @@ namespace Dune {
     /// \name Element access
     /// @{
 
-    //! Return a reference to the `i`th element
-    reference operator[] (size_type i)
+    /**
+     * \brief Return a reference to the `i`th element.
+     * \throw RangeError if index `i` is out of range `[0,SIZE)` (only checked if DUNE_CHECK_BOUNDS is defined).
+     */
+    constexpr reference operator[] (size_type i)
+        noexcept(not DUNE_ASSERT_BOUNDS_ENABLED)
     {
       DUNE_ASSERT_BOUNDS(i < size());
       return _data[i];
     }
 
-    //! Return a (const) reference to the `i`th element
-    const_reference operator[] (size_type i) const
+    /**
+     * \brief Return a (const) reference to the `i`th element.
+     * \throw RangeError if index `i` is out of range `[0,SIZE)` (only checked if DUNE_CHECK_BOUNDS is defined).
+     */
+    constexpr const_reference operator[] (size_type i) const
+        noexcept(not DUNE_ASSERT_BOUNDS_ENABLED)
     {
       DUNE_ASSERT_BOUNDS(i < size());
       return _data[i];
@@ -313,7 +325,7 @@ namespace Dune {
     friend constexpr FieldVector operator* (const FieldVector& a, const S& b) noexcept
     {
       FieldVector result;
-      for (int i = 0; i < SIZE; ++i)
+      for (size_type i = 0; i < size(); ++i)
         result[i] = a[i] * b;
       return result;
     }
@@ -323,7 +335,7 @@ namespace Dune {
     friend constexpr FieldVector operator* (const S& a, const FieldVector& b) noexcept
     {
       FieldVector result;
-      for (int i = 0; i < SIZE; ++i)
+      for (size_type i = 0; i < size(); ++i)
         result[i] = a * b[i];
       return result;
     }
@@ -333,7 +345,7 @@ namespace Dune {
     friend constexpr FieldVector operator/ (const FieldVector& a, const S& b) noexcept
     {
       FieldVector result;
-      for (int i = 0; i < SIZE; ++i)
+      for (size_type i = 0; i < size(); ++i)
         result[i] = a[i] / b;
       return result;
     }
