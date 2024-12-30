@@ -11,7 +11,6 @@
 #include <concepts>
 #include <cstdlib>
 #include <cstring>
-#include <stdexcept>
 #include <type_traits>
 #include <utility>
 #include <initializer_list>
