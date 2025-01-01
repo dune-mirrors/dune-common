@@ -12,46 +12,46 @@
 
 namespace Dune::Concept {
 
-template <class E>
+template <class E, std::size_t rank = E::rank()>
 concept Extents = requires(E extents, std::size_t i)
 {
   { E::rank() } -> std::convertible_to<std::size_t>;
   { E::static_extent(i) } -> std::same_as<std::size_t>;
   { extents.extent(i) } -> std::convertible_to<typename E::index_type>;
-};
+} && E::rank() == rank;
 
-template <class T>
-concept Tensor = Extents<T> && requires(T tensor)
+template <class T, std::size_t rank = T::rank()>
+concept Tensor = Extents<T,rank> && requires(T tensor)
 {
-  requires Extents<typename T::extents_type>;
+  requires Extents<typename T::extents_type,rank>;
   { tensor.extents() } -> std::convertible_to<typename T::extents_type>;
 };
 
 template <class T>
-concept Vector = Tensor<T> && T::rank() == 1;
+concept Vector = Tensor<T,1>;
 
 template <class T>
-concept Matrix = Tensor<T> && T::rank() == 2;
+concept Matrix = Tensor<T,2>;
 
-static_assert(Concept::Tensor<Archetypes::Tensor<double,0>>);
+static_assert(Concept::Tensor<Archetypes::Tensor<double,0>,0>);
 static_assert(Concept::Vector<Archetypes::Tensor<double,1>>);
 static_assert(Concept::Matrix<Archetypes::Tensor<double,2>>);
 
 
-template <class T>
-concept RandomAccessTensor = Tensor<T> &&
-requires(T tensor, std::array<typename T::index_type, T::rank()> indices)
+template <class T, std::size_t rank = T::rank()>
+concept RandomAccessTensor = Tensor<T,rank> &&
+requires(T tensor, std::array<typename T::index_type, rank> indices)
 {
   tensor[indices];
 };
 
 template <class T>
-concept RandomAccessVector = RandomAccessTensor<T> && T::rank() == 1;
+concept RandomAccessVector = RandomAccessTensor<T,1>;
 
 template <class T>
-concept RandomAccessMatrix = RandomAccessTensor<T> && T::rank() == 2;
+concept RandomAccessMatrix = RandomAccessTensor<T,2>;
 
-static_assert(Concept::RandomAccessTensor<Archetypes::Tensor<double,0>>);
+static_assert(Concept::RandomAccessTensor<Archetypes::Tensor<double,0>,0>);
 static_assert(Concept::RandomAccessVector<Archetypes::Tensor<double,1>>);
 static_assert(Concept::RandomAccessMatrix<Archetypes::Tensor<double,2>>);
 
