@@ -33,19 +33,9 @@
       DUNE_THROW(Dune::RangeError, "Index out of bounds."); \
   } while (false)
 
-/**
- * \brief Constant value to be used in constexpr functions indicating whether
- * the macro DUNE_ASSERT_BOUNDS is defined.
- */
-#define DUNE_ASSERT_BOUNDS_ENABLED true
-
 #else
 #define DUNE_ASSERT_BOUNDS(cond)
 #endif
-#endif
-
-#ifndef DUNE_ASSERT_BOUNDS_ENABLED
-#define DUNE_ASSERT_BOUNDS_ENABLED false
 #endif
 
 /** @} */

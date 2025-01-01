@@ -226,7 +226,6 @@ namespace Dune {
      * \throw RangeError if index `i` is out of range `[0,SIZE)` (only checked if DUNE_CHECK_BOUNDS is defined).
      */
     constexpr reference operator[] (size_type i)
-        noexcept(not DUNE_ASSERT_BOUNDS_ENABLED)
     {
       DUNE_ASSERT_BOUNDS(i < size());
       return _data[i];
@@ -237,7 +236,6 @@ namespace Dune {
      * \throw RangeError if index `i` is out of range `[0,SIZE)` (only checked if DUNE_CHECK_BOUNDS is defined).
      */
     constexpr const_reference operator[] (size_type i) const
-        noexcept(not DUNE_ASSERT_BOUNDS_ENABLED)
     {
       DUNE_ASSERT_BOUNDS(i < size());
       return _data[i];
