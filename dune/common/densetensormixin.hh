@@ -76,7 +76,10 @@ protected:
 
 public:
   /// \brief Assign `value` to each component of the tensor
-  constexpr derived_type& operator= (const value_type& value)
+  template <Concept::Number S>
+    requires (std::is_assignable_v<value_type&, const S&>)
+  constexpr derived_type& operator= (const S& value)
+      noexcept(std::is_nothrow_assignable_v<value_type&, const S&>)
   {
     forEachIndex(base_type::extents(), [&](auto&& index) {
       (*this)[index] = value;
@@ -220,9 +223,8 @@ public:
   // @{
 
   /// \brief Vector space operation ( *this += x )
-  template <Concept::RandomAccessTensor T>
-    requires (extents_type::rank() == T::rank() &&
-      Impl::checkStaticExtents<T::rank(), extents_type, typename T::extents_type>())
+  template <Concept::RandomAccessTensor<extents_type::rank()> T>
+    requires (Impl::checkStaticExtents<T::rank(), extents_type, typename T::extents_type>())
   constexpr derived_type& operator+= (const T& x)
   {
     assert(base_type::extents() == x.extents());
@@ -233,9 +235,8 @@ public:
   }
 
   /// \brief Binary elementwise addition of two tensors
-  template <Concept::RandomAccessTensor T>
-    requires (extents_type::rank() == T::rank() &&
-      Impl::checkStaticExtents<T::rank(), extents_type, typename T::extents_type>())
+  template <Concept::RandomAccessTensor<extents_type::rank()> T>
+    requires (Impl::checkStaticExtents<T::rank(), extents_type, typename T::extents_type>())
   constexpr Concept::RandomAccessTensor auto operator+ (const T& x) const
   {
     assert(base_type::extents() == x.extents());
@@ -253,9 +254,8 @@ public:
   }
 
   /// \brief Vector space operation ( *this -= x )
-  template <Concept::RandomAccessTensor T>
-    requires (extents_type::rank() == T::rank() &&
-      Impl::checkStaticExtents<T::rank(), extents_type, typename T::extents_type>())
+  template <Concept::RandomAccessTensor<extents_type::rank()> T>
+    requires (Impl::checkStaticExtents<T::rank(), extents_type, typename T::extents_type>())
   constexpr derived_type& operator-= (const T& x)
   {
     assert(base_type::extents() == x.extents());
@@ -266,9 +266,8 @@ public:
   }
 
   /// \brief Binary elementwise subtraction of two tensors
-  template <Concept::RandomAccessTensor T>
-    requires (extents_type::rank() == T::rank() &&
-      Impl::checkStaticExtents<T::rank(), extents_type, typename T::extents_type>())
+  template <Concept::RandomAccessTensor<extents_type::rank()> T>
+    requires (Impl::checkStaticExtents<T::rank(), extents_type, typename T::extents_type>())
   constexpr Concept::RandomAccessTensor auto operator- (const T& x) const
   {
     assert(base_type::extents() == x.extents());
@@ -297,9 +296,8 @@ public:
   }
 
   /// \brief Vector space axpy operation ( *this += alpha x )
-  template <Concept::RandomAccessTensor T>
-    requires (extents_type::rank() == T::rank() &&
-      Impl::checkStaticExtents<T::rank(), extents_type, typename T::extents_type>())
+  template <Concept::RandomAccessTensor<extents_type::rank()> T>
+    requires (Impl::checkStaticExtents<T::rank(), extents_type, typename T::extents_type>())
   constexpr derived_type& axpy (const field_type& alpha, const T& x)
   {
     assert(base_type::extents() == x.extents());
@@ -310,9 +308,8 @@ public:
   }
 
   /// \brief Vector space aypx operation ( *this = alpha * (*this) + x )
-  template <Concept::RandomAccessTensor T>
-    requires (extents_type::rank() == T::rank() &&
-      Impl::checkStaticExtents<T::rank(), extents_type, typename T::extents_type>())
+  template <Concept::RandomAccessTensor<extents_type::rank()> T>
+    requires (Impl::checkStaticExtents<T::rank(), extents_type, typename T::extents_type>())
   constexpr derived_type& aypx (const field_type& alpha, const T& x)
   {
     assert(base_type::extents() == x.extents());
@@ -323,7 +320,8 @@ public:
   }
 
   /// \brief Vector space operation ( *this *= scalar )
-  constexpr derived_type& operator*= (const field_type& scalar)
+  template <Concept::Number S>
+  constexpr derived_type& operator*= (const S& scalar)
   {
     forEachIndex(base_type::extents(), [&](auto&& index) {
       (*this)[index] *= scalar;
@@ -332,7 +330,8 @@ public:
   }
 
   /// \brief Elementwise scalar multiplication of the tensor
-  constexpr friend Concept::RandomAccessTensor auto operator* (const self_type& self, const field_type& scalar)
+  template <Concept::Number S>
+  constexpr friend Concept::RandomAccessTensor auto operator* (const self_type& self, const S& scalar)
   {
     auto result = Tensor{self};
     result *= scalar;
@@ -340,7 +339,8 @@ public:
   }
 
   /// \brief Elementwise scalar multiplication of the tensor
-  constexpr friend Concept::RandomAccessTensor auto operator* (const field_type& scalar, const self_type& self)
+  template <Concept::Number S>
+  constexpr friend Concept::RandomAccessTensor auto operator* (const S& scalar, const self_type& self)
   {
     auto result = Tensor{self};
     result *= scalar;
@@ -348,7 +348,8 @@ public:
   }
 
   /// \brief Vector space operation ( *this /= scalar )
-  constexpr derived_type& operator/= (const field_type& scalar)
+  template <Concept::Number S>
+  constexpr derived_type& operator/= (const S& scalar)
   {
     forEachIndex(base_type::extents(), [&](auto&& index) {
       (*this)[index] /= scalar;
@@ -357,7 +358,8 @@ public:
   }
 
   /// \brief Elementwise scalar division of the tensor
-  constexpr friend Concept::RandomAccessTensor auto operator/ (const self_type& self, const field_type& scalar)
+  template <Concept::Number S>
+  constexpr friend Concept::RandomAccessTensor auto operator/ (const self_type& self, const S& scalar)
   {
     auto result = Tensor{self};
     result /= scalar;
@@ -385,8 +387,7 @@ public:
       Impl::checkStaticExtents<1, extents_type, typename T::extents_type>())
   constexpr Concept::RandomAccessTensor auto dot (const T& tensor) const
   {
-    return tensordot(*this, tensor, std::integral_constant<std::size_t,1>{},
-      std::plus<>{}, DotProduct{});
+    return tensordot(*this, tensor, Indices::_1, std::plus<>{}, DotProduct{});
   }
 
   /// \brief Returns the Hermitian tensor product with contraction over two indices `conj(A_{ijk}) B_{jkl}`
@@ -395,15 +396,15 @@ public:
       Impl::checkStaticExtents<1, extents_type, typename T::extents_type>())
   constexpr Concept::RandomAccessTensor auto ddot (const T& tensor) const
   {
-    return tensordot(*this, tensor, std::integral_constant<std::size_t,2>{},
-      std::plus<>{}, DotProduct{});
+    return tensordot(*this, tensor, Indices::_2, std::plus<>{}, DotProduct{});
   }
 
 
   /// \brief y = A x
   template <Concept::RandomAccessVector VectorIn,
             Concept::RandomAccessVector VectorOut>
-  constexpr void mv (const VectorIn& x, VectorOut& y) const requires (extents_type::rank() == 2)
+  constexpr void mv (const VectorIn& x, VectorOut& y) const
+      requires (extents_type::rank() == 2)
   {
     y = 0;
     tensordotOut<1>(*this,x,y);
@@ -412,7 +413,8 @@ public:
   /// \brief y = A^T x
   template <Concept::RandomAccessVector VectorIn,
             Concept::RandomAccessVector VectorOut>
-  constexpr void mtv (const VectorIn& x, VectorOut& y) const  requires (extents_type::rank() == 2)
+  constexpr void mtv (const VectorIn& x, VectorOut& y) const
+      requires (extents_type::rank() == 2)
   {
     y = 0;
     tensordotOut<1>(x,*this,y);
@@ -421,17 +423,19 @@ public:
   /// \brief y = A^H x
   template <Concept::RandomAccessVector VectorIn,
             Concept::RandomAccessVector VectorOut>
-  constexpr void mhv (const VectorIn& x, VectorOut& y) const  requires (extents_type::rank() == 2)
+  constexpr void mhv (const VectorIn& x, VectorOut& y) const
+      requires (extents_type::rank() == 2)
   {
     y = 0;
-    tensordotOut(x,*this,y, std::integral_constant<std::size_t, 1>{},
+    tensordotOut(x,*this,y, Indices::_1,
       std::plus<>{}, [](auto&& a, auto&& b) { return a * conjugateComplex(b); });
   }
 
   /// \brief y += A x
   template <Concept::RandomAccessVector VectorIn,
             Concept::RandomAccessVector VectorOut>
-  constexpr void umv (const VectorIn& x, VectorOut& y) const requires (extents_type::rank() == 2)
+  constexpr void umv (const VectorIn& x, VectorOut& y) const
+      requires (extents_type::rank() == 2)
   {
     tensordotOut<1>(*this,x,y);
   }
@@ -439,16 +443,17 @@ public:
   /// \brief y -= A x
   template <Concept::RandomAccessVector VectorIn,
             Concept::RandomAccessVector VectorOut>
-  constexpr void mmv (const VectorIn& x, VectorOut& y) const requires (extents_type::rank() == 2)
+  constexpr void mmv (const VectorIn& x, VectorOut& y) const
+      requires (extents_type::rank() == 2)
   {
-    tensordotOut(*this,x,y, std::integral_constant<std::size_t, 1>{},
-      std::minus<>{}, std::multiplies<>{});
+    tensordotOut(*this,x,y, Indices::_1, std::minus<>{}, std::multiplies<>{});
   }
 
   /// \brief y += A^T x
   template <Concept::RandomAccessVector VectorIn,
             Concept::RandomAccessVector VectorOut>
-  constexpr void umtv (const VectorIn& x, VectorOut& y) const requires (extents_type::rank() == 2)
+  constexpr void umtv (const VectorIn& x, VectorOut& y) const
+      requires (extents_type::rank() == 2)
   {
     tensordotOut<1>(x,*this,y);
   }
@@ -456,27 +461,29 @@ public:
   /// \brief y -= A^T x
   template <Concept::RandomAccessVector VectorIn,
             Concept::RandomAccessVector VectorOut>
-  constexpr void mmtv (const VectorIn& x, VectorOut& y) const requires (extents_type::rank() == 2)
+  constexpr void mmtv (const VectorIn& x, VectorOut& y) const
+      requires (extents_type::rank() == 2)
   {
-    tensordotOut<1>(x,*this,y, std::integral_constant<std::size_t, 1>{},
-      std::minus<>{}, std::multiplies<>{});
+    tensordotOut(x,*this,y, Indices::_1, std::minus<>{}, std::multiplies<>{});
   }
 
   /// \brief y += A^H x
   template <Concept::RandomAccessVector VectorIn,
             Concept::RandomAccessVector VectorOut>
-  constexpr void umhv (const VectorIn& x, VectorOut& y) const requires (extents_type::rank() == 2)
+  constexpr void umhv (const VectorIn& x, VectorOut& y) const
+      requires (extents_type::rank() == 2)
   {
-    tensordotOut(x,*this,y, std::integral_constant<std::size_t, 1>{},
+    tensordotOut(x,*this,y, Indices::_1,
       std::plus<>{}, [](auto&& a, auto&& b) { return a * conjugateComplex(b); });
   }
 
   /// \brief y -= A^H x
   template <Concept::RandomAccessVector VectorIn,
             Concept::RandomAccessVector VectorOut>
-  constexpr void mmhv (const VectorIn& x, VectorOut& y) const requires (extents_type::rank() == 2)
+  constexpr void mmhv (const VectorIn& x, VectorOut& y) const
+      requires (extents_type::rank() == 2)
   {
-    tensordotOut(x,*this,y, std::integral_constant<std::size_t, 1>{},
+    tensordotOut(x,*this,y, Indices::_1,
       std::minus<>{}, [](auto&& a, auto&& b) { return a * conjugateComplex(b); });
   }
 
@@ -484,9 +491,10 @@ public:
   template <Concept::RandomAccessVector VectorIn,
             Concept::RandomAccessVector VectorOut>
   constexpr void usmv (const typename FieldTraits<VectorOut>::field_type& alpha,
-                       const VectorIn& x, VectorOut& y) const requires (extents_type::rank() == 2)
+                       const VectorIn& x, VectorOut& y) const
+      requires (extents_type::rank() == 2)
   {
-    tensordotOut(*this,x, y, std::integral_constant<std::size_t, 1>{},
+    tensordotOut(*this,x, y, Indices::_1,
       std::plus<>{}, [alpha](auto&& a, auto&& b) { return alpha * a * b; });
   }
 
@@ -494,9 +502,10 @@ public:
   template <Concept::RandomAccessVector VectorIn,
             Concept::RandomAccessVector VectorOut>
   constexpr void usmtv (const typename FieldTraits<VectorOut>::field_type& alpha,
-                        const VectorIn& x, VectorOut& y) const requires (extents_type::rank() == 2)
+                        const VectorIn& x, VectorOut& y) const
+      requires (extents_type::rank() == 2)
   {
-    tensordotOut(x,*this,y, std::integral_constant<std::size_t, 1>{},
+    tensordotOut(x,*this,y, Indices::_1,
       std::plus<>{}, [alpha](auto&& a, auto&& b) { return alpha * a * b; });
   }
 
@@ -504,9 +513,10 @@ public:
   template <Concept::RandomAccessVector VectorIn,
             Concept::RandomAccessVector VectorOut>
   constexpr void usmhv (const typename FieldTraits<VectorOut>::field_type& alpha,
-                        const VectorIn& x, VectorOut& y) const requires (extents_type::rank() == 2)
+                        const VectorIn& x, VectorOut& y) const
+      requires (extents_type::rank() == 2)
   {
-    tensordotOut(x,*this,y, std::integral_constant<std::size_t, 1>{},
+    tensordotOut(x,*this,y, Indices::_1,
       std::plus<>{}, [alpha](auto&& a, auto&& b) { return alpha * a * conjugateComplex(b); });
   }
 
@@ -517,9 +527,8 @@ public:
   // @{
 
   /// \brief Returns the Hermitian tensor inner product with contraction over all indices `conj(A_{ij}) B_{ij}`
-  template <Concept::RandomAccessTensor T>
-    requires (extents_type::rank() == T::rank() &&
-      Impl::checkStaticExtents<T::rank(), extents_type, typename T::extents_type>())
+  template <Concept::RandomAccessTensor<extents_type::rank()> T>
+    requires (Impl::checkStaticExtents<T::rank(), extents_type, typename T::extents_type>())
   constexpr auto inner (const T& tensor) const
   {
     auto result = tensordot(*this, tensor, std::integral_constant<std::size_t,T::rank()>{},
@@ -530,7 +539,7 @@ public:
 
   /// \brief Square of 2-norm
   typename FieldTraits<value_type>::real_type two_norm2 () const
-    requires (extents_type::rank() == 1)
+      requires (extents_type::rank() == 1)
   {
     using std::abs;
     using R = typename FieldTraits<value_type>::real_type;
@@ -539,7 +548,7 @@ public:
 
   /// \brief 2-norm
   typename FieldTraits<value_type>::real_type two_norm () const
-    requires (extents_type::rank() == 1)
+      requires (extents_type::rank() == 1)
   {
     using std::sqrt;
     return sqrt(two_norm2());
