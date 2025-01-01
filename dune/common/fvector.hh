@@ -125,10 +125,16 @@ namespace Dune {
       : _data{}
     {}
 
+    //! Constructor with a given value initializing all entries to this value
+    explicit(SIZE != 1) constexpr FieldVector (const value_type& value) noexcept
+      : _data{filledArray<SIZE>(value)}
+    {}
+
     //! Constructor with a given scalar initializing all entries to this value
     template<Concept::Number S>
       requires (std::constructible_from<K,S>)
     explicit(SIZE != 1) constexpr FieldVector (const S& scalar)
+        noexcept(std::is_nothrow_constructible_v<K,S>)
       : _data{filledArray<SIZE,K>(K(scalar))}
     {}
 
