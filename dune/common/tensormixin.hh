@@ -237,7 +237,7 @@ public:
   // @{
 
   /// \brief Vector space operation ( *this += x )
-  template <Concept::RandomAccessTensor<extents_type::rank()> T>
+  template <Concept::RandomAccessTensorWithRank<extents_type::rank()> T>
     requires (Impl::checkStaticExtents<T::rank(), extents_type, typename T::extents_type>())
   constexpr derived_type& operator+= (const T& x)
   {
@@ -249,7 +249,7 @@ public:
   }
 
   /// \brief Binary elementwise addition of two tensors
-  template <Concept::RandomAccessTensor<extents_type::rank()> T>
+  template <Concept::RandomAccessTensorWithRank<extents_type::rank()> T>
     requires (Impl::checkStaticExtents<T::rank(), extents_type, typename T::extents_type>())
   constexpr Concept::RandomAccessTensor auto operator+ (const T& x) const
   {
@@ -268,7 +268,7 @@ public:
   }
 
   /// \brief Vector space operation ( *this -= x )
-  template <Concept::RandomAccessTensor<extents_type::rank()> T>
+  template <Concept::RandomAccessTensorWithRank<extents_type::rank()> T>
     requires (Impl::checkStaticExtents<T::rank(), extents_type, typename T::extents_type>())
   constexpr derived_type& operator-= (const T& x)
   {
@@ -280,7 +280,7 @@ public:
   }
 
   /// \brief Binary elementwise subtraction of two tensors
-  template <Concept::RandomAccessTensor<extents_type::rank()> T>
+  template <Concept::RandomAccessTensorWithRank<extents_type::rank()> T>
     requires (Impl::checkStaticExtents<T::rank(), extents_type, typename T::extents_type>())
   constexpr Concept::RandomAccessTensor auto operator- (const T& x) const
   {
@@ -310,7 +310,7 @@ public:
   }
 
   /// \brief Vector space axpy operation ( *this += alpha x )
-  template <Concept::RandomAccessTensor<extents_type::rank()> T>
+  template <Concept::RandomAccessTensorWithRank<extents_type::rank()> T>
     requires (Impl::checkStaticExtents<T::rank(), extents_type, typename T::extents_type>())
   constexpr derived_type& axpy (const field_type& alpha, const T& x)
   {
@@ -322,7 +322,7 @@ public:
   }
 
   /// \brief Vector space aypx operation ( *this = alpha * (*this) + x )
-  template <Concept::RandomAccessTensor<extents_type::rank()> T>
+  template <Concept::RandomAccessTensorWithRank<extents_type::rank()> T>
     requires (Impl::checkStaticExtents<T::rank(), extents_type, typename T::extents_type>())
   constexpr derived_type& aypx (const field_type& alpha, const T& x)
   {
@@ -541,7 +541,7 @@ public:
   // @{
 
   /// \brief Returns the Hermitian tensor inner product with contraction over all indices `conj(A_{ij}) B_{ij}`
-  template <Concept::RandomAccessTensor<extents_type::rank()> T>
+  template <Concept::RandomAccessTensorWithRank<extents_type::rank()> T>
     requires (Impl::checkStaticExtents<T::rank(), extents_type, typename T::extents_type>())
   constexpr auto inner (const T& tensor) const
   {
