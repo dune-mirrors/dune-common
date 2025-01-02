@@ -29,7 +29,7 @@ namespace Impl {
 
 // Extract from the given extents only those dimensions specified by the `dims` sequence
 template <class E, std::size_t... II>
-constexpr auto slicedExtents (const E& extents, std::index_sequence<II...> dims)
+constexpr auto sliceExtents (const E& extents, std::index_sequence<II...> dims)
 {
   return Std::extents<typename E::index_type, E::static_extent(II)...>{extents.extent(II)...};
 }
@@ -88,7 +88,7 @@ constexpr bool checkStaticExtents ()
  * - {i}, the remaining indices from A: aSeqInv={0}
  * - {jk}, the remaining indices from B: bSeqInv={2,3}
  *
- * The algorithms loops over all these indices in the corresponding ranges [0,extent]:
+ * The algorithm loops over all these indices in the corresponding ranges [0,extent]:
  * \code{.cpp}
 for (int l = 0; l < a.extent(aSeq[0]); ++l)
   for (int m = 0; m < a.extent(aSeq[1]); ++m)
@@ -113,6 +113,7 @@ void tensorDotImpl (const A& a, ASeq aSeq, ASeqInv aSeqInv,
                     std::array<typename C::index_type,C::rank()> cIndices = {})
 {
   if constexpr(aSeq.size() > 0 && bSeq.size() > 0) {
+    // first, loop over the contraction indices of A and B
     constexpr std::size_t I = head(aSeq);
     constexpr std::size_t J = head(bSeq);
     for (typename A::index_type k = 0; k < a.extent(I); ++k) {
@@ -122,6 +123,7 @@ void tensorDotImpl (const A& a, ASeq aSeq, ASeqInv aSeqInv,
     }
   }
   else if constexpr(aSeqInv.size() > 0) {
+    // second, loop over the remaining indices of tensor A
     constexpr std::size_t I = head(aSeqInv);
     for (typename A::index_type i = 0; i < a.extent(I); ++i) {
       aIndices[I] = i;
@@ -130,6 +132,7 @@ void tensorDotImpl (const A& a, ASeq aSeq, ASeqInv aSeqInv,
     }
   }
   else if constexpr(bSeqInv.size() > 0) {
+    // third, loop over the remaining indices of tensor B
     constexpr std::size_t J = head(bSeqInv);
     for (typename B::index_type j = 0; j < b.extent(J); ++j) {
       bIndices[J] = j;
@@ -138,6 +141,7 @@ void tensorDotImpl (const A& a, ASeq aSeq, ASeqInv aSeqInv,
     }
   }
   else {
+    // finally, add up the contribution to tensor C, e.g. c[i,j,k] += a[i,l,m] * b[l,m,j,k]
     c[cIndices] = std::invoke(op1, std::move(c[cIndices]), std::invoke(op2, a[aIndices], b[bIndices]));
   }
 }
@@ -146,14 +150,15 @@ void tensorDotImpl (const A& a, ASeq aSeq, ASeqInv aSeqInv,
 
 
 /**
- * \brief Product of two tensors, stored in the output tensor.
+ * \brief Product of two tensors `A` and `B`, stored in the output tensor `C`.
  *
  * Product of tensors `A` and `B` with index contraction over positions `II...`
  * of `A` and positions `JJ...` of `B`. The output tensor `C` must have a rank
  * corresponding to the number of indices remaining in `A` and `B`.
  *
- * The product might be accumulated to the output tensor using the `Updater`
- * function, which by default implements an axpy operation.
+ * The product might be accumulated to the output tensor using outer binary operation
+ * `op1`, e.g., a plus functor, and the inner binary operation `op2`, e.g., a
+ * multiplies functor, see also the `std::inner_product` algorithm.
  */
 template <Concept::RandomAccessTensor A, std::size_t... II,
           Concept::RandomAccessTensor B, std::size_t... JJ,
@@ -166,8 +171,8 @@ constexpr auto tensordotOut (const A& a, std::index_sequence<II...> aSeq,
   static_assert(aSeq.size() == bSeq.size());
 
   // create integer sequences that do not include the contraction indices
-  const auto aSeqInv = difference<A::rank()>(aSeq);
-  const auto bSeqInv = difference<B::rank()>(bSeq);
+  const auto aSeqInv = difference<A::rank()>(aSeq); // {0,1,...A::rank()-1} \ {II...}
+  const auto bSeqInv = difference<B::rank()>(bSeq); // {0,1,...B::rank()-1} \ {JJ...}
   static_assert(aSeqInv.size() + bSeqInv.size() == C::rank());
 
   // the extents of a and the extents of b must be compatible to c
@@ -176,6 +181,7 @@ constexpr auto tensordotOut (const A& a, std::index_sequence<II...> aSeq,
   static_assert(Impl::checkStaticExtents<EA,EB>(aSeq, bSeq));
   assert((Impl::checkExtents(a.extents(), aSeq, b.extents(), bSeq)));
 
+  // Objects of `A` and `B` must be different from object `C`
   assert((void*)(&a) != (void*)(&c) && (void*)(&b) != (void*)(&c));
   Impl::tensorDotImpl(a,aSeq,aSeqInv,b,bSeq,bSeqInv,c,std::ref(op1),std::ref(op2));
 }
@@ -214,13 +220,14 @@ constexpr void tensordotOut (const A& a, const B& b, C& c,
   static_assert(Impl::checkStaticExtents<EA,EB>(SeqI{}, SeqJ{}));
   assert((Impl::checkExtents(a.extents(), SeqI{}, b.extents(), SeqJ{})));
 
+  // Objects of `A` and `B` must be different from object `C`
   assert((void*)(&a) != (void*)(&c) && (void*)(&b) != (void*)(&c));
   Impl::tensorDotImpl(a,SeqI{},InvSeqI{},b,SeqJ{},InvSeqJ{},c,std::ref(op1),std::ref(op2));
 }
 
 
 /**
- * \brief Product of two tensors, contracted over indices II and JJ.
+ * \brief Product of two tensors, contracted over indices `II...` of tensor `A` and `JJ...` of tensor `B`.
  *
  * Product of tensors `A` and `B` with index contraction over positions `II...`
  * of `A` and positions `JJ...` of `B`. And output tensor is constructed with
@@ -252,13 +259,13 @@ constexpr auto tensordot (const A& a, std::index_sequence<II...> aSeq,
   assert((Impl::checkExtents(a.extents(), aSeq, b.extents(), bSeq)));
 
   // create integer sequences that do not include the contraction indices
-  const auto aSeqInv = difference<A::rank()>(aSeq);
-  const auto bSeqInv = difference<B::rank()>(bSeq);
+  const auto aSeqInv = difference<A::rank()>(aSeq); // {0,1,...A::rank()-1} \ {II...}
+  const auto bSeqInv = difference<B::rank()>(bSeq); // {0,1,...B::rank()-1} \ {JJ...}
 
   // create result extents by collecting the extents of a and b that are not contracted
   auto cExtents = Impl::concatExtents(
-    Impl::slicedExtents(a.extents(), aSeqInv),
-    Impl::slicedExtents(b.extents(), bSeqInv));
+    Impl::sliceExtents(a.extents(), aSeqInv),
+    Impl::sliceExtents(b.extents(), bSeqInv));
 
   using VA = decltype(std::declval<A>()[std::array<typename A::index_type,A::rank()>{}]);
   using VB = decltype(std::declval<B>()[std::array<typename B::index_type,B::rank()>{}]);
@@ -270,10 +277,11 @@ constexpr auto tensordot (const A& a, std::index_sequence<II...> aSeq,
 
 
 /**
- *  \brief Product of two tensors `A` and `B` contracted over the last `N` indices
+ * \brief Product of two tensors `A` and `B` contracted over the last `N` indices
  * of `A` and the first `N` indices of `B`
  *
- * Sum over the last `N` axes of `a` and the first `N` axes of `b`
+ * Sum over the last `N` axes of `a` and the first `N` axes of `b`. Returns a tensor of
+ * rank `A::rank()-N + B::rank()-N`.
  *
  * \b Examples:
  * - outer product of 2-tensors: `c(i,j,k,l) = a(i,j) * b(k,l)` is `tensordot<0>(a,b)`
