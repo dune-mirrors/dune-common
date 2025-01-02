@@ -71,20 +71,34 @@ static_assert(Concept::Vector<Archetypes::Tensor<double,1>>);
 static_assert(Concept::Matrix<Archetypes::Tensor<double,2>>);
 
 
-template <class T, std::size_t rank = T::rank()>
-concept RandomAccessTensor = Tensor<T,rank> &&
-requires(T tensor, std::array<typename T::index_type, rank> indices)
+/**
+ * \brief A `RandomAccessTensor` is a `Tensor` with multi-index access to its elements.
+ *
+ * It is required that the tensor can be accessed by `operator[]` with a multi-index passed
+ * as a `std::array` of indices. The number of indices is equal to the rank of the tensor. This
+ * access is assumed to be valid of all indices in the index-space defined by the tensor extents.
+ */
+template <class T>
+concept RandomAccessTensor = Tensor<T> &&
+requires(T tensor, std::array<typename T::index_type, T::rank()> indices)
 {
   tensor[indices];
 };
 
-template <class T>
-concept RandomAccessVector = RandomAccessTensor<T,1>;
+//! A `RandomAccessTensorWithRank` is a `RandomAccessTensor` with given tensor-rank `rank`.
+template <class T, std::size_t rank>
+concept RandomAccessTensorWithRank = RandomAccessTensor<T> && T::rank() == rank;
 
+//! A `RandomAccessVector` is a `RandomAccessTensor` of rank 1.
 template <class T>
-concept RandomAccessMatrix = RandomAccessTensor<T,2>;
+concept RandomAccessVector = RandomAccessTensorWithRank<T,1>;
 
-static_assert(Concept::RandomAccessTensor<Archetypes::Tensor<double,0>,0>);
+//! A `RandomAccessMatrix` is a `RandomAccessTensor` of rank 2.
+template <class T>
+concept RandomAccessMatrix = RandomAccessTensorWithRank<T,2>;
+
+
+static_assert(Concept::RandomAccessTensorWithRank<Archetypes::Tensor<double,0>,0>);
 static_assert(Concept::RandomAccessVector<Archetypes::Tensor<double,1>>);
 static_assert(Concept::RandomAccessMatrix<Archetypes::Tensor<double,2>>);
 
