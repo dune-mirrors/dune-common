@@ -26,13 +26,14 @@ namespace Impl {
 
 // Take the extents from both index spaces and use as many static extents as possible
 template <class I1, std::size_t... exts1, class I2, std::size_t... exts2>
+  requires (sizeof...(exts1) == sizeof...(exts2))
 constexpr auto combinedExtents (const Std::extents<I1,exts1...>& e1,
                                 const Std::extents<I2,exts2...>& e2)
 {
   using I = std::common_type_t<I1,I2>;
-  return [&]<std::size_t... II, std::size_t... JJ>(std::index_sequence<II...>, std::index_sequence<JJ...>) {
+  return [&]<std::size_t... II>(std::index_sequence<II...>) {
     return Std::extents<I, (exts1 == Std::dynamic_extent ? exts2 : exts1)...>{I(e1.extent(II))...};
-  }(std::make_index_sequence<sizeof...(exts1)>{},std::make_index_sequence<sizeof...(exts2)>{});
+  }(std::make_index_sequence<sizeof...(exts1)>{});
 }
 
 } // end namespace Impl
@@ -529,7 +530,7 @@ public:
   /// \brief Returns the Hermitian tensor inner product with contraction over all indices `conj(A_{ij}) B_{ij}`
   template <Concept::RandomAccessTensorWithRank<extents_type::rank()> T>
     requires (Impl::checkStaticExtents<T::rank(), extents_type, typename T::extents_type>())
-  constexpr auto inner (const T& tensor) const
+  constexpr Concept::Number auto inner (const T& tensor) const
   {
     auto result = tensordot(*this, tensor, std::integral_constant<std::size_t,T::rank()>{},
       std::plus<>{}, DotProduct{});
