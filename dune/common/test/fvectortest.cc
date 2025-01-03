@@ -168,117 +168,6 @@ struct FieldVectorMainTest<ft,rt,d,false>
   {}
 };
 
-template<class ft, class testft=ft>
-struct ScalarOperatorTest
-{
-  ScalarOperatorTest()
-  {
-    // testft has to initializable with an int
-    testft a = 1;
-    testft c = 2;
-    Dune::LoopSIMD<ft, 4> d = ft(2);
-    FieldVector<ft,1> v(2);
-    FieldVector<ft,1> w(2);
-    [[maybe_unused]] bool b;
-
-    std::cout << __func__ << "\t ( " << className(v) << " )" << std::endl;
-
-    a = a * c;
-    a = a + c;
-    a = a / c;
-    a = a - c;
-
-    v = a;
-    v = w = v;
-    a = v;
-
-    a = v + a;
-    a = v - a;
-    a = v * a;
-    a += 1; // make sure a!=0
-    a = v / a;
-
-    v = v + a;
-    v = v - a;
-    v = v * a;
-    a += 1; // make sure a!=0
-    v = v / a;
-
-    a = a + v;
-    a = a - v;
-    a = a * v;
-    v += 1; // make sure v!=0
-    a = a / v;
-
-    v = a + v;
-    v = a - v;
-    v = a * v;
-    v += 1; // make sure v!=0
-    v = a / v;
-
-    v -= w;
-    v -= a;
-    v += w;
-    v += a;
-    v *= a;
-    a += 1; // make sure a!=0
-    v /= a;
-
-    b = (v == a);
-    b = (v != a);
-    b = (a == v);
-    b = (a != v);
-
-    // test scalar operations with SIMD
-    auto x = a * d;
-    x = a / d;
-    x = a + d;
-    x = a - d;
-
-  }
-};
-
-// scalar ordering doesn't work for complex numbers
-template<class ft>
-struct ScalarOrderingTest
-{
-  ScalarOrderingTest()
-  {
-    ft a = 1;
-    ft c = 2;
-    FieldVector<ft,1> v(2);
-    FieldVector<ft,1> w(2);
-    [[maybe_unused]] bool b;
-
-    std::cout << __func__ << "\t ( " << className(v) << " )" << std::endl;
-
-    b = (a <  c);
-    b = (a <= c);
-    b = (a >= c);
-    b = (a >  c);
-
-    b = (v == a);
-    b = (v != a);
-    b = (a == v);
-    b = (a != v);
-
-    b = (v <  a);
-    b = (v <= a);
-    b = (v >= a);
-    b = (v >  a);
-
-    b = (v <  w);
-    b = (v <= w);
-    b = (v >= w);
-    b = (v >  w);
-
-    b = (a <  w);
-    b = (a <= w);
-    b = (a >= w);
-    b = (a >  w);
-  }
-};
-
 template<typename T>
 struct Epsilon
 {
@@ -433,16 +322,9 @@ public:
   {
     // --- real valued
     FieldVectorMainTest<ft,ft,1>();
-    ScalarOperatorTest<ft>();
-    ScalarOrderingTest<ft>();
     DotProductTest<ft,1>();
     // --- complex valued
     FieldVectorMainTest<complex<ft>,ft,1>();
-    ScalarOperatorTest< complex<ft> >();
-    // ordering doesn't work for complex numbers
-
-    // --- test with an integer
-    ScalarOperatorTest< ft, int >();
     // --- test next lower dimension
     FieldVectorMainTest<ft,ft,0>();
   }
@@ -457,16 +339,12 @@ public:
   {
     // --- real valued
     FieldVectorMainTest<ft,ft,1>();
-    ScalarOperatorTest<ft>();
-    ScalarOrderingTest<ft>();
     DotProductTest<ft,1>();
-
-    // --- test with an integer
-    ScalarOperatorTest< ft, int >();
     // --- test next lower dimension
     FieldVectorMainTest<ft,ft,0>();
   }
 };
+
 
 template <class V>
 void checkNormNAN(V const &v, int line) {
@@ -597,8 +475,6 @@ int main()
       FieldVectorMainTest<ft,ft,2>();
       FieldVectorMainTest<ft,ft,1>();
       FieldVectorMainTest<ft,ft,0>();
-      ScalarOperatorTest<ft>();
-      ScalarOrderingTest<ft>();
       DotProductTest<ft,3>();
     }
 #endif // HAVE_GMP
@@ -611,8 +487,6 @@ int main()
       FieldVectorMainTest<ft,ft,2>();
       FieldVectorMainTest<ft,ft,1>();
       FieldVectorMainTest<ft,ft,0>();
-      ScalarOperatorTest<ft>();
-      ScalarOrderingTest<ft>();
       DotProductTest<ft,3>();
     }
 #endif

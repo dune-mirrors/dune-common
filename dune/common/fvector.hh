@@ -126,7 +126,7 @@ namespace Dune {
     {}
 
     //! Constructor with a given value initializing all entries to this value
-    explicit(SIZE != 1)
+    explicit
     constexpr FieldVector (const value_type& value) noexcept
       : _data{filledArray<SIZE>(value)}
     {}
@@ -134,7 +134,7 @@ namespace Dune {
     //! Constructor with a given scalar initializing all entries to this value
     template<Concept::Number S>
       requires (std::constructible_from<K,S>)
-    explicit(SIZE != 1)
+    explicit
     constexpr FieldVector (const S& scalar)
         noexcept(std::is_nothrow_constructible_v<K,S>)
       : _data{filledArray<SIZE,K>(K(scalar))}
@@ -255,41 +255,11 @@ namespace Dune {
       return _data.data();
     }
 
-    //! Conversion operator
-    constexpr operator const_reference () const noexcept
-        requires(SIZE == 1)
-    {
-      return _data[0];
-    }
-
-    //! Conversion operator
-    constexpr operator reference () noexcept
-        requires(SIZE == 1)
-    {
-      return _data[0];
-    }
-
     /// @}
 
 
     /// \name Comparison operators
     /// @{
-
-    //! comparing FieldVectors<1> with scalar for equality
-    template<Concept::Number S>
-    friend constexpr bool operator== (const FieldVector& a, const S& b) noexcept
-        requires(SIZE == 1)
-    {
-      return a._data[0] == b;
-    }
-
-    //! comparing FieldVectors<1> with scalar for equality
-    template<Concept::Number S>
-    friend constexpr bool operator== (const S& a, const FieldVector& b) noexcept
-        requires(SIZE == 1)
-    {
-      return a == b._data[0];
-    }
 
     //! three-way comparison of FieldVectors
     template<class T>
@@ -301,22 +271,6 @@ namespace Dune {
 #else
       return Std::lexicographical_compare_three_way(a.begin(), a.end(), b.begin(), b.end());
 #endif
-    }
-
-    //! three-way comparison of FieldVectors<1> with scalar
-    template<Concept::Number S>
-    friend constexpr auto operator<=> (const FieldVector& a, const S& b) noexcept
-        requires(SIZE == 1)
-    {
-      return a._data[0] <=> b;
-    }
-
-    //! three-way comparison of FieldVectors<1> with scalar
-    template<Concept::Number S>
-    friend constexpr auto operator<=> (const S& a, const FieldVector& b) noexcept
-        requires(SIZE == 1)
-    {
-      return a <=> b._data[0];
     }
 
     /// @}
@@ -356,50 +310,6 @@ namespace Dune {
       for (size_type i = 0; i < size(); ++i)
         result[i] = a[i] / b;
       return result;
-    }
-
-    //! Binary division, when using FieldVector<K,1> like K
-    template<Concept::Number S>
-    friend constexpr FieldVector operator/ (const S& a, const FieldVector& b) noexcept
-        requires(SIZE == 1)
-    {
-      return FieldVector{a / b[0]};
-    }
-
-    //! Binary addition, when using FieldVector<K,1> like K
-    template<Concept::Number S>
-    friend constexpr auto operator+ (const FieldVector& a, const S& b) noexcept
-        requires(SIZE == 1)
-    {
-      using ResultValueType = typename PromotionTraits<K,S>::PromotedType;
-      return FieldVector<ResultValueType,dimension>{a[0] + b};
-    }
-
-    //! Binary addition, when using FieldVector<K,1> like K
-    template<Concept::Number S>
-    friend constexpr auto operator+ (const S& a, const FieldVector& b) noexcept
-        requires(SIZE == 1)
-    {
-      using ResultValueType = typename PromotionTraits<K,S>::PromotedType;
-      return FieldVector<ResultValueType,dimension>{a + b[0]};
-    }
-
-    //! Binary subtraction, when using FieldVector<K,1> like K
-    template<Concept::Number S>
-    friend constexpr auto operator- (const FieldVector& a, const S& b) noexcept
-        requires(SIZE == 1)
-    {
-      using ResultValueType = typename PromotionTraits<K,S>::PromotedType;
-      return FieldVector<ResultValueType,dimension>{a[0] - b};
-    }
-
-    //! Binary subtraction, when using FieldVector<K,1> like K
-    template<Concept::Number S>
-    friend constexpr auto operator- (const S& a, const FieldVector& b) noexcept
-        requires(SIZE == 1)
-    {
-      using ResultValueType = typename PromotionTraits<K,S>::PromotedType;
-      return FieldVector<ResultValueType,dimension>{a - b[0]};
     }
 
     /// @}

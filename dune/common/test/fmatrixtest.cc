@@ -633,65 +633,6 @@ int test_determinant()
   return ret;
 }
 
-template<class ft>
-struct ScalarOperatorTest
-{
-  ScalarOperatorTest()
-  {
-DUNE_NO_DEPRECATED_BEGIN
-    ft a = 1;
-    ft c = 2;
-    FieldMatrix<ft,1,1> v(2);
-    FieldMatrix<ft,1,1> w(2);
-    [[maybe_unused]] bool b;
-
-    std::cout << __func__ << "\t ( " << className(v) << " )" << std::endl;
-
-    a = a * c;
-    a = a + c;
-    a = a / c;
-    a = a - c;
-
-    v = a;
-    v = w = v;
-    a = v;
-
-    a = v + a;
-    a = v - a;
-    a = v * a;
-    a = v / a;
-
-    v = v + a;
-    v = v - a;
-    v = v * a;
-    v = v / a;
-
-    a = a + v;
-    a = a - v;
-    a = a * v;
-    a = a / v;
-
-    v = a + v;
-    v = a - v;
-    v = a * v;
-    v = a / v;
-
-    v -= w;
-    v -= a;
-    v += w;
-    v += a;
-    v *= a;
-    v /= a;
-
-    b = (v == a);
-    b = (v != a);
-    b = (a == v);
-    b = (a != v);
-DUNE_NO_DEPRECATED_END
-
-  }
-};
-
 template<typename ft>
 void test_ev()
 {
@@ -895,12 +836,9 @@ int main()
     // test 1 x 1 matrices
     test_interface<float, float, 1, 1>();
     test_matrix<float, float, float, 1, 1>();
-    ScalarOperatorTest<float>();
     test_matrix<double, double, double, 1, 1>();
-    ScalarOperatorTest<double>();
 #if HAVE_QUADMATH
     test_matrix<Dune::Float128, Dune::Float128, Dune::Float128, 1, 1>();
-    ScalarOperatorTest<Dune::Float128>();
 #endif
 #if HAVE_GMP
     test_matrix<Dune::GMPField<128>, Dune::GMPField<128>, Dune::GMPField<128>, 1, 1>();
@@ -954,7 +892,7 @@ int main()
     errors += test_invert_solve();
 
     {  // Test whether multiplying one-column matrices by scalars work
-      FieldMatrix<double,3,1> A = {1,2,3};
+      FieldMatrix<double,3,1> A = {{1},{2},{3}};
       double v = 0;
       FieldVector<double,3> f = {2,3,4};
       double vT = 0;
