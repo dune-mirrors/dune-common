@@ -104,7 +104,7 @@ install(FILES
         stdthread.hh
         streamoperators.hh
         stringutility.hh
-        timer.hh
+        tensordot.hh
         transpose.hh
         tupleutility.hh
         tuplevector.hh
