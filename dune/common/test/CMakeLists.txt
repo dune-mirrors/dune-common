@@ -147,9 +147,6 @@ add_dune_gmp_flags(fvectortest)
 add_dune_mpfr_flags(fvectortest)
 add_dune_quadmath_flags(fvectortest)
 
-dune_add_test(SOURCES fvectorconversion1d.cc
-              LABELS quick)
-
 dune_add_test(SOURCES genericiterator_compile_fail.cc
               EXPECT_COMPILE_FAIL
               LABELS quick)
