@@ -101,6 +101,7 @@ install(FILES
         streamoperators.hh
         stringutility.hh
         tensor.hh
+        tensordot.hh
         tensormixin.hh
         tensorspan.hh
         timer.hh
