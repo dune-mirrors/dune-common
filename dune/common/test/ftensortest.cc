@@ -14,8 +14,6 @@
 #include <dune/common/parallel/mpihelper.hh>
 #include <dune/common/test/foreachindex.hh>
 #include <dune/common/test/testsuite.hh>
-#include <stdexcept>
-#include <utility>
 
 using namespace Dune;
 
