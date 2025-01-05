@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: LicenseRef-GPL-2.0-only-with-DUNE-exception
 
 #include <iostream>
+#include <utility>
 
 #include <dune/common/densetensor.hh>
 #include <dune/common/exceptions.hh>
@@ -14,7 +15,6 @@
 #include <dune/common/parallel/mpihelper.hh>
 #include <dune/common/test/foreachindex.hh>
 #include <dune/common/test/testsuite.hh>
-#include <utility>
 
 using namespace Dune;
 
