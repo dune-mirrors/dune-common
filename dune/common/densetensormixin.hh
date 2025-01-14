@@ -637,6 +637,49 @@ constexpr bool operator== (const S& number, const DenseTensorMixin<D,B>& rhs) no
   return number == rhs();
 }
 
+
+/** \brief Output stream overload for tensor types */
+template <class D, class B>
+std::ostream& operator<< (std::ostream& out, const Dune::TensorMixin<D,B>& tensor)
+{
+  using extents_type = typename Dune::TensorMixin<D,B>::extents_type;
+  using index_type = typename Dune::TensorMixin<D,B>::index_type;
+  if constexpr(extents_type::rank() == 0) {
+    out << tensor();
+  } else if constexpr(extents_type::rank() == 1) {
+    out << "[";
+    for (index_type i = 0; i < tensor.extent(0); ++i)
+      out << tensor(i) << (i < tensor.extent(0)-1 ? ", " : "]");
+  } else if constexpr(extents_type::rank() == 2) {
+    out << "[\n";
+    for (index_type i = 0; i < tensor.extent(0); ++i) {
+      out << "  [";
+      for (index_type j = 0; j < tensor.extent(1); ++j)
+        out << tensor(i,j) << (j < tensor.extent(1)-1 ? ", " : "]");
+      out << (i < tensor.extent(0)-1 ? ",\n" : "\n");
+    }
+    out << ']';
+  } else if constexpr(extents_type::rank() == 3) {
+    out << "[\n";
+    for (index_type i = 0; i < tensor.extent(0); ++i) {
+      out << "  [\n";
+      for (index_type j = 0; j < tensor.extent(1); ++j) {
+        out << "    [";
+        for (index_type k = 0; k < tensor.extent(2); ++k)
+          out << tensor(i,j,k) << (k < tensor.extent(2)-1 ? ", " : "]");
+        out << (j < tensor.extent(1)-1 ? ",\n" : "\n");
+      }
+      out << "  ]";
+      out << (i < tensor.extent(0)-1 ? ",\n" : "\n");
+    }
+    out << ']';
+  } else {
+    out << "Tensor<" << extents_type::rank() << ">";
+  }
+  return out;
+}
+
+
 template <class D, class B>
 struct FieldTraits< DenseTensorMixin<D,B> >
 {

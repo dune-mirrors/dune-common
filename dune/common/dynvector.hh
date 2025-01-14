@@ -13,13 +13,16 @@
 #include <initializer_list>
 #include <limits>
 #include <utility>
-
-#include "boundschecking.hh"
-#include "exceptions.hh"
-#include "genericiterator.hh"
-
 #include <vector>
-#include "densevector.hh"
+
+#include <dune/common/boundschecking.hh>
+#include <dune/common/densevector.hh>
+#include <dune/common/exceptions.hh>
+#include <dune/common/genericiterator.hh>
+#include <dune/common/tensortraits.hh>
+#include <dune/common/std/extents.hh>
+#include <dune/common/std/span.hh>
+
 
 namespace Dune {
 
@@ -47,6 +50,31 @@ namespace Dune {
     typedef typename FieldTraits< K >::field_type field_type;
     typedef typename FieldTraits< K >::real_type real_type;
   };
+
+  template< class K, class Allocator >
+  struct TensorTraits< DynamicVector< K, Allocator > >
+  {
+    using index_type = typename DenseMatVecTraits<DynamicVector<K,Allocator>>::size_type;
+    using extents_type = Std::extents<index_type, Std::dynamic_extent>;
+    using rank_type = typename extents_type::rank_type;
+
+
+    /// \brief Number of elements in all dimensions of the array, \related extents
+    static constexpr extents_type extents (const DynamicVector<K,Allocator>& tensor) noexcept { return extents_type{tensor.size()}; }
+
+    /// \brief Number of dimensions of the array
+    static constexpr rank_type rank () noexcept { return 1; }
+
+    /// \brief Number of dimension with dynamic size
+    static constexpr rank_type rank_dynamic () noexcept { return 1; }
+
+    /// \brief Number of elements in the r'th dimension of the tensor
+    static constexpr std::size_t static_extent (rank_type /*r*/) noexcept { return Std::dynamic_extent; }
+
+    /// \brief Number of elements in the r'th dimension of the tensor
+    static constexpr index_type extent (const DynamicVector<K,Allocator>& tensor, rank_type /*r*/) noexcept { return tensor.size(); }
+  };
+
 
   /** \brief Construct a vector with a dynamic size.
    *
@@ -156,6 +184,21 @@ namespace Dune {
     const K & operator[](size_type i) const {
       DUNE_ASSERT_BOUNDS(i < size());
       return _data[i];
+    }
+
+    //! random access with array of indices
+    template <class SizeType>
+      requires std::convertible_to<SizeType, size_type>
+    K & operator[] (std::array<SizeType,1> i)
+    {
+      return _data[i[0]];
+    }
+
+    template <class SizeType>
+      requires std::convertible_to<SizeType, size_type>
+    const K & operator[] (std::array<SizeType,1> i) const
+    {
+      return _data[i[0]];
     }
 
     //! return pointer to underlying array

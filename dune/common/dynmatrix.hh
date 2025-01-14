@@ -52,6 +52,30 @@ namespace Dune
     typedef typename FieldTraits<K>::real_type real_type;
   };
 
+  template< class K >
+  struct TensorTraits< DynamicMatrix<K> >
+  {
+    using index_type = typename DenseMatVecTraits<DynamicMatrix<K>>::size_type;
+    using extents_type = Std::extents<index_type, Std::dynamic_extent, Std::dynamic_extent>;
+    using rank_type = typename extents_type::rank_type;
+
+
+    /// \brief Number of elements in all dimensions of the array, \related extents
+    static constexpr extents_type extents (const DynamicMatrix<K>& tensor) noexcept { return extents_type{tensor.N(), tensor.M()}; }
+
+    /// \brief Number of dimensions of the array
+    static constexpr rank_type rank () noexcept { return 2; }
+
+    /// \brief Number of dimension with dynamic size
+    static constexpr rank_type rank_dynamic () noexcept { return 2; }
+
+    /// \brief Number of elements in the r'th dimension of the tensor
+    static constexpr std::size_t static_extent (rank_type /*r*/) noexcept { return Std::dynamic_extent; }
+
+    /// \brief Number of elements in the r'th dimension of the tensor
+    static constexpr index_type extent (const DynamicMatrix<K>& tensor, rank_type r) noexcept { return r == 0 ? tensor.N() : tensor.M(); }
+  };
+
   /** \brief Construct a matrix with a dynamic size.
    *
    * \tparam K is the field type (use float, double, complex, etc)

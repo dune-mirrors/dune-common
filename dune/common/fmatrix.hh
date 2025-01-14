@@ -19,6 +19,8 @@
 #include <dune/common/promotiontraits.hh>
 #include <dune/common/typetraits.hh>
 #include <dune/common/matrixconcepts.hh>
+#include <dune/common/tensortraits.hh>
+#include <dune/common/std/extents.hh>
 
 namespace Dune
 {
@@ -102,6 +104,30 @@ namespace Dune
   {
     typedef typename FieldTraits<K>::field_type field_type;
     typedef typename FieldTraits<K>::real_type real_type;
+  };
+
+  template< class K, int ROWS, int COLS >
+  struct TensorTraits< FieldMatrix<K,ROWS,COLS> >
+  {
+    using index_type = typename DenseMatVecTraits<FieldMatrix<K,ROWS,COLS>>::size_type;
+    using extents_type = Std::extents<std::size_t, std::size_t(ROWS),std::size_t(COLS)>;
+    using rank_type = typename extents_type::rank_type;
+
+
+    /// \brief Number of elements in all dimensions of the array, \related extents
+    static constexpr extents_type extents (const FieldMatrix<K,ROWS,COLS>& /*tensor*/) noexcept { return extents_type{}; }
+
+    /// \brief Number of dimensions of the array
+    static constexpr rank_type rank () noexcept { return 2; }
+
+    /// \brief Number of dimension with dynamic size
+    static constexpr rank_type rank_dynamic () noexcept { return 0; }
+
+    /// \brief Number of elements in the r'th dimension of the tensor
+    static constexpr std::size_t static_extent (rank_type r) noexcept { return r == 0 ? ROWS : COLS; }
+
+    /// \brief Number of elements in the r'th dimension of the tensor
+    static constexpr index_type extent (const FieldMatrix<K,ROWS,COLS>& /*tensor*/, rank_type r) noexcept { return r == 0 ? ROWS : COLS; }
   };
 
   /**

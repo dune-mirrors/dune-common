@@ -14,6 +14,7 @@
 #include <dune/common/integersequence.hh>
 #include <dune/common/std/extents.hh>
 #include <dune/common/rangeutilities.hh>
+#include <dune/common/tensortraits.hh>
 #include <dune/common/typetraits.hh>
 #include <dune/common/concepts/tensor.hh>
 #include <dune/common/std/extents.hh>
@@ -103,20 +104,23 @@ for (int l = 0; l < a.extent(aSeq[0]); ++l)
 template <std::size_t K = 0,
           class A, class ASeq, class ASeqInv,
           class B, class BSeq, class BSeqInv,
-          class C, class BinaryOp1, class BinaryOp2>
+          class C, class BinaryOp1, class BinaryOp2,
+          class ATraits = TensorTraits<A>,
+          class BTraits = TensorTraits<B>,
+          class CTraits = TensorTraits<C>>
 constexpr DUNE_FORCE_INLINE
 void tensorDotImpl (const A& a, ASeq aSeq, ASeqInv aSeqInv,
                     const B& b, BSeq bSeq, BSeqInv bSeqInv,
                     C& c, BinaryOp1 op1, BinaryOp2 op2,
-                    std::array<typename A::index_type,A::rank()> aIndices = {},
-                    std::array<typename B::index_type,B::rank()> bIndices = {},
-                    std::array<typename C::index_type,C::rank()> cIndices = {})
+                    std::array<typename ATraits::index_type,ATraits::rank()> aIndices = {},
+                    std::array<typename BTraits::index_type,BTraits::rank()> bIndices = {},
+                    std::array<typename CTraits::index_type,CTraits::rank()> cIndices = {})
 {
   if constexpr(aSeq.size() > 0 && bSeq.size() > 0) {
     // first, loop over the contraction indices of A and B
     constexpr std::size_t I = head(aSeq);
     constexpr std::size_t J = head(bSeq);
-    for (typename A::index_type k = 0; k < a.extent(I); ++k) {
+    for (typename ATraits::index_type k = 0; k < ATraits::extent(a,I); ++k) {
       aIndices[I] = k;
       bIndices[J] = k;
       tensorDotImpl<K>(a,tail(aSeq),aSeqInv,b,tail(bSeq),bSeqInv,c,op1,op2,aIndices,bIndices,cIndices);
@@ -125,7 +129,7 @@ void tensorDotImpl (const A& a, ASeq aSeq, ASeqInv aSeqInv,
   else if constexpr(aSeqInv.size() > 0) {
     // second, loop over the remaining indices of tensor A
     constexpr std::size_t I = head(aSeqInv);
-    for (typename A::index_type i = 0; i < a.extent(I); ++i) {
+    for (typename ATraits::index_type i = 0; i < ATraits::extent(a,I); ++i) {
       aIndices[I] = i;
       cIndices[K] = i;
       tensorDotImpl<K+1>(a,aSeq,tail(aSeqInv),b,bSeq,bSeqInv,c,op1,op2,aIndices,bIndices,cIndices);
@@ -134,7 +138,7 @@ void tensorDotImpl (const A& a, ASeq aSeq, ASeqInv aSeqInv,
   else if constexpr(bSeqInv.size() > 0) {
     // third, loop over the remaining indices of tensor B
     constexpr std::size_t J = head(bSeqInv);
-    for (typename B::index_type j = 0; j < b.extent(J); ++j) {
+    for (typename BTraits::index_type j = 0; j < BTraits::extent(b,J); ++j) {
       bIndices[J] = j;
       cIndices[K] = j;
       tensorDotImpl<K+1>(a,aSeq,aSeqInv,b,bSeq,tail(bSeqInv),c,op1,op2,aIndices,bIndices,cIndices);
@@ -170,16 +174,20 @@ constexpr auto tensordotOut (const A& a, std::index_sequence<II...> aSeq,
 {
   static_assert(aSeq.size() == bSeq.size());
 
+  using ATraits = TensorTraits<A>;
+  using BTraits = TensorTraits<B>;
+  using CTraits = TensorTraits<C>;
+
   // create integer sequences that do not include the contraction indices
-  const auto aSeqInv = difference<A::rank()>(aSeq); // {0,1,...A::rank()-1} \ {II...}
-  const auto bSeqInv = difference<B::rank()>(bSeq); // {0,1,...B::rank()-1} \ {JJ...}
-  static_assert(aSeqInv.size() + bSeqInv.size() == C::rank());
+  const auto aSeqInv = difference<ATraits::rank()>(aSeq); // {0,1,...A::rank()-1} \ {II...}
+  const auto bSeqInv = difference<BTraits::rank()>(bSeq); // {0,1,...B::rank()-1} \ {JJ...}
+  static_assert(aSeqInv.size() + bSeqInv.size() == CTraits::rank());
 
   // the extents of a and the extents of b must be compatible to c
-  using EA = typename A::extents_type;
-  using EB = typename B::extents_type;
+  using EA = typename ATraits::extents_type;
+  using EB = typename BTraits::extents_type;
   static_assert(Impl::checkStaticExtents<EA,EB>(aSeq, bSeq));
-  assert((Impl::checkExtents(a.extents(), aSeq, b.extents(), bSeq)));
+  assert((Impl::checkExtents(ATraits::extents(a), aSeq, BTraits::extents(b), bSeq)));
 
   // Objects of `A` and `B` must be different from object `C`
   assert((void*)(&a) != (void*)(&c) && (void*)(&b) != (void*)(&c));
@@ -208,17 +216,21 @@ constexpr void tensordotOut (const A& a, const B& b, C& c,
                              std::integral_constant<std::size_t,N> axes = {},
                              BinaryOp1 op1 = {}, BinaryOp2 op2 = {})
 {
-  using SeqI = typename StaticIntegralRange<std::size_t,A::rank(),A::rank()-N>::integer_sequence;
-  using InvSeqI = std::make_index_sequence<A::rank()-N>;
+  using ATraits = TensorTraits<A>;
+  using BTraits = TensorTraits<B>;
+  using CTraits = TensorTraits<C>;
+
+  using SeqI = typename StaticIntegralRange<std::size_t,ATraits::rank(),ATraits::rank()-N>::integer_sequence;
+  using InvSeqI = std::make_index_sequence<ATraits::rank()-N>;
   using SeqJ = std::make_index_sequence<N>;
-  using InvSeqJ = typename StaticIntegralRange<std::size_t,B::rank(),N>::integer_sequence;
-  static_assert(InvSeqI::size() + InvSeqJ::size() == C::rank());
+  using InvSeqJ = typename StaticIntegralRange<std::size_t,BTraits::rank(),N>::integer_sequence;
+  static_assert(InvSeqI::size() + InvSeqJ::size() == CTraits::rank());
 
   // the extents of a and the extents of b must be compatible to c
-  using EA = typename A::extents_type;
-  using EB = typename B::extents_type;
+  using EA = typename ATraits::extents_type;
+  using EB = typename BTraits::extents_type;
   static_assert(Impl::checkStaticExtents<EA,EB>(SeqI{}, SeqJ{}));
-  assert((Impl::checkExtents(a.extents(), SeqI{}, b.extents(), SeqJ{})));
+  assert((Impl::checkExtents(ATraits::extents(a), SeqI{}, BTraits::extents(b), SeqJ{})));
 
   // Objects of `A` and `B` must be different from object `C`
   assert((void*)(&a) != (void*)(&c) && (void*)(&b) != (void*)(&c));
@@ -252,23 +264,26 @@ constexpr auto tensordot (const A& a, std::index_sequence<II...> aSeq,
                           const B& b, std::index_sequence<JJ...> bSeq,
                           BinaryOp1 op1 = {}, BinaryOp2 op2 = {})
 {
+  using ATraits = TensorTraits<A>;
+  using BTraits = TensorTraits<B>;
+
   // the extents(II) of a and the extents(JJ) of b must match
-  using EA = typename A::extents_type;
-  using EB = typename B::extents_type;
+  using EA = typename ATraits::extents_type;
+  using EB = typename BTraits::extents_type;
   static_assert(Impl::checkStaticExtents<EA,EB>(aSeq, bSeq));
-  assert((Impl::checkExtents(a.extents(), aSeq, b.extents(), bSeq)));
+  assert((Impl::checkExtents(ATraits::extents(a), aSeq, BTraits::extents(b), bSeq)));
 
   // create integer sequences that do not include the contraction indices
-  const auto aSeqInv = difference<A::rank()>(aSeq); // {0,1,...A::rank()-1} \ {II...}
-  const auto bSeqInv = difference<B::rank()>(bSeq); // {0,1,...B::rank()-1} \ {JJ...}
+  const auto aSeqInv = difference<ATraits::rank()>(aSeq); // {0,1,...A::rank()-1} \ {II...}
+  const auto bSeqInv = difference<BTraits::rank()>(bSeq); // {0,1,...B::rank()-1} \ {JJ...}
 
   // create result extents by collecting the extents of a and b that are not contracted
   auto cExtents = Impl::concatExtents(
-    Impl::sliceExtents(a.extents(), aSeqInv),
-    Impl::sliceExtents(b.extents(), bSeqInv));
+    Impl::sliceExtents(ATraits::extents(a), aSeqInv),
+    Impl::sliceExtents(BTraits::extents(b), bSeqInv));
 
-  using VA = decltype(std::declval<A>()[std::array<typename A::index_type,A::rank()>{}]);
-  using VB = decltype(std::declval<B>()[std::array<typename B::index_type,B::rank()>{}]);
+  using VA = decltype(std::declval<A>()[std::array<typename ATraits::index_type,ATraits::rank()>{}]);
+  using VB = decltype(std::declval<B>()[std::array<typename BTraits::index_type,BTraits::rank()>{}]);
   using V = std::invoke_result_t<BinaryOp2,VA,VB>;
   auto c = Tensor{cExtents, V(0)};
   Impl::tensorDotImpl(a,aSeq,aSeqInv,b,bSeq,bSeqInv,c,std::ref(op1),std::ref(op2));
@@ -296,7 +311,8 @@ constexpr auto tensordot (const A& a, const B& b,
                           std::integral_constant<std::size_t,N> axes = {},
                           BinaryOp1 op1 = {}, BinaryOp2 op2 = {})
 {
-  using SeqI = typename StaticIntegralRange<std::size_t,A::rank(),A::rank()-N>::integer_sequence;
+  using ATraits = TensorTraits<A>;
+  using SeqI = typename StaticIntegralRange<std::size_t,ATraits::rank(),ATraits::rank()-N>::integer_sequence;
   using SeqJ = std::make_index_sequence<N>;
   return tensordot(a,SeqI{},b,SeqJ{},op1,op2);
 }
