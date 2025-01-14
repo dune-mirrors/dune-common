@@ -303,6 +303,21 @@ namespace Dune {
       return asImp()[i];
     }
 
+    //! random access with array of indices
+    template <class SizeType>
+      requires std::convertible_to<SizeType, size_type>
+    value_type & operator[] (std::array<SizeType,1> i)
+    {
+      return asImp()[i[0]];
+    }
+
+    template <class SizeType>
+      requires std::convertible_to<SizeType, size_type>
+    const value_type & operator[] (std::array<SizeType,1> i) const
+    {
+      return asImp()[i[0]];
+    }
+
     //! return reference to first element
     constexpr value_type& front()
     {

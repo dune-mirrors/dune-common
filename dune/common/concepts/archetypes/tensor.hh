@@ -12,6 +12,7 @@ namespace Dune::Concept::Archetypes {
 template <std::size_t r>
 struct Extents
 {
+  using rank_type = std::size_t;
   using index_type = std::size_t;
 
   static constexpr std::size_t rank () { return r; }
