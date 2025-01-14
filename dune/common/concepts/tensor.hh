@@ -8,6 +8,7 @@
 #include <array>
 #include <concepts>
 
+#include <dune/common/tensortraits.hh>
 #include <dune/common/concepts/archetypes/tensor.hh>
 
 namespace Dune::Concept {
@@ -55,7 +56,7 @@ requires(T tensor, std::array<typename T::index_type, T::rank()> indices)
 
 //! A `TensorWithRank` is a `Tensor` with given tensor-rank `rank`.
 template <class T, std::size_t rank>
-concept TensorWithRank = Tensor<T> && T::rank() == rank;
+concept TensorWithRank = Tensor<T> && TensorTraits<T>::rank() == rank;
 
 //! A `Vector` is a `Tensor` of rank 1.
 template <class T>
@@ -80,14 +81,14 @@ static_assert(Concept::Matrix<Archetypes::Tensor<double,2>>);
  */
 template <class T>
 concept RandomAccessTensor = Tensor<T> &&
-requires(T tensor, std::array<typename T::index_type, T::rank()> indices)
+requires(T tensor, std::array<typename TensorTraits<T>::index_type, TensorTraits<T>::rank()> indices)
 {
   tensor[indices];
 };
 
 //! A `RandomAccessTensorWithRank` is a `RandomAccessTensor` with given tensor-rank `rank`.
 template <class T, std::size_t rank>
-concept RandomAccessTensorWithRank = RandomAccessTensor<T> && T::rank() == rank;
+concept RandomAccessTensorWithRank = RandomAccessTensor<T> && TensorTraits<T>::rank() == rank;
 
 //! A `RandomAccessVector` is a `RandomAccessTensor` of rank 1.
 template <class T>

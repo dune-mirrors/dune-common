@@ -44,6 +44,11 @@ int main(int argc, char** argv)
   auto fMatrix23 = Dune::FieldMatrix<double,2,3>{};
   auto fMatrix32 = Dune::FieldMatrix<double,3,2>{};
 
+  auto fVector2 = Dune::FieldVector<double,2>{};
+  auto fVector3 = Dune::FieldVector<double,3>{};
+  auto fMatrix23 = Dune::FieldMatrix<double,2,3>{};
+  auto fMatrix32 = Dune::FieldMatrix<double,3,2>{};
+
   // test dynamic tensors
   {
     auto d = tensordot<0>(dTensor,dTensor);
