@@ -3,6 +3,10 @@
 // SPDX-FileCopyrightInfo: Copyright © DUNE Project contributors, see file LICENSE.md in module root
 // SPDX-License-Identifier: LicenseRef-GPL-2.0-only-with-DUNE-exception
 
+#include <dune/common/dynmatrix.hh>
+#include <dune/common/dynvector.hh>
+#include <dune/common/fmatrix.hh>
+#include <dune/common/fvector.hh>
 #include <dune/common/tensor.hh>
 #include <dune/common/tensordot.hh>
 #include <dune/common/tensorspan.hh>
@@ -23,12 +27,22 @@ int main(int argc, char** argv)
   auto dTensor32 = Dune::Tensor<double,Dune::dynamic,Dune::dynamic>{3,2};
   auto dTensor234 = Dune::Tensor<double,Dune::dynamic,Dune::dynamic,Dune::dynamic>{2,3,4};
 
+  auto dVector2 = Dune::DynamicVector<double>{2};
+  auto dVector3 = Dune::DynamicVector<double>{3};
+  auto dMatrix23 = Dune::DynamicMatrix<double>{2,3};
+  auto dMatrix32 = Dune::DynamicMatrix<double>{3,2};
+
   auto fTensor = Dune::Tensor<double>{};
   auto fTensor2 = Dune::Tensor<double,2>{};
   auto fTensor3 = Dune::Tensor<double,3>{};
   auto fTensor23 = Dune::Tensor<double,2,3>{};
   auto fTensor32 = Dune::Tensor<double,3,2>{};
   auto fTensor234 = Dune::Tensor<double,2,3,4>{};
+
+  auto fVector2 = Dune::FieldVector<double,2>{};
+  auto fVector3 = Dune::FieldVector<double,3>{};
+  auto fMatrix23 = Dune::FieldMatrix<double,2,3>{};
+  auto fMatrix32 = Dune::FieldMatrix<double,3,2>{};
 
   // test dynamic tensors
   {
@@ -52,6 +66,11 @@ int main(int argc, char** argv)
     testSuite.check(d23.rank() == 2);
     testSuite.check(d23.extent(0) == 2);
     testSuite.check(d23.extent(1) == 3);
+  }
+
+  {
+    auto d = tensordot<1>(dVector2,dVector2);
+    testSuite.check(d.rank() == 0);
   }
 
   {
@@ -101,6 +120,43 @@ int main(int argc, char** argv)
     testSuite.check(d2332.extent(3) == 2);
   }
 
+  {
+    auto d = tensordot<2>(dMatrix23,dMatrix23);
+    testSuite.check(d.rank() == 0);
+
+    auto d2 = tensordot<1>(dMatrix23,dVector3);
+    testSuite.check(d2.rank() == 1);
+    testSuite.check(d2.extent(0) == 2);
+
+    auto d3 = tensordot<1>(dVector2,dMatrix23);
+    testSuite.check(d3.rank() == 1);
+    testSuite.check(d3.extent(0) == 3);
+
+    auto d22 = tensordot<1>(dMatrix23,dMatrix32);
+    testSuite.check(d22.rank() == 2);
+    testSuite.check(d22.extent(0) == 2);
+    testSuite.check(d22.extent(1) == 2);
+
+    auto d223 = tensordot<0>(dVector2,dMatrix23);
+    testSuite.check(d223.rank() == 3);
+    testSuite.check(d223.extent(0) == 2);
+    testSuite.check(d223.extent(1) == 2);
+    testSuite.check(d223.extent(2) == 3);
+
+    auto d233 = tensordot<0>(dMatrix23,dVector3);
+    testSuite.check(d233.rank() == 3);
+    testSuite.check(d233.extent(0) == 2);
+    testSuite.check(d233.extent(1) == 3);
+    testSuite.check(d233.extent(2) == 3);
+
+    auto d2332 = tensordot<0>(dMatrix23,dMatrix32);
+    testSuite.check(d2332.rank() == 4);
+    testSuite.check(d2332.extent(0) == 2);
+    testSuite.check(d2332.extent(1) == 3);
+    testSuite.check(d2332.extent(2) == 3);
+    testSuite.check(d2332.extent(3) == 2);
+  }
+
   // test mixed static/dynamic tensors
   {
     auto d = tensordot<0>(fTensor,dTensor);
@@ -120,6 +176,16 @@ int main(int argc, char** argv)
     testSuite.check(d3.extent(0) == 3);
 
     auto d23 = tensordot<0>(fTensor2,dTensor3);
+    testSuite.check(d23.rank() == 2);
+    testSuite.check(d23.extent(0) == 2);
+    testSuite.check(d23.extent(1) == 3);
+  }
+
+  {
+    auto d = tensordot<1>(fVector2,dVector2);
+    testSuite.check(d.rank() == 0);
+
+    auto d23 = tensordot<0>(fVector2,dVector3);
     testSuite.check(d23.rank() == 2);
     testSuite.check(d23.extent(0) == 2);
     testSuite.check(d23.extent(1) == 3);
@@ -170,6 +236,24 @@ int main(int argc, char** argv)
     testSuite.check(d2332.extent(1) == 3);
     testSuite.check(d2332.extent(2) == 3);
     testSuite.check(d2332.extent(3) == 2);
+  }
+
+  {
+    auto d = tensordot<2>(fMatrix23,dTensor23);
+    testSuite.check(d.rank() == 0);
+
+    auto d2 = tensordot<1>(fMatrix23,dTensor3);
+    testSuite.check(d2.rank() == 1);
+    testSuite.check(d2.extent(0) == 2);
+
+    auto d3 = tensordot<1>(fVector2,dTensor23);
+    testSuite.check(d3.rank() == 1);
+    testSuite.check(d3.extent(0) == 3);
+
+    auto d22 = tensordot<1>(fMatrix23,dTensor32);
+    testSuite.check(d22.rank() == 2);
+    testSuite.check(d22.extent(0) == 2);
+    testSuite.check(d22.extent(1) == 2);
   }
 
   // test interaction with TensorSpan

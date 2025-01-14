@@ -104,6 +104,7 @@ install(FILES
         tensordot.hh
         tensormixin.hh
         tensorspan.hh
+        tensortraits.hh
         timer.hh
         transpose.hh
         tupleutility.hh
