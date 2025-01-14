@@ -27,10 +27,10 @@ int main(int argc, char** argv)
   auto dTensor32 = Dune::Tensor<double,Dune::dynamic,Dune::dynamic>{3,2};
   auto dTensor234 = Dune::Tensor<double,Dune::dynamic,Dune::dynamic,Dune::dynamic>{2,3,4};
 
-  auto dVector2 = Dune::DynamicVector<double>{2};
-  auto dVector3 = Dune::DynamicVector<double>{3};
-  auto dMatrix23 = Dune::DynamicMatrix<double>{2,3};
-  auto dMatrix32 = Dune::DynamicMatrix<double>{3,2};
+  auto dVector2 = Dune::DynamicVector<double>(2);
+  auto dVector3 = Dune::DynamicVector<double>(3);
+  auto dMatrix23 = Dune::DynamicMatrix<double>(2,3);
+  auto dMatrix32 = Dune::DynamicMatrix<double>(3,2);
 
   auto fTensor = Dune::Tensor<double>{};
   auto fTensor2 = Dune::Tensor<double,2>{};
