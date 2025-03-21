@@ -6,8 +6,8 @@
 #define DUNE_COMMON_TEST_FOREACHINDEX_HH
 
 #include <array>
+#include <concepts>
 #include <functional>
-#include <type_traits>
 #include <utility>
 
 #include <dune/common/forceinline.hh>
@@ -40,9 +40,8 @@ DUNE_FORCE_INLINE void forEachIndexImpl (const Extents& extents, Fun f, Indices.
 
 
 /// \brief Invoke the function `f` on all index-tuples in the multi dimensional index-space given by `extents`.
-template <class Extents, class Fun,
-  class I = std::array<typename Extents::index_type,Extents::rank()>,
-  std::enable_if_t<std::is_invocable_v<Fun,I>, int> = 0>
+template <class Extents, class Fun>
+  requires std::invocable<Fun, std::array<typename Extents::index_type,Extents::rank()>>
 DUNE_FORCE_INLINE void forEachIndex (const Extents& extents, Fun f)
 {
   Impl::forEachIndexImpl(extents, std::move(f));
