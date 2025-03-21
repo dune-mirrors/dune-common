@@ -165,8 +165,8 @@ void checkAccess(Dune::TestSuite& testSuite)
       subTestSuite.check(tensor[i] == 42.0);
       subTestSuite.check(tensor.at(i) == 42.0);
     }
-    subTestSuite.checkThrow<std::out_of_range>([&]{tensor.at(-1);});
-    subTestSuite.checkThrow<std::out_of_range>([&]{tensor.at(tensor.extent(0));});
+    subTestSuite.checkThrow<Dune::RangeError>([&]{tensor.at(-1);});
+    subTestSuite.checkThrow<Dune::RangeError>([&]{tensor.at(tensor.extent(0));});
   }
   else if constexpr(Tensor::rank() == 2) {
     for (std::size_t i = 0; i < Tensor::static_extent(0); ++i) {
@@ -175,8 +175,8 @@ void checkAccess(Dune::TestSuite& testSuite)
         subTestSuite.check(tensor(i,j) == 42.0);
         subTestSuite.check(tensor.at(i,j) == 42.0);
       }
-      subTestSuite.checkThrow<std::out_of_range>([&]{tensor.at(-1,-2);});
-      subTestSuite.checkThrow<std::out_of_range>([&]{tensor.at(tensor.extent(0),tensor.extent(1));});
+      subTestSuite.checkThrow<Dune::RangeError>([&]{tensor.at(-1,-2);});
+      subTestSuite.checkThrow<Dune::RangeError>([&]{tensor.at(tensor.extent(0),tensor.extent(1));});
     }
   }
   else if constexpr(Tensor::rank() == 3) {
@@ -187,8 +187,8 @@ void checkAccess(Dune::TestSuite& testSuite)
           subTestSuite.check(tensor(i,j,k) == 42.0);
           subTestSuite.check(tensor.at(i,j,k) == 42.0);
         }
-        subTestSuite.checkThrow<std::out_of_range>([&]{tensor.at(-1,-2,-3);});
-        subTestSuite.checkThrow<std::out_of_range>([&]{tensor.at(tensor.extent(0),tensor.extent(1),tensor.extent(2));});
+        subTestSuite.checkThrow<Dune::RangeError>([&]{tensor.at(-1,-2,-3);});
+        subTestSuite.checkThrow<Dune::RangeError>([&]{tensor.at(tensor.extent(0),tensor.extent(1),tensor.extent(2));});
       }
     }
   }
