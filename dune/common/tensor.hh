@@ -164,6 +164,27 @@ public:
     : base_type{Std::mdspan(other)}
   {}
 
+  /// \brief Copy constructor with default behavior
+  constexpr Tensor (const Tensor&) = default;
+
+  /// \brief Move constructor with default behavior
+  constexpr Tensor (Tensor&&) = default;
+
+  /// @}
+
+
+  /// \name Assignment operators
+  /// @{
+
+  /// \brief Assignment operators inherited from the mixin class and storage class
+  using base_type::operator=;
+
+  /// \brief Copy assignment-operator with default behavior
+  constexpr Tensor& operator= (const Tensor&) = default;
+
+  /// \brief Move assignment-operator with default behavior
+  constexpr Tensor& operator= (Tensor&&) = default;
+
   /// @}
 
 
