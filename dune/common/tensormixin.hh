@@ -93,7 +93,7 @@ public:
 
   /**
    * \brief Access specified element at position (i0,i1,...) with mutable access
-   * \throws std::out_of_range if the indices are out of the index space `[0,extent_0)x...x[0,extent_{r-1})`.
+   * \throws Dune::RangeError if the indices are out of the index space `[0,extent_0)x...x[0,extent_{r-1})`.
    */
   template <std::convertible_to<index_type>... Indices>
     requires (sizeof...(Indices) == extents_type::rank())
@@ -106,7 +106,7 @@ public:
 
   /**
    * \brief Access specified element at position (i0,i1,...) with const access
-   * \throws std::out_of_range if the indices are out of the index space `[0,extent_0)x...x[0,extent_{r-1})`.
+   * \throws Dune::RangeError if the indices are out of the index space `[0,extent_0)x...x[0,extent_{r-1})`.
    */
   template <std::convertible_to<index_type>... Indices>
     requires (sizeof...(Indices) == extents_type::rank())
