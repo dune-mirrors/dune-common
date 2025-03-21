@@ -6,6 +6,7 @@
 #define DUNE_COMMON_TENSORSPAN_HH
 
 #include <array>
+#include <concepts>
 #include <type_traits>
 
 #include <dune/common/ftraits.hh>
@@ -55,19 +56,17 @@ public:
   using base_type::base_type;
 
   /// \brief Converting constructor
-  template <class V, class E, class L, class A,
-    class M = typename L::template mapping<E>,
-    std::enable_if_t<std::is_constructible_v<mapping_type, const M&>, int> = 0,
-    std::enable_if_t<std::is_constructible_v<accessor_type, const A&>, int> = 0>
+  template <class V, class E, class L, class A, class M = typename L::template mapping<E>>
+    requires (std::is_constructible_v<mapping_type, const M&> &&
+              std::is_constructible_v<accessor_type, const A&>)
   constexpr TensorSpan (const TensorSpan<V,E,L,A>& other)
     : base_type{other}
   {}
 
   /// \brief Converting move constructor
-  template <class V, class E, class L, class A,
-    class M = typename L::template mapping<E>,
-    std::enable_if_t<std::is_constructible_v<mapping_type, const M&>, int> = 0,
-    std::enable_if_t<std::is_constructible_v<accessor_type, const A&>, int> = 0>
+  template <class V, class E, class L, class A, class M = typename L::template mapping<E>>
+    requires (std::is_constructible_v<mapping_type, const M&> &&
+              std::is_constructible_v<accessor_type, const A&>)
   constexpr TensorSpan (TensorSpan<V,E,L,A>&& tensor)
     : base_type{std::move(tensor)}
   {}
@@ -88,32 +87,30 @@ public:
 // deduction guides
 // @{
 
-template <class CArray,
-  std::enable_if_t<std::is_array_v<CArray>, int> = 0,
-  std::enable_if_t<(std::rank_v<CArray> == 1), int> = 0>
+template <class CArray>
+  requires (std::is_array_v<CArray> && (std::rank_v<CArray> == 1))
 TensorSpan (CArray&)
   -> TensorSpan<std::remove_all_extents_t<CArray>, Std::extents<std::size_t, std::extent_v<CArray,0>>>;
 
-template <class Pointer,
-  std::enable_if_t<std::is_pointer_v<std::remove_reference_t<Pointer>>, int> = 0>
+template <class Pointer>
+  requires (std::is_pointer_v<std::remove_reference_t<Pointer>>)
 TensorSpan (Pointer&&)
   -> TensorSpan<std::remove_pointer_t<std::remove_reference_t<Pointer>>, Std::extents<std::size_t>>;
 
-template <class element_type, class... II,
-  std::enable_if_t<(... && std::is_convertible_v<II,std::size_t>), int> = 0,
-  std::enable_if_t<(sizeof...(II) > 0), int> = 0>
+template <class element_type, std::convertible_to<std::size_t>... II>
+  requires (sizeof...(II) > 0)
 TensorSpan (element_type*, II...)
   -> TensorSpan<element_type, Std::dextents<std::size_t, sizeof...(II)>>;
 
-template <class element_type, class SizeType, std::size_t N>
+template <class element_type, std::integral SizeType, std::size_t N>
 TensorSpan (element_type*, Std::span<SizeType,N>&)
   -> TensorSpan<element_type, Std::dextents<std::size_t, N>>;
 
-template <class element_type, class SizeType, std::size_t N>
+template <class element_type, std::integral SizeType, std::size_t N>
 TensorSpan (element_type*, const std::array<SizeType,N>&)
   -> TensorSpan<element_type, Std::dextents<std::size_t, N>>;
 
-template <class element_type, class IndexType, std::size_t... exts>
+template <class element_type, std::integral IndexType, std::size_t... exts>
 TensorSpan (element_type*, const Std::extents<IndexType,exts...>&)
   -> TensorSpan<element_type, Std::extents<IndexType,exts...>>;
 

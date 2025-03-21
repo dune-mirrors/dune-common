@@ -6,6 +6,7 @@
 #define DUNE_COMMON_TENSORMIXIN_HH
 
 #include <cassert>
+#include <concepts>
 #include <stdexcept>
 #include <type_traits>
 #include <utility>
@@ -68,18 +69,16 @@ public:
   /// @{
 
   /// \brief Access specified element at position (i0,i1,...) with mutable access
-  template <class... Indices,
-    std::enable_if_t<(sizeof...(Indices) == extents_type::rank()), int> = 0,
-    std::enable_if_t<(... && std::is_convertible_v<Indices, index_type>), int> = 0>
+  template <std::convertible_to<index_type>... Indices>
+    requires (sizeof...(Indices) == extents_type::rank())
   constexpr reference operator() (Indices... indices)
   {
     return base_type::operator[](std::array<index_type,extents_type::rank()>{index_type(indices)...});
   }
 
   /// \brief Access specified element at position (i0,i1,...) with const access
-  template <class... Indices,
-    std::enable_if_t<(sizeof...(Indices) == extents_type::rank()), int> = 0,
-    std::enable_if_t<(... && std::is_convertible_v<Indices, index_type>), int> = 0>
+  template <std::convertible_to<index_type>... Indices>
+    requires (sizeof...(Indices) == extents_type::rank())
   constexpr const_reference operator() (Indices... indices) const
   {
     return base_type::operator[](std::array<index_type,extents_type::rank()>{index_type(indices)...});
@@ -89,9 +88,8 @@ public:
    * \brief Access specified element at position (i0,i1,...) with mutable access
    * \throws std::out_of_range if the indices are out of the index space `[0,extent_0)x...x[0,extent_{r-1})`.
    */
-  template <class... Indices,
-    std::enable_if_t<(sizeof...(Indices) == extents_type::rank()), int> = 0,
-    std::enable_if_t<(... && std::is_convertible_v<Indices, index_type>), int> = 0>
+  template <std::convertible_to<index_type>... Indices>
+    requires (sizeof...(Indices) == extents_type::rank())
   constexpr reference at (Indices... indices)
   {
     if (not indexInIndexSpace(indices...))
@@ -103,9 +101,8 @@ public:
    * \brief Access specified element at position (i0,i1,...) with const access
    * \throws std::out_of_range if the indices are out of the index space `[0,extent_0)x...x[0,extent_{r-1})`.
    */
-  template <class... Indices,
-    std::enable_if_t<(sizeof...(Indices) == extents_type::rank()), int> = 0,
-    std::enable_if_t<(... && std::is_convertible_v<Indices, index_type>), int> = 0>
+  template <std::convertible_to<index_type>... Indices>
+    requires (sizeof...(Indices) == extents_type::rank())
   constexpr const_reference at (Indices... indices) const
   {
     if (not indexInIndexSpace(indices...))
@@ -114,33 +111,29 @@ public:
   }
 
   /// \brief Access element at position [{i0,i1,...}]
-  template <class Index,
-    std::enable_if_t<std::is_convertible_v<const Index&, index_type>, int> = 0>
+  template <std::convertible_to<index_type> Index>
   constexpr reference operator[] (const std::array<Index,extents_type::rank()>& indices)
   {
     return base_type::operator[](indices);
   }
 
   /// \brief Access element at position [{i0,i1,...}]
-  template <class Index,
-    std::enable_if_t<std::is_convertible_v<const Index&, index_type>, int> = 0>
+  template <std::convertible_to<index_type> Index>
   constexpr const_reference operator[] (const std::array<Index,extents_type::rank()>& indices) const
   {
     return base_type::operator[](indices);
   }
 
   /// \brief Access vector-element at position [i0] with mutable access.
-  template <class E = extents_type,
-    std::enable_if_t<(E::rank() == 1), int> = 0>
   constexpr reference operator[] (index_type index) noexcept
+        requires (extents_type::rank() == 1)
   {
     return base_type::operator[](std::array{index});
   }
 
   /// \brief Access vector-element at position [i0] with const access.
-  template <class E = extents_type,
-    std::enable_if_t<(E::rank() == 1), int> = 0>
   constexpr const_reference operator[] (index_type index) const noexcept
+        requires (extents_type::rank() == 1)
   {
     return base_type::operator[](std::array{index});
   }
@@ -149,9 +142,8 @@ public:
    * \brief Return true when (i0,i1,...) is in pattern.
    * This is always true for dense tensors.
    **/
-  template <class... Indices,
-    std::enable_if_t<(sizeof...(Indices) == extents_type::rank()), int> = 0,
-    std::enable_if_t<(... && std::is_convertible_v<Indices, index_type>), int> = 0>
+  template <std::convertible_to<index_type>... Indices>
+    requires (sizeof...(Indices) == extents_type::rank())
   constexpr bool exists (Indices... indices) const noexcept
   {
     return indexInIndexSpace(indices...);
@@ -164,17 +156,15 @@ public:
   /// @{
 
   /// \brief Number of rows of a rank-2 tensor
-  template <class E = extents_type,
-    std::enable_if_t<(E::rank() == 2), int> = 0>
   constexpr index_type rows () const noexcept
+        requires (extents_type::rank() == 2)
   {
     return asBase().extent(0);
   }
 
   /// \brief Number of columns of a rank-2 tensor
-  template <class E = extents_type,
-    std::enable_if_t<(E::rank() == 2), int> = 0>
   constexpr index_type cols () const noexcept
+        requires (extents_type::rank() == 2)
   {
     return asBase().extent(1);
   }
@@ -185,10 +175,10 @@ public:
   /// \name Conversion to the underlying value if rank is zero
   // @{
 
-  template <class ScalarType, class E = extents_type,
-    std::enable_if_t<std::is_convertible_v<value_type,ScalarType>, int> = 0,
-    std::enable_if_t<(E::rank() == 0), int> = 0>
+  template <class ScalarType>
+    requires std::convertible_to<value_type,ScalarType>
   constexpr operator ScalarType () const noexcept
+        requires (extents_type::rank() == 0)
   {
     return ScalarType(base_type::operator[](std::array<index_type,0>{}));
   }
@@ -236,20 +226,18 @@ private:
 };
 
 // specialization for rank-0 tensor and comparison with scalar
-template <class D, class B, class V, class E = typename B::extents_type,
-  std::enable_if_t<(E::rank() == 0), int> = 0,
-  std::enable_if_t<std::is_convertible_v<V, typename B::value_type>, int> = 0,
-  std::enable_if_t<std::is_constructible_v<typename B::value_type, V>, int> = 0>
+template <class D, class B, std::convertible_to<typename B::value_type> V>
+  requires (B::extents_type::rank() == 0 &&
+            std::is_constructible_v<typename B::value_type, V>)
 constexpr bool operator== (const TensorMixin<D,B>& lhs, const V& rhs) noexcept
 {
   return lhs() == rhs;
 }
 
 // specialization for rank-0 tensor and comparison with scalar
-template <class V, class D, class B, class E = typename B::extents_type,
-  std::enable_if_t<(E::rank() == 0), int> = 0,
-  std::enable_if_t<std::is_convertible_v<V, typename B::value_type>, int> = 0,
-  std::enable_if_t<std::is_constructible_v<typename B::value_type, V>, int> = 0>
+template <class D, class B, std::convertible_to<typename B::value_type> V>
+  requires (B::extents_type::rank() == 0 &&
+            std::is_constructible_v<typename B::value_type, V>)
 constexpr bool operator== (const V& lhs, const TensorMixin<D,B>& rhs) noexcept
 {
   return lhs == rhs();

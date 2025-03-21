@@ -6,6 +6,7 @@
 #define DUNE_COMMON_TENSOR_HH
 
 #include <array>
+#include <concepts>
 #include <type_traits>
 #include <vector>
 
@@ -89,9 +90,8 @@ public:
    };
    * \endcode
    **/
-  template <class E = extents_type,
-    std::enable_if_t<(E::rank_dynamic() == 0), int> = 0,
-    std::enable_if_t<std::is_default_constructible_v<E>, int> = 0>
+  template <class E = extents_type>
+    requires (E::rank_dynamic() == 0 && std::is_default_constructible_v<E>)
   constexpr Tensor (NestedInitializerList_t<value_type,extents_type::rank()> init)
     : Tensor{extents_type{}, init}
   {}
@@ -109,8 +109,8 @@ public:
    });
    * \endcode
    **/
-  template <class M = mapping_type,
-    std::enable_if_t<std::is_constructible_v<M,extents_type>, int> = 0>
+  template <class M = mapping_type>
+    requires (std::is_constructible_v<M,extents_type>)
   constexpr Tensor (const extents_type& e, NestedInitializerList_t<value_type,extents_type::rank()> init)
     : Tensor{mapping_type{e}, init}
   {}
@@ -127,10 +127,9 @@ public:
    });
    * \endcode
    **/
-  template <class Otherindex_type, std::size_t N,
-    std::enable_if_t<std::is_convertible_v<const Otherindex_type&, index_type>, int> = 0,
-    std::enable_if_t<std::is_nothrow_constructible_v<index_type,const Otherindex_type&>, int> = 0,
-    std::enable_if_t<(N == extents_type::rank_dynamic() || N == extents_type::rank()), int> = 0>
+  template <std::convertible_to<index_type> Otherindex_type, std::size_t N>
+    requires (std::is_nothrow_constructible_v<index_type,const Otherindex_type&> &&
+              (N == extents_type::rank_dynamic() || N == extents_type::rank()))
   constexpr Tensor (Std::span<Otherindex_type,N> e,
                     NestedInitializerList_t<value_type,extents_type::rank()> init)
     : Tensor{mapping_type{extents_type{e}}, init}
@@ -159,8 +158,8 @@ public:
   }
 
   /// \brief Converting constructor from another TensorMixin
-  template <class D, class B,
-    std::enable_if_t<std::is_constructible_v<base_type, B>, int> = 0>
+  template <class D, class B>
+    requires std::constructible_from<base_type, B>
   constexpr Tensor (const TensorMixin<D,B>& other)
     : base_type{Std::mdspan(other)}
   {}
@@ -198,8 +197,7 @@ public:
   /// @{
 
   /// \brief Change the extents of the tensor and resize the underlying container with given default value
-  template <class V,
-    std::enable_if_t<std::is_convertible_v<V,value_type>, int> = 0>
+  template <std::convertible_to<value_type> V>
   void resize (const extents_type& e, const V& value)
   {
     auto container = std::move(*this).extract_container();
@@ -215,23 +213,20 @@ public:
   }
 
   /// \brief Change the extents of the tensor by the given individual extents
-  template <class... index_types, class V,
-    std::enable_if_t<(sizeof...(index_types) == extents_type::rank() ||
-                      sizeof...(index_types) == extents_type::rank_dynamic()), int> = 0,
-    std::enable_if_t<(... && std::is_convertible_v<index_types,index_type>), int> = 0,
-    std::enable_if_t<std::is_constructible_v<extents_type,index_types...>, int> = 0,
-    std::enable_if_t<std::is_convertible_v<V,value_type>, int> = 0>
+  template <std::convertible_to<index_type>... index_types, std::convertible_to<value_type> V>
+    requires ((sizeof...(index_types) == extents_type::rank() ||
+               sizeof...(index_types) == extents_type::rank_dynamic()) &&
+              std::is_constructible_v<extents_type,index_types...>)
   void resize (index_types... exts, const V& v)
   {
     resize(extents_type{exts...}, v);
   }
 
   /// \brief Change the extents of the tensor by the given individual extents
-  template <class... index_types,
-    std::enable_if_t<(sizeof...(index_types) == extents_type::rank() ||
-                      sizeof...(index_types) == extents_type::rank_dynamic()), int> = 0,
-    std::enable_if_t<(... && std::is_convertible_v<index_types,index_type>), int> = 0,
-    std::enable_if_t<std::is_constructible_v<extents_type,index_types...>, int> = 0>
+  template <std::convertible_to<index_type>... index_types>
+    requires ((sizeof...(index_types) == extents_type::rank() ||
+               sizeof...(index_types) == extents_type::rank_dynamic()) &&
+              std::is_constructible_v<extents_type,index_types...>)
   void resize (index_types... exts)
   {
     resize(extents_type{exts...}, value_type(0));
@@ -244,25 +239,24 @@ public:
   /// @{
 
   /// \brief Conversion operator to TensorSpan
-  template <class V, class E, class L, class A,
-    std::enable_if_t<std::is_assignable_v<TensorSpan<V,E,L,A>, tensorspan_type>, int> = 0>
+  template <class V, class E, class L, class A>
+    requires std::assignable_from<TensorSpan<V,E,L,A>&, tensorspan_type>
   constexpr operator TensorSpan<V,E,L,A> ()
   {
     return tensorspan_type(this->container_data(), this->mapping());
   }
 
   /// \brief Conversion operator to TensorSpan
-  template <class V, class E, class L, class A,
-    std::enable_if_t<std::is_assignable_v<TensorSpan<V,E,L,A>, const_tensorspan_type>, int> = 0>
+  template <class V, class E, class L, class A>
+    requires std::assignable_from<TensorSpan<V,E,L,A>&, const_tensorspan_type>
   constexpr operator TensorSpan<V,E,L,A> () const
   {
     return const_tensorspan_type(this->container_data(), this->mapping());
   }
 
   /// \brief Conversion function to TensorSpan
-  template <class A = Std::default_accessor<element_type>,
-    std::enable_if_t<
-      std::is_assignable_v<tensorspan_type, TensorSpan<element_type,extents_type,layout_type,A>>, int> = 0>
+  template <class A = Std::default_accessor<element_type>>
+    requires std::assignable_from<tensorspan_type&, TensorSpan<element_type,extents_type,layout_type,A>>
   constexpr TensorSpan<element_type,extents_type,layout_type,A>
   toTensorSpan (const A& accessor = A{})
   {
@@ -270,9 +264,8 @@ public:
   }
 
   /// \brief Conversion function to TensorSpan
-  template <class A = Std::default_accessor<const element_type>,
-    std::enable_if_t<
-      std::is_assignable_v<const_tensorspan_type, TensorSpan<const element_type,extents_type,layout_type,A>>, int> = 0>
+  template <class A = Std::default_accessor<const element_type>>
+    requires std::assignable_from<const_tensorspan_type&, TensorSpan<const element_type,extents_type,layout_type,A>>
   constexpr TensorSpan<const element_type,extents_type,layout_type,A>
   toTensorSpan (const A& accessor = A{}) const
   {
@@ -308,29 +301,34 @@ template <class index_type, std::size_t... exts, class value_type>
 Tensor (Std::extents<index_type, exts...>, value_type)
   -> Tensor<value_type, exts...>;
 
-template <class Mapping, class value_type,
-  std::enable_if_t<Impl::IsLayoutMapping<Mapping>::value, int> = 0,
-  std::enable_if_t<(Mapping::extents_type::rank() == 0), int> = 0>
+// NOTE: since deduction guides cannot be unrolled or defined inside a
+// helper class, we need to write out the specialization for the different
+// ranks. This is done up to tensor rank 3. Higher order ranks cannot rely
+// on CTAD.
+
+template <class Mapping, class value_type>
+  requires (Impl::IsLayoutMapping<Mapping>::value &&
+            (Mapping::extents_type::rank() == 0))
 Tensor (Mapping, value_type)
   -> Tensor<value_type>;
 
-template <class Mapping, class value_type,
-  std::enable_if_t<Impl::IsLayoutMapping<Mapping>::value, int> = 0,
-  std::enable_if_t<(Mapping::extents_type::rank() == 1), int> = 0>
+template <class Mapping, class value_type>
+  requires (Impl::IsLayoutMapping<Mapping>::value &&
+            (Mapping::extents_type::rank() == 1))
 Tensor (Mapping, value_type)
   -> Tensor<value_type, Mapping::extents_type::static_extent(0)>;
 
-template <class Mapping, class value_type,
-  std::enable_if_t<Impl::IsLayoutMapping<Mapping>::value, int> = 0,
-  std::enable_if_t<(Mapping::extents_type::rank() == 2), int> = 0>
+template <class Mapping, class value_type>
+  requires (Impl::IsLayoutMapping<Mapping>::value &&
+            (Mapping::extents_type::rank() == 2))
 Tensor (Mapping, value_type)
   -> Tensor<value_type,
       Mapping::extents_type::static_extent(0),
       Mapping::extents_type::static_extent(1)>;
 
-template <class Mapping, class value_type,
-  std::enable_if_t<Impl::IsLayoutMapping<Mapping>::value, int> = 0,
-  std::enable_if_t<(Mapping::extents_type::rank() == 3), int> = 0>
+template <class Mapping, class value_type>
+  requires (Impl::IsLayoutMapping<Mapping>::value &&
+            (Mapping::extents_type::rank() == 3))
 Tensor (Mapping, value_type)
   -> Tensor<value_type,
       Mapping::extents_type::static_extent(0),
@@ -341,29 +339,29 @@ template <class index_type, std::size_t... exts, class value_type, class Alloc>
 Tensor (Std::extents<index_type, exts...>, value_type, const Alloc&)
   -> Tensor<value_type, exts...>;
 
-template <class Mapping, class value_type, class Alloc,
-  std::enable_if_t<Impl::IsLayoutMapping<Mapping>::value, int> = 0,
-  std::enable_if_t<(Mapping::extents_type::rank() == 0), int> = 0>
+template <class Mapping, class value_type, class Alloc>
+  requires (Impl::IsLayoutMapping<Mapping>::value &&
+            (Mapping::extents_type::rank() == 0))
 Tensor (Mapping, value_type, const Alloc&)
   -> Tensor<value_type>;
 
-template <class Mapping, class value_type, class Alloc,
-  std::enable_if_t<Impl::IsLayoutMapping<Mapping>::value, int> = 0,
-  std::enable_if_t<(Mapping::extents_type::rank() == 1), int> = 0>
+template <class Mapping, class value_type, class Alloc>
+  requires (Impl::IsLayoutMapping<Mapping>::value &&
+            (Mapping::extents_type::rank() == 1))
 Tensor (Mapping, value_type, const Alloc&)
   -> Tensor<value_type, Mapping::extents_type::static_extent(0)>;
 
-template <class Mapping, class value_type, class Alloc,
-  std::enable_if_t<Impl::IsLayoutMapping<Mapping>::value, int> = 0,
-  std::enable_if_t<(Mapping::extents_type::rank() == 2), int> = 0>
+template <class Mapping, class value_type, class Alloc>
+  requires (Impl::IsLayoutMapping<Mapping>::value &&
+            (Mapping::extents_type::rank() == 2))
 Tensor (Mapping, value_type, const Alloc&)
   -> Tensor<value_type,
       Mapping::extents_type::static_extent(0),
       Mapping::extents_type::static_extent(1)>;
 
-template <class Mapping, class value_type, class Alloc,
-  std::enable_if_t<Impl::IsLayoutMapping<Mapping>::value, int> = 0,
-  std::enable_if_t<(Mapping::extents_type::rank() == 3), int> = 0>
+template <class Mapping, class value_type, class Alloc>
+  requires (Impl::IsLayoutMapping<Mapping>::value &&
+            (Mapping::extents_type::rank() == 3))
 Tensor (Mapping, value_type, const Alloc&)
   -> Tensor<value_type,
       Mapping::extents_type::static_extent(0),
