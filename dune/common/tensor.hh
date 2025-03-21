@@ -26,12 +26,12 @@ static constexpr inline std::size_t dynamic = Std::dynamic_extent;
 namespace Impl {
 
 template <class Element, std::size_t... extents>
-struct TensorTraits
+struct TensorStorageType
 {
   using container_type = std::conditional_t<((extents == Dune::dynamic) || ...),
     std::vector<Element>, std::array<Element, (extents * ... * std::size_t(1))>>;
   using extents_type = Std::extents<typename container_type::size_type,extents...>;
-  using storage_type = Std::mdarray<Element, extents_type, Std::layout_right, container_type>;
+  using type = Std::mdarray<Element, extents_type, Std::layout_right, container_type>;
 };
 
 } // end namespace Impl
@@ -51,10 +51,10 @@ struct TensorTraits
 template <class Element, std::size_t... extents>
 class Tensor
     : public TensorMixin<Tensor<Element,extents...>,
-        typename Impl::TensorTraits<Element,extents...>::storage_type>
+        typename Impl::TensorStorageType<Element,extents...>::type>
 {
   using self_type = Tensor;
-  using storage_type = typename Impl::TensorTraits<Element,extents...>::storage_type;
+  using storage_type = typename Impl::TensorStorageType<Element,extents...>::type;
   using base_type = TensorMixin<self_type, storage_type>;
 
 public:
