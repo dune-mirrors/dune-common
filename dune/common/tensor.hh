@@ -261,7 +261,7 @@ public:
 
   /// \brief Conversion operator to TensorSpan
   template <class V, class E, class L, class A>
-    requires std::assignable_from<TensorSpan<V,E,L,A>&, tensorspan_type>
+    requires std::constructible_from<TensorSpan<V,E,L,A>, tensorspan_type>
   constexpr operator TensorSpan<V,E,L,A> ()
   {
     return tensorspan_type(this->container_data(), this->mapping());
@@ -269,7 +269,7 @@ public:
 
   /// \brief Conversion operator to TensorSpan
   template <class V, class E, class L, class A>
-    requires std::assignable_from<TensorSpan<V,E,L,A>&, const_tensorspan_type>
+    requires std::constructible_from<TensorSpan<V,E,L,A>, const_tensorspan_type>
   constexpr operator TensorSpan<V,E,L,A> () const
   {
     return const_tensorspan_type(this->container_data(), this->mapping());
@@ -382,6 +382,15 @@ Tensor (Std::mdspan<V,Dune::Std::extents<I,exts...>,L,C>)
   -> Tensor<std::remove_cv_t<V>, exts...>;
 
 /// @}
+
+
+template <class V, std::size_t... exts>
+TensorSpan (Tensor<V,exts...>&)
+  -> TensorSpan<V,typename Impl::TensorStorageType<V,exts...>::extents_type,Std::layout_right,Std::default_accessor<V>>;
+
+template <class V, std::size_t... exts>
+TensorSpan (const Tensor<V,exts...>&)
+  -> TensorSpan<const V,typename Impl::TensorStorageType<V,exts...>::extents_type,Std::layout_right,Std::default_accessor<const V>>;
 
 
 template <class V, std::size_t... exts>

@@ -41,7 +41,24 @@ void checkEqualValue(Dune::TestSuite& testSuite, Tensor const& a, typename Tenso
 template <class D, class B>
 void call (const TensorMixin<D,B>& tensor)
 {
-  // it is possible to call a function that expects the TensorInterface base class
+  // it is possible to call a function that expects the TensorMixin base class
+}
+
+void call2 (TensorSpan<const double, Std::dextents<int,0>> tensorspan)
+{
+  // it is possible to call a function that expects the TensorSpan argument
+}
+void call2 (TensorSpan<const double, Std::dextents<int,1>> tensorspan)
+{
+  // it is possible to call a function that expects the TensorSpan argument
+}
+void call2 (TensorSpan<const double, Std::dextents<int,2>> tensorspan)
+{
+  // it is possible to call a function that expects the TensorSpan argument
+}
+void call2 (TensorSpan<const double, Std::dextents<int,3>> tensorspan)
+{
+  // it is possible to call a function that expects the TensorSpan argument
 }
 
 template <class Tensor>
@@ -138,7 +155,16 @@ void checkConstructors(Dune::TestSuite& testSuite)
     subTestSuite.check(tensor10(1,1) == 9.0);
   }
 
+  // check whether a function with a TensorMixin argument can be called
   call(tensor);
+
+  TensorSpan span(tensor);
+  TensorSpan span2(tensor.toTensorSpan());
+
+  // check whether a function with a TensorSpan argument can be called
+  call2(tensor);
+  call2(tensor.toTensorSpan());
+
   testSuite.subTest(subTestSuite);
 }
 
