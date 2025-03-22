@@ -296,11 +296,17 @@ public:
   /// @}
 };
 
-namespace Impl {
+
+namespace Concept {
 
 template <class M>
-using IsLayoutMapping = std::is_same<M,
-    typename M::layout_type::template mapping<typename M::extents_type>>;
+concept LayoutMapping = std::same_as<M,
+      typename M::layout_type::template mapping<typename M::extents_type>>;
+
+} // end namespace Concept
+
+
+namespace Impl {
 
 template <class V, class E>
 struct TensorFromExtents;
@@ -327,29 +333,25 @@ Tensor (Std::extents<index_type, exts...>, value_type)
 // ranks. This is done up to tensor rank 3. Higher order ranks cannot rely
 // on CTAD.
 
-template <class Mapping, class value_type>
-  requires (Impl::IsLayoutMapping<Mapping>::value &&
-            (Mapping::extents_type::rank() == 0))
+template <Concept::LayoutMapping Mapping, class value_type>
+  requires (Mapping::extents_type::rank() == 0)
 Tensor (Mapping, value_type)
   -> Tensor<value_type>;
 
-template <class Mapping, class value_type>
-  requires (Impl::IsLayoutMapping<Mapping>::value &&
-            (Mapping::extents_type::rank() == 1))
+template <Concept::LayoutMapping Mapping, class value_type>
+  requires (Mapping::extents_type::rank() == 1)
 Tensor (Mapping, value_type)
   -> Tensor<value_type, Mapping::extents_type::static_extent(0)>;
 
-template <class Mapping, class value_type>
-  requires (Impl::IsLayoutMapping<Mapping>::value &&
-            (Mapping::extents_type::rank() == 2))
+template <Concept::LayoutMapping Mapping, class value_type>
+  requires (Mapping::extents_type::rank() == 2)
 Tensor (Mapping, value_type)
   -> Tensor<value_type,
       Mapping::extents_type::static_extent(0),
       Mapping::extents_type::static_extent(1)>;
 
-template <class Mapping, class value_type>
-  requires (Impl::IsLayoutMapping<Mapping>::value &&
-            (Mapping::extents_type::rank() == 3))
+template <Concept::LayoutMapping Mapping, class value_type>
+  requires (Mapping::extents_type::rank() == 3)
 Tensor (Mapping, value_type)
   -> Tensor<value_type,
       Mapping::extents_type::static_extent(0),
@@ -360,29 +362,25 @@ template <class index_type, std::size_t... exts, class value_type, class Alloc>
 Tensor (Std::extents<index_type, exts...>, value_type, const Alloc&)
   -> Tensor<value_type, exts...>;
 
-template <class Mapping, class value_type, class Alloc>
-  requires (Impl::IsLayoutMapping<Mapping>::value &&
-            (Mapping::extents_type::rank() == 0))
+template <Concept::LayoutMapping Mapping, class value_type, class Alloc>
+  requires (Mapping::extents_type::rank() == 0)
 Tensor (Mapping, value_type, const Alloc&)
   -> Tensor<value_type>;
 
-template <class Mapping, class value_type, class Alloc>
-  requires (Impl::IsLayoutMapping<Mapping>::value &&
-            (Mapping::extents_type::rank() == 1))
+template <Concept::LayoutMapping Mapping, class value_type, class Alloc>
+  requires (Mapping::extents_type::rank() == 1)
 Tensor (Mapping, value_type, const Alloc&)
   -> Tensor<value_type, Mapping::extents_type::static_extent(0)>;
 
-template <class Mapping, class value_type, class Alloc>
-  requires (Impl::IsLayoutMapping<Mapping>::value &&
-            (Mapping::extents_type::rank() == 2))
+template <Concept::LayoutMapping Mapping, class value_type, class Alloc>
+  requires (Mapping::extents_type::rank() == 2)
 Tensor (Mapping, value_type, const Alloc&)
   -> Tensor<value_type,
       Mapping::extents_type::static_extent(0),
       Mapping::extents_type::static_extent(1)>;
 
-template <class Mapping, class value_type, class Alloc>
-  requires (Impl::IsLayoutMapping<Mapping>::value &&
-            (Mapping::extents_type::rank() == 3))
+template <Concept::LayoutMapping Mapping, class value_type, class Alloc>
+  requires (Mapping::extents_type::rank() == 3)
 Tensor (Mapping, value_type, const Alloc&)
   -> Tensor<value_type,
       Mapping::extents_type::static_extent(0),
