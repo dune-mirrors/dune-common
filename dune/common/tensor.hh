@@ -306,20 +306,6 @@ concept LayoutMapping = std::same_as<M,
 } // end namespace Concept
 
 
-namespace Impl {
-
-template <class V, class E>
-struct TensorFromExtents;
-
-template <class V, class I, std::size_t... exts>
-struct TensorFromExtents<V, Dune::Std::extents<I, exts...>>
-{
-  using type = Dune::Tensor<V, exts...>;
-};
-
-} // end namespace Impl
-
-
 /// \name Deduction guides
 /// \relates Tensor
 /// @{
