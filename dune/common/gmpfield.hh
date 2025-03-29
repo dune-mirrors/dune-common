@@ -92,12 +92,16 @@ namespace Dune
     //! type conversion operators
     operator double () const
     {
-#if HAVE_MPFR
-      return this->toDouble();
-#elif HAVE_GMPXX
       return this->get_d();
-#endif
     }
+
+#if HAVE_MPFR
+    //! return a double representation
+    double get_d () const
+    {
+      return this->toDouble();
+    }
+#endif
   };
 
   template <unsigned int precision>
