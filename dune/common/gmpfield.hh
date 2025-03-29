@@ -186,14 +186,14 @@ namespace Dune
 
 namespace std
 {
-  /// Specialization of numeric_limits for known precision width
 #if HAVE_MPFR
   template <unsigned int precision>
-  inline void swap(Dune::GMPField<precision>& x, Dune::GMPField<precision>& y)
+  inline void swap (Dune::GMPField<precision>& x, Dune::GMPField<precision>& y)
   {
-      return mpfr::swap(x, y);
+    return mpfr::swap(x, y);
   }
 
+  //! Specialization of numeric_limits for known precision width
   template <unsigned int precision>
   class numeric_limits<Dune::GMPField<precision>>
       : public numeric_limits<mpfr::mpreal>
@@ -226,9 +226,9 @@ namespace std
   };
 #elif HAVE_GMPXX
   template <unsigned int precision>
-  inline void swap(Dune::GMPField<precision>& x, Dune::GMPField<precision>& y)
+  inline void swap (Dune::GMPField<precision>& x, Dune::GMPField<precision>& y)
   {
-      return x.swap(y);
+    return x.swap(y);
   }
 
   // NOTE that the specialization of std::numeric_limits for mpf_class is not usable
