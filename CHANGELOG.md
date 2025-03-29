@@ -143,6 +143,11 @@ In order to build the DUNE core modules you need at least the following software
 - Add converting constructor and assignment operator to `FieldMatrix` and `DiagonalMatrix` to
   allow assignments between `FieldMatrix`es of different field types.
 
+- Add a new multi-precision backend, `MPFR`, as alternative to the outdated `GMPXX`. It
+  implements the same class `GMPField` but additionally provides proper specialization of
+  `std::numeric_limits`. If `MPFR` is not found, `GMPXX` is still used as a fallback, but
+  a cmake warning will be emitted to suggest an update to `MPFR`.
+
 ## C++: Deprecations and removals
 
 - Remove deprecated alias `Dune::Std::bool_constant`. Please use `std::bool_constant` directly.
