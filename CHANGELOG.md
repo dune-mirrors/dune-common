@@ -79,6 +79,8 @@ In order to build the DUNE core modules you need at least the following software
 
 - Add the macro `DUNE_ASSUME` for portable compiler assumption.
 
+- Add a new multi-precision backend, `MPFR`, as alternative to the outdated `GMPXX`. It implements the same class `GMPField` but additionally provides proper specialization of `std::numeric_limits`. If `MPFR` is not found, `GMPXX` is still used as a fallback, but a cmake warning will be emitted to suggest an update to `MPFR`.
+
 ## C++: Deprecations and removals
 
 - Deprecate the utility `integerSequenceEntry` in favour of the shorter `get` from `integersequence.hh`.
