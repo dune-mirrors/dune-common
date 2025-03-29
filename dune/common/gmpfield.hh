@@ -200,6 +200,12 @@ namespace std
   {
     using type = Dune::GMPField<precision>;
 
+    static constexpr int bits2digits (int prec)
+    {
+      constexpr double LOG10_2 = 0.301029995663981195213738894724493;
+      return int(prec * LOG10_2);
+    }
+
   public:
     inline static type min () { return mpfr::minval(precision); }
     inline static type max () {  return  mpfr::maxval(precision); }
@@ -214,9 +220,9 @@ namespace std
       else               return mpfr::mpreal(1.0, precision);
     }
 
-    inline static int digits () { return int(precision); }
-    inline static int digits10 () { return mpfr::bits2digits(precision); }
-    inline static int max_digits10 () { return mpfr::bits2digits(precision); }
+    static constexpr int digits = int(precision);
+    static constexpr int digits10 = bits2digits(precision);
+    static constexpr int max_digits10 = bits2digits(precision);
   };
 #elif HAVE_GMPXX
   template <unsigned int precision>
