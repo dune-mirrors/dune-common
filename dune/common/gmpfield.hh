@@ -104,6 +104,20 @@ namespace Dune
 #endif
   };
 
+} // end namespace Dune
+
+#if HAVE_GMPXX
+// add a missing function for gmpxx
+inline mpf_class round (const mpf_class& value)
+{
+  mpf_class fvalue = floor(value);
+  mpf_class cvalue = ceil(value);
+  return (value - fvalue) < (cvalue - value) ? fvalue : cvalue;
+}
+#endif
+
+namespace Dune
+{
   template <unsigned int precision>
   struct IsNumber<GMPField<precision>>
     : public std::true_type {};
@@ -167,7 +181,8 @@ namespace Dune
     }
   };
 #endif
-}
+
+} // end namespace Dune
 
 namespace std
 {
