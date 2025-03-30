@@ -156,6 +156,11 @@ dune_add_test(SOURCES genericiterator_compile_fail.cc
               EXPECT_COMPILE_FAIL
               LABELS quick)
 
+dune_add_test(SOURCES gmpfieldtest.cc
+              CMAKE_GUARD MPFR_FOUND
+              LABELS quick)
+add_dune_gmp_flags(gmpfieldtest)
+
 dune_add_test(SOURCES hybridutilitiestest.cc
               LABELS quick)
 
