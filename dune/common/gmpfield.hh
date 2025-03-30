@@ -6,7 +6,7 @@
 #define DUNE_COMMON_GMPFIELD_HH
 
 /** \file
- * \brief Wrapper for the GNU MPF(R) multiprecision floating point library
+ * \brief Wrapper for the GNU MPF(R) multi-precision floating point library
  */
 
 #include <iostream>
@@ -106,15 +106,6 @@ namespace Dune
 
 } // end namespace Dune
 
-#if HAVE_GMPXX
-// add a missing function for gmpxx
-inline mpf_class round (const mpf_class& value)
-{
-  mpf_class fvalue = floor(value);
-  mpf_class cvalue = ceil(value);
-  return (value - fvalue) < (cvalue - value) ? fvalue : cvalue;
-}
-#endif
 
 namespace Dune
 {
@@ -199,6 +190,7 @@ namespace std
       : public numeric_limits<mpfr::mpreal>
   {
     using type = Dune::GMPField<precision>;
+    using Base = numeric_limits<mpfr::mpreal>;
 
     static constexpr int bits2digits (int prec)
     {
@@ -211,14 +203,7 @@ namespace std
     inline static type max () {  return  mpfr::maxval(precision); }
     inline static type lowest () { return -mpfr::maxval(precision); }
     inline static type epsilon () { return  mpfr::machine_epsilon(precision); }
-
-    inline static type round_error ()
-    {
-      mp_rnd_t r = mpfr::mpreal::get_default_rnd();
-
-      if(r == GMP_RNDN)  return mpfr::mpreal(0.5, precision);
-      else               return mpfr::mpreal(1.0, precision);
-    }
+    inline static type round_error () { return Base::round_error(precision); }
 
     static constexpr int digits = int(precision);
     static constexpr int digits10 = bits2digits(precision);
@@ -231,10 +216,10 @@ namespace std
     return x.swap(y);
   }
 
-  // NOTE that the specialization of std::numeric_limits for mpf_class is not usable
+  // NOTE that the specialization of `std::numeric_limits` for mpf_class is not usable
   // since all entries are simply set to 0. Thus, we do not provide a specialization
   // for the wrapper class GMPField, which would lead to wrong results and could not
-  // be detected by `std::numeric_limit<GMPField<...>>::is_specialized.
+  // be detected by `std::numeric_limit<GMPField<...>>::is_specialized`.
 #endif
 
 } // end namespace std
