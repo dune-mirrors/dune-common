@@ -28,7 +28,7 @@ if(MPFR_FOUND)
     COMPILE_DEFINITIONS "HAVE_GMP=1;HAVE_MPFR=1"
   )
 elseif(GMP_FOUND)
-  message(WARNING "The library GMPXX is outdated and deprecated. Use MPFR instead.")
+  message(WARNING "The library GMPXX is outdated and deprecated. Use MPFR C++ (mpreal)  instead.")
   dune_register_package_flags(
     LIBRARIES GMP::gmpxx
     COMPILE_DEFINITIONS "HAVE_GMP=1;HAVE_GMPXX=1"

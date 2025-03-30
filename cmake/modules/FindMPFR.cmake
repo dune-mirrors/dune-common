@@ -46,7 +46,7 @@ this module:
 # Add a feature summary for this package
 include(FeatureSummary)
 set_package_properties(MPFR PROPERTIES
-  DESCRIPTION "GNU MPFR multi-precision library including the C++ bindings MPFR-C++"
+  DESCRIPTION "GNU MPFR multi-precision library including the C++ bindings MPFR C++ (mpreal)"
   URL "https://www.mpfr.org/"
 )
 
@@ -89,7 +89,7 @@ find_package_handle_standard_args("MPFR"
     ${_mpfr}_LINK_LIBRARIES ${_mpfr}_FOUND MPFR_INCLUDE_DIR MPREAL_INCLUDE_DIR PkgConfig_FOUND
   VERSION_VAR
     ${_mpfr}_VERSION
-  FAIL_MESSAGE "Could NOT find MPFR (set MPFDR_ROOT or MPREAL_ROOT to path containing mpfr.g or mpreal, respectively)"
+  FAIL_MESSAGE "Could NOT find MPFR (set MPFR_ROOT or MPREAL_ROOT to path containing mpfr.h or mpreal.h, respectively)"
 )
 
 mark_as_advanced(MPFR_INCLUDE_DIR MPREAL_INCLUDE_DIR)
