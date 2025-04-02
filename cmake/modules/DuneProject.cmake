@@ -324,8 +324,8 @@ endif()
     if(NOT (${ProjectName} STREQUAL "dune-common"))
       # set up dune dependencies
       set(DUNE_DEPENDENCY_HEADER
-"macro(find_and_check_dune_dependency module version)
-  find_dependency(\${module})
+"macro(find_and_check_dune_dependency module version hints)
+  find_dependency(\${module} HINTS \${hints})
   list(PREPEND CMAKE_MODULE_PATH \"\${dune-common_MODULE_PATH}\")
   include(DuneModuleDependencies)
   list(POP_FRONT CMAKE_MODULE_PATH)
@@ -340,7 +340,8 @@ endmacro()
           split_module_version(${_mod} _mod_name _mod_ver)
           if(${_mod_name}_FOUND)
             string(JOIN "\n" DUNE_DEPENDENCY_HEADER ${DUNE_DEPENDENCY_HEADER}
-              "find_and_check_dune_dependency(${_mod_name} \"${_mod_ver}\")")
+              "find_and_check_dune_dependency(${_mod_name} \"${_mod_ver}\" \"@${_mod_name}_PATH_HINTS@\")"
+            )
           endif()
         endforeach()
       else()
@@ -349,7 +350,8 @@ endmacro()
           split_module_version(${_mod} _mod_name _mod_ver)
           if(${_mod_name}_FOUND)
           string(JOIN "\n" DUNE_DEPENDENCY_HEADER ${DUNE_DEPENDENCY_HEADER}
-            "find_and_check_dune_dependency(${_mod_name} \"${_mod_ver}\")")
+            "find_and_check_dune_dependency(${_mod_name} \"${_mod_ver}\" \"\")"
+          )
           endif()
         endforeach()
       endif()
@@ -471,6 +473,17 @@ macro(set_and_check _var _file)
   endforeach(_f)
 endmacro()")
   set(MODULE_INSTALLED OFF)
+
+  # set path hints for required modules to make it easier to find them in the build tree
+  dune_policy(GET DP_SUGGESTED_MODULE_DEPENDENCIES_REQUIRED_DOWNSTREAM _require_module_policy)
+  if (_require_module_policy STREQUAL "NEW")
+    foreach(_mod IN LISTS ${ProjectName}_DEPENDS ${ProjectName}_DEPENDS_FORCED)
+      split_module_version(${_mod} _mod_name _mod_ver)
+      if(${_mod_name}_FOUND)
+        set(${_mod_name}_PATH_HINTS "${${_mod_name}_DIR}")
+      endif()
+    endforeach()
+  endif()
 
   configure_file(
     ${CONFIG_SOURCE_FILE}
