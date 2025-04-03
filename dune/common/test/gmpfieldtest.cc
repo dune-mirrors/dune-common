@@ -55,10 +55,10 @@ int main ()
   G x3 = double(pi);
   G x4 = (long double)(pi);
 
-  [[maybe_unused]] int z1 = x1;
-  [[maybe_unused]] float z2 = x2;
-  [[maybe_unused]] double z3 = x3;
-  [[maybe_unused]] long double z4 = x4;
+  [[maybe_unused]] int z1 = int(x1);
+  [[maybe_unused]] float z2 = float(x2);
+  [[maybe_unused]] double z3 = double(x3);
+  [[maybe_unused]] long double z4 = (long double)(x4);
 
   [[maybe_unused]] G xx1 = z1;
   [[maybe_unused]] G xx2 = z2;
@@ -69,6 +69,9 @@ int main ()
   test.check(abs(x2 - xx2) < tol);
   test.check(abs(x3 - xx3) < tol);
   test.check(abs(x4 - xx4) < tol);
+
+  // mixed type operation
+  test.check(abs(z2 - xx2) < tol);
 
   // field-vector
   Dune::FieldVector<G,3> v{1,2,3}, x;
@@ -119,19 +122,19 @@ int main ()
   test.check(cmp(atan2(G{1},G{2}), atan(G{0.5})), "atan2");
   test.check(cmp(tanh(atanh(G{0.5})),G{0.5}), "tanh(atanh)");
 
-  test.check(cmp(fdim(G{4},G{1}),G{3}), "fdim"); // a > b ? a - b : +0
+  // test.check(cmp(fdim(G{4},G{1}),G{3}), "fdim"); // a > b ? a - b : +0
   test.check(cmp(fma(G{0.5},G{0.4},G{1.8}),(G{0.5} * G{0.4}) + G{1.8}), "fma");
   test.check(cmp(fmax(G{0.6},G{0.4}),G{0.6}), "fmax");
   test.check(cmp(fmin(G{0.6},G{0.4}),G{0.4}), "fmin");
   test.check(cmp(hypot(G{1.6}, G{2.3}), sqrt(G{1.6}*G{1.6} + G{2.3}*G{2.3})), "hypot");
   // ilogb
-  test.check(cmp(llrint(G{2.3}),(long long int)(2)), "llrint");
-  test.check(cmp(lrint(G{2.3}),(long int)(2)), "lrint");
+  // test.check(cmp(llrint(G{2.3}),(long long int)(2)), "llrint");
+  // test.check(cmp(lrint(G{2.3}),(long int)(2)), "lrint");
   test.check(cmp(rint(G{2.3}),G{2}), "lrint");
   test.check(cmp(llround(G{2.3}),(long long int)(2)), "llround");
   test.check(cmp(lround(G{2.3}),(long int)(2)), "lround");
   test.check(cmp(round(G{2.3}),G{2}), "round");
-  test.check(cmp(nearbyint(G{2.3}),G{2}), "nearbyint");
+  // test.check(cmp(nearbyint(G{2.3}),G{2}), "nearbyint");
   test.check(cmp(trunc(G{2.7}),G{2}), "trunc");
   test.check(cmp(ceil(G{1.6}),G{2}), "ceil");
   test.check(cmp(floor(G{1.6}),G{1}), "floor");

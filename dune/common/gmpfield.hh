@@ -89,12 +89,6 @@ namespace Dune
     GMPField& operator= (GMPField const&) = default;
     GMPField& operator= (GMPField&&) = default;
 
-    //! type conversion operators
-    operator double () const
-    {
-      return this->get_d();
-    }
-
 #if HAVE_MPFR
     //! return a double representation
     double get_d () const
