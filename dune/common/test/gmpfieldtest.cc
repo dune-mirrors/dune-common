@@ -49,17 +49,26 @@ int main ()
   test.check(abs(e0 - e) < tol);
   test.check(abs(pi0 - pi) < tol);
 
-
   // implicit conversion
-  G x1 = 1;
-  G x2 = 1.0f;
-  G x3 = 1.0;
-  G x4 = 1.0l;
+  G x1 = int(3);
+  G x2 = float(pi);
+  G x3 = double(pi);
+  G x4 = (long double)(pi);
 
   [[maybe_unused]] int z1 = x1;
   [[maybe_unused]] float z2 = x2;
   [[maybe_unused]] double z3 = x3;
   [[maybe_unused]] long double z4 = x4;
+
+  [[maybe_unused]] G xx1 = z1;
+  [[maybe_unused]] G xx2 = z2;
+  [[maybe_unused]] G xx3 = z3;
+  [[maybe_unused]] G xx4 = z4;
+
+  test.check(abs(x1 - xx1) < tol);
+  test.check(abs(x2 - xx2) < tol);
+  test.check(abs(x3 - xx3) < tol);
+  test.check(abs(x4 - xx4) < tol);
 
   // field-vector
   Dune::FieldVector<G,3> v{1,2,3}, x;
