@@ -154,11 +154,10 @@ public:
       [&it](value_type value) { *it++ = value; });
   }
 
-  /// \brief Converting constructor from another TensorMixin
-  template <class D, class B>
-    requires std::constructible_from<base_type, B>
-  constexpr Tensor (const TensorMixin<D,B>& other)
-    : base_type{Std::mdspan(other)}
+  /// \brief Converting constructor from another Tensor
+  template <class OtherElement, std::size_t... otherExtents>
+  constexpr Tensor (const Tensor<OtherElement,otherExtents...>& other)
+    : base_type{other.toTensorSpan()}
   {}
 
   /// \brief Copy constructor with default behavior
