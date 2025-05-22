@@ -188,11 +188,14 @@ public:
   /// @{
 
   /**
-   * \brief Subscript operator to access the tensor components using an array of indices.
+   * \brief Subscript operator to access the tensor components using a single index or an array of indices.
    * \b Examples:
    * \code{c++}
      Tensor<double,3,3> matrix;
      matrix[std::array{0,1}] = 7.0;
+
+     Tensor<double,3> vector;
+     vector[2] = 42.0;
      \endcode
    **/
   using base_type::operator[];
@@ -213,7 +216,14 @@ public:
   /// \name Modifiers
   /// @{
 
-  /// \brief Change the extents of the tensor and resize the underlying container with given default value
+  /**
+    * \brief Change the extents of the tensor and resize the underlying container with given default value.
+    *
+    * \note This does not allow to resize tensors with purely static extents, since
+    * the new extents type must be identical to the old extents type and all dimensions
+    * are encoded in that type. However, a `.resize()` is still called on the underlying
+    * container with the extra `value` argument.
+    **/
   template <std::convertible_to<value_type> V>
   void resize (const extents_type& e, const V& value)
   {
@@ -223,23 +233,46 @@ public:
     static_cast<base_type&>(*this) = base_type{m, std::move(container)};
   }
 
-  /// \brief Change the extents of the tensor and resize the underlying container
+  /**
+    * \brief Change the extents of the tensor and resize the underlying container.
+    *
+    * This resizes the underlying container with the new entries initialized to 0.
+    *
+    * \note This does not allow to resize tensors with purely static extents, since
+    * the new extents type must be identical to the old extents type and all dimensions
+    * are encoded in that type.
+    **/
   void resize (const extents_type& e)
   {
     resize(e, value_type(0));
   }
 
-  /// \brief Change the extents of the tensor by the given individual extents
+  /**
+    * \brief Change the extents of the tensor by the given individual extents.
+    *
+    * \note This does not allow to resize tensors with purely static extents, since
+    * the new extents type must be identical to the old extents type and all dimensions
+    * are encoded in that type. However, a `.resize()` is still called on the underlying
+    * container with the extra `value` argument.
+    **/
   template <std::convertible_to<index_type>... index_types, std::convertible_to<value_type> V>
     requires ((sizeof...(index_types) == extents_type::rank() ||
                sizeof...(index_types) == extents_type::rank_dynamic()) &&
               std::is_constructible_v<extents_type,index_types...>)
-  void resize (index_types... exts, const V& v)
+  void resize (index_types... exts, const V& value)
   {
-    resize(extents_type{exts...}, v);
+    resize(extents_type{exts...}, value);
   }
 
-  /// \brief Change the extents of the tensor by the given individual extents
+  /**
+    * \brief Change the extents of the tensor by the given individual extents.
+    *
+    * This resizes the underlying container with the new entries initialized to 0.
+    *
+    * \note This does not allow to resize tensors with purely static extents, since
+    * the new extents type must be identical to the old extents type and all dimensions
+    * are encoded in that type.
+    **/
   template <std::convertible_to<index_type>... index_types>
     requires ((sizeof...(index_types) == extents_type::rank() ||
                sizeof...(index_types) == extents_type::rank_dynamic()) &&
