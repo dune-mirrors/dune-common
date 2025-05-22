@@ -13,6 +13,7 @@
 #include <dune/common/initializerlist.hh>
 #include <dune/common/tensormixin.hh>
 #include <dune/common/tensorspan.hh>
+#include <dune/common/concepts/number.hh>
 #include <dune/common/std/extents.hh>
 #include <dune/common/std/layout_right.hh>
 #include <dune/common/std/mdarray.hh>
@@ -348,24 +349,24 @@ Tensor (Std::extents<index_type, exts...>, value_type)
 // ranks. This is done up to tensor rank 3. Higher order ranks cannot rely
 // on CTAD.
 
-template <Concept::LayoutMapping Mapping, class value_type>
+template <Concept::LayoutMapping Mapping, Concept::Number value_type>
   requires (Mapping::extents_type::rank() == 0)
 Tensor (Mapping, value_type)
   -> Tensor<value_type>;
 
-template <Concept::LayoutMapping Mapping, class value_type>
+template <Concept::LayoutMapping Mapping, Concept::Number value_type>
   requires (Mapping::extents_type::rank() == 1)
 Tensor (Mapping, value_type)
   -> Tensor<value_type, Mapping::extents_type::static_extent(0)>;
 
-template <Concept::LayoutMapping Mapping, class value_type>
+template <Concept::LayoutMapping Mapping, Concept::Number value_type>
   requires (Mapping::extents_type::rank() == 2)
 Tensor (Mapping, value_type)
   -> Tensor<value_type,
       Mapping::extents_type::static_extent(0),
       Mapping::extents_type::static_extent(1)>;
 
-template <Concept::LayoutMapping Mapping, class value_type>
+template <Concept::LayoutMapping Mapping, Concept::Number value_type>
   requires (Mapping::extents_type::rank() == 3)
 Tensor (Mapping, value_type)
   -> Tensor<value_type,
@@ -373,28 +374,28 @@ Tensor (Mapping, value_type)
       Mapping::extents_type::static_extent(1),
       Mapping::extents_type::static_extent(2)>;
 
-template <class index_type, std::size_t... exts, class value_type, class Alloc>
+template <class index_type, std::size_t... exts, Concept::Number value_type, class Alloc>
 Tensor (Std::extents<index_type, exts...>, value_type, const Alloc&)
   -> Tensor<value_type, exts...>;
 
-template <Concept::LayoutMapping Mapping, class value_type, class Alloc>
+template <Concept::LayoutMapping Mapping, Concept::Number value_type, class Alloc>
   requires (Mapping::extents_type::rank() == 0)
 Tensor (Mapping, value_type, const Alloc&)
   -> Tensor<value_type>;
 
-template <Concept::LayoutMapping Mapping, class value_type, class Alloc>
+template <Concept::LayoutMapping Mapping, Concept::Number value_type, class Alloc>
   requires (Mapping::extents_type::rank() == 1)
 Tensor (Mapping, value_type, const Alloc&)
   -> Tensor<value_type, Mapping::extents_type::static_extent(0)>;
 
-template <Concept::LayoutMapping Mapping, class value_type, class Alloc>
+template <Concept::LayoutMapping Mapping, Concept::Number value_type, class Alloc>
   requires (Mapping::extents_type::rank() == 2)
 Tensor (Mapping, value_type, const Alloc&)
   -> Tensor<value_type,
       Mapping::extents_type::static_extent(0),
       Mapping::extents_type::static_extent(1)>;
 
-template <Concept::LayoutMapping Mapping, class value_type, class Alloc>
+template <Concept::LayoutMapping Mapping, Concept::Number value_type, class Alloc>
   requires (Mapping::extents_type::rank() == 3)
 Tensor (Mapping, value_type, const Alloc&)
   -> Tensor<value_type,
