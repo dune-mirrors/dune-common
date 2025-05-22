@@ -60,19 +60,6 @@ protected:
   /// Derive constructors from base class
   using base_type::base_type;
 
-
-  // /// \brief base copy constructor
-  // constexpr TensorMixin (const base_type& tensor)
-  //       noexcept(std::is_nothrow_copy_constructible_v<base_type>)
-  //   : base_type{tensor}
-  // {}
-
-  // /// \brief base move constructor
-  // constexpr TensorMixin (base_type&& tensor)
-  //       noexcept(std::is_nothrow_move_constructible_v<base_type>)
-  //   : base_type{std::move(tensor)}
-  // {}
-
 public:
   /// \name Multi index access
   /// @{
