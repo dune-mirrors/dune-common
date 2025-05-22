@@ -19,16 +19,12 @@
 #include <dune/common/std/span.hh>
 
 namespace Dune {
-
-//! A special value representing dynamic extents in a tensor
-static constexpr inline std::size_t dynamic = Std::dynamic_extent;
-
 namespace Impl {
 
 template <class Element, std::size_t... extents>
 struct TensorStorageType
 {
-  using container_type = std::conditional_t<((extents == Dune::dynamic) || ...),
+  using container_type = std::conditional_t<((extents == Dune::dynamic_extent) || ...),
     std::vector<Element>, std::array<Element, (extents * ... * std::size_t(1))>>;
   using extents_type = Std::extents<typename container_type::size_type,extents...>;
   using type = Std::mdarray<Element, extents_type, Std::layout_right, container_type>;
@@ -46,7 +42,7 @@ struct TensorStorageType
  * \nosubgrouping
  *
  * \tparam Element  The element type stored in the tensor
- * \tparam extents  Individual static extents or Dune::dynamic
+ * \tparam extents  Individual static extents or Dune::dynamic_extent
  **/
 template <class Element, std::size_t... extents>
 class Tensor
@@ -101,8 +97,8 @@ public:
    *
    * \b Example:
    * \code{.cpp}
-   using Extents = typename Tensor<double,dynamic,dynamic>::extents_type;
-   Tensor<double,dynamic,dynamic> matrix(Extents{2,2},
+   using Extents = typename Tensor<double,dynamic_extent,dynamic_extent>::extents_type;
+   Tensor<double,dynamic_extent,dynamic_extent> matrix(Extents{2,2},
    {
      {1.0,2.0},
      {2.0, 3.0}
@@ -120,7 +116,7 @@ public:
    *
    * \b Example:
    * \code{.cpp}
-   Tensor<double,dynamic,dynamic> matrix(std::array{2,2},
+   Tensor<double,dynamic_extent,dynamic_extent> matrix(std::array{2,2},
    {
      {1.0,2.0},
      {2.0, 3.0}
@@ -140,9 +136,9 @@ public:
    *
    * \b Example:
    * \code{.cpp}
-   using Extents = typename Tensor<double,dynamic,dynamic>::extents_type;
-   using Mapping = typename Tensor<double,dynamic,dynamic>::mapping_type;
-   Tensor<double,dynamic,dynamic> matrix(Mapping{Extents{2,2}},
+   using Extents = typename Tensor<double,dynamic_extent,dynamic_extent>::extents_type;
+   using Mapping = typename Tensor<double,dynamic_extent,dynamic_extent>::mapping_type;
+   Tensor<double,dynamic_extent,dynamic_extent> matrix(Mapping{Extents{2,2}},
    {
      {1.0,2.0},
      {2.0, 3.0}
