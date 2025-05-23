@@ -103,7 +103,7 @@ TensorSpan (element_type*, II...)
   -> TensorSpan<element_type, Std::dextents<std::size_t, sizeof...(II)>>;
 
 template <class element_type, std::integral SizeType, std::size_t N>
-TensorSpan (element_type*, Std::span<SizeType,N>&)
+TensorSpan (element_type*, std::span<SizeType,N>&)
   -> TensorSpan<element_type, Std::dextents<std::size_t, N>>;
 
 template <class element_type, std::integral SizeType, std::size_t N>
