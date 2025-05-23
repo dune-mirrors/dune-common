@@ -7,6 +7,7 @@
 
 #include <cassert>
 #include <concepts>
+#include <span>
 #include <stdexcept>
 #include <type_traits>
 #include <utility>
@@ -16,12 +17,8 @@
 #include <dune/common/indices.hh>
 #include <dune/common/concepts/number.hh>
 #include <dune/common/std/type_traits.hh>
-#include <dune/common/std/span.hh>
 
 namespace Dune {
-
-//! A special value representing dynamic extents in a tensor
-inline constexpr std::size_t dynamic_extent = Std::dynamic_extent;
 
 /**
  * \brief A tensor interface-class providing common functionality.

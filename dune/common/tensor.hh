@@ -7,6 +7,7 @@
 
 #include <array>
 #include <concepts>
+#include <span>
 #include <type_traits>
 #include <vector>
 
@@ -17,7 +18,6 @@
 #include <dune/common/std/extents.hh>
 #include <dune/common/std/layout_right.hh>
 #include <dune/common/std/mdarray.hh>
-#include <dune/common/std/span.hh>
 
 namespace Dune {
 namespace Impl {
@@ -25,7 +25,7 @@ namespace Impl {
 template <class Element, std::size_t... extents>
 struct TensorStorageType
 {
-  using container_type = std::conditional_t<((extents == Dune::dynamic_extent) || ...),
+  using container_type = std::conditional_t<((extents == std::dynamic_extent) || ...),
     std::vector<Element>, std::array<Element, (extents * ... * std::size_t(1))>>;
   using extents_type = Std::extents<typename container_type::size_type,extents...>;
   using type = Std::mdarray<Element, extents_type, Std::layout_right, container_type>;
@@ -43,7 +43,7 @@ struct TensorStorageType
  * \nosubgrouping
  *
  * \tparam Element  The element type stored in the tensor
- * \tparam extents  Individual static extents or Dune::dynamic_extent
+ * \tparam extents  Individual static extents or std::dynamic_extent
  **/
 template <class Element, std::size_t... extents>
 class Tensor
@@ -127,7 +127,7 @@ public:
   template <std::convertible_to<index_type> Otherindex_type, std::size_t N>
     requires (std::is_nothrow_constructible_v<index_type,const Otherindex_type&> &&
               (N == extents_type::rank_dynamic() || N == extents_type::rank()))
-  constexpr Tensor (Std::span<Otherindex_type,N> e,
+  constexpr Tensor (std::span<Otherindex_type,N> e,
                     NestedInitializerList_t<value_type,extents_type::rank()> init)
     : Tensor{mapping_type{extents_type{e}}, init}
   {}
