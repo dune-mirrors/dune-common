@@ -15,6 +15,7 @@
 #include <dune/common/ftraits.hh>
 #include <dune/common/indices.hh>
 #include <dune/common/math.hh>
+#include <dune/common/rangeutilities.hh>
 #include <dune/common/tensordot.hh>
 #include <dune/common/concepts/number.hh>
 #include <dune/common/concepts/tensor.hh>
@@ -82,9 +83,14 @@ public:
   constexpr derived_type& operator= (const S& value)
       noexcept(std::is_nothrow_assignable_v<value_type&, const S&>)
   {
-    forEachIndex(base_type::extents(), [&](auto&& index) {
-      (*this)[index] = value;
-    });
+    if (this->is_exhaustive()) {
+      for (auto& vi : valueRange(this->asBase()))
+        vi = value;
+    } else {
+      forEachIndex(base_type::extents(), [&](auto&& index) {
+        (*this)[index] = value;
+      });
+    }
     return this->asDerived();
   }
 
@@ -324,9 +330,14 @@ public:
   template <Concept::Number S>
   constexpr derived_type& operator*= (const S& scalar)
   {
-    forEachIndex(base_type::extents(), [&](auto&& index) {
-      (*this)[index] *= scalar;
-    });
+    if (this->is_exhaustive()) {
+      for (auto& vi : valueRange(this->asBase()))
+        vi *= scalar;
+    } else {
+      forEachIndex(base_type::extents(), [&](auto&& index) {
+        (*this)[index] *= scalar;
+      });
+    }
     return this->asDerived();
   }
 
@@ -526,29 +537,24 @@ public:
     return F(result);
   }
 
-  /// \brief Square of 2-norm
-  typename FieldTraits<value_type>::real_type two_norm2 () const
-      requires (extents_type::rank() == 1)
-  {
-    using std::abs;
-    using R = typename FieldTraits<value_type>::real_type;
-    return R(abs(this->inner(*this)));
-  }
-
-  /// \brief 2-norm
-  typename FieldTraits<value_type>::real_type two_norm () const
-      requires (extents_type::rank() == 1)
-  {
-    using std::sqrt;
-    return sqrt(two_norm2());
-  }
-
   /// \brief Square of Frobenius norm
   typename FieldTraits<value_type>::real_type frobenius_norm2 () const
   {
     using std::abs;
     using R = typename FieldTraits<value_type>::real_type;
-    return R(abs(this->inner(*this)));
+    if (this->is_exhaustive()) {
+      R result(0);
+      for (auto const& vi : valueRange(this->asBase()))
+        result += R(DotProduct{}(vi,vi));
+      return result;
+    } else {
+      R result(0);
+      forEachIndex(base_type::extents(), [&](auto&& index) {
+        auto const& vi = (*this)[index];
+        result += R(DotProduct{}(vi,vi));
+      });
+      return result;
+    }
   }
 
   /// \brief Frobenius norm
@@ -556,6 +562,20 @@ public:
   {
     using std::sqrt;
     return sqrt(frobenius_norm2());
+  }
+
+  /// \brief Square of 2-norm
+  typename FieldTraits<value_type>::real_type two_norm2 () const
+      requires (extents_type::rank() == 1)
+  {
+    return frobenius_norm2();
+  }
+
+  /// \brief 2-norm
+  typename FieldTraits<value_type>::real_type two_norm () const
+      requires (extents_type::rank() == 1)
+  {
+    return frobenius_norm();
   }
 
   /// @}
@@ -584,6 +604,25 @@ private:
     return unpackIntegerSequence([&](auto... i) {
       return ( (0 <= indices[i] && index_type(indices[i]) < asBase().extent(i)) && ... );
     }, std::make_index_sequence<extents_type::rank()>{});
+  }
+
+  // a range over all values in the tensor-span
+  template <class BaseType>
+  auto valueRange (BaseType&& base) const
+      requires requires { base.accessor(); base.data_handle(); }
+  {
+    assert(base.is_exhaustive());
+    return Dune::transformedRangeView(Dune::range(base.mapping().required_span_size()),
+      [&b=base](auto i) -> decltype(auto) { return b.accessor().access(b.data_handle(), i); });
+  }
+
+  // a range over all values in the tensor
+  template <class BaseType>
+  auto valueRange (BaseType&& base) const
+      requires requires { base.container_data(); }
+  {
+    assert(base.is_exhaustive());
+    return std::span(base.container_data(), base.mapping().required_span_size());
   }
 
 private:
