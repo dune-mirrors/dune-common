@@ -16,6 +16,7 @@ struct Extents
   using index_type = std::size_t;
 
   static constexpr std::size_t rank () { return r; }
+  static constexpr std::size_t rank_dynamic () { return 0; }
   static constexpr std::size_t static_extent (std::size_t) { return 0; }
   index_type extent (std::size_t) const;
 };

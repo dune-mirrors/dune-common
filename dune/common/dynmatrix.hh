@@ -9,12 +9,15 @@
 #include <cstddef>
 #include <iostream>
 #include <initializer_list>
+#include <span>
 
 #include <dune/common/boundschecking.hh>
 #include <dune/common/exceptions.hh>
 #include <dune/common/dynvector.hh>
 #include <dune/common/densematrix.hh>
+#include <dune/common/tensortraits.hh>
 #include <dune/common/typetraits.hh>
+#include <dune/common/std/extents.hh>
 
 namespace Dune
 {
@@ -56,7 +59,7 @@ namespace Dune
   struct TensorTraits< DynamicMatrix<K> >
   {
     using index_type = typename DenseMatVecTraits<DynamicMatrix<K>>::size_type;
-    using extents_type = Std::extents<index_type, Std::dynamic_extent, Std::dynamic_extent>;
+    using extents_type = Std::extents<index_type, std::dynamic_extent, std::dynamic_extent>;
     using rank_type = typename extents_type::rank_type;
 
 
@@ -70,7 +73,7 @@ namespace Dune
     static constexpr rank_type rank_dynamic () noexcept { return 2; }
 
     /// \brief Number of elements in the r'th dimension of the tensor
-    static constexpr std::size_t static_extent (rank_type /*r*/) noexcept { return Std::dynamic_extent; }
+    static constexpr std::size_t static_extent (rank_type /*r*/) noexcept { return std::dynamic_extent; }
 
     /// \brief Number of elements in the r'th dimension of the tensor
     static constexpr index_type extent (const DynamicMatrix<K>& tensor, rank_type r) noexcept { return r == 0 ? tensor.N() : tensor.M(); }
