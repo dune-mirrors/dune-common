@@ -8,6 +8,7 @@
 #include <array>
 #include <cassert>
 #include <functional>
+#include <span>
 #include <type_traits>
 #include <utility>
 
@@ -61,8 +62,8 @@ constexpr bool checkStaticExtents (std::index_sequence<II...>, std::index_sequen
 {
   static_assert(sizeof...(II) == sizeof...(JJ));
   return ((E1::static_extent(II) == E2::static_extent(JJ) ||
-           E1::static_extent(II) == Std::dynamic_extent ||
-           E2::static_extent(JJ) == Std::dynamic_extent) && ...);
+           E1::static_extent(II) == std::dynamic_extent ||
+           E2::static_extent(JJ) == std::dynamic_extent) && ...);
 }
 
 // Check the extents for the special case that we contract over N indices
@@ -164,9 +165,9 @@ void tensorDotImpl (const A& a, ASeq aSeq, ASeqInv aSeqInv,
  * `op1`, e.g., a plus functor, and the inner binary operation `op2`, e.g., a
  * multiplies functor, see also the `std::inner_product` algorithm.
  */
-template <Concept::RandomAccessTensor A, std::size_t... II,
-          Concept::RandomAccessTensor B, std::size_t... JJ,
-          Concept::RandomAccessTensor C,
+template <Concept::TensorLike A, std::size_t... II,
+          Concept::TensorLike B, std::size_t... JJ,
+          Concept::TensorLike C,
           class BinaryOp1 = std::plus<>, class BinaryOp2 = std::multiplies<>>
 constexpr auto tensordotOut (const A& a, std::index_sequence<II...> aSeq,
                              const B& b, std::index_sequence<JJ...> bSeq,
@@ -208,9 +209,9 @@ constexpr auto tensordotOut (const A& a, std::index_sequence<II...> aSeq,
  * multiplies functor, see also the `std::inner_product` algorithm.
  */
 template <std::size_t N,
-          Concept::RandomAccessTensor A,
-          Concept::RandomAccessTensor B,
-          Concept::RandomAccessTensor C,
+          Concept::TensorLike A,
+          Concept::TensorLike B,
+          Concept::TensorLike C,
           class BinaryOp1 = std::plus<>, class BinaryOp2 = std::multiplies<>>
 constexpr void tensordotOut (const A& a, const B& b, C& c,
                              std::integral_constant<std::size_t,N> axes = {},
@@ -257,8 +258,8 @@ constexpr void tensordotOut (const A& a, const B& b, C& c,
  * - inner product of 2-tensors: `c = a(i,j) * b(i,j)`
  *     is `tensordot(a,index_sequence<0,1>{},b,index_sequence<0,1>{})`
  */
-template <Concept::RandomAccessTensor A, std::size_t... II,
-          Concept::RandomAccessTensor B, std::size_t... JJ,
+template <Concept::TensorLike A, std::size_t... II,
+          Concept::TensorLike B, std::size_t... JJ,
           class BinaryOp1 = std::plus<>, class BinaryOp2 = std::multiplies<>>
 constexpr auto tensordot (const A& a, std::index_sequence<II...> aSeq,
                           const B& b, std::index_sequence<JJ...> bSeq,
@@ -304,8 +305,8 @@ constexpr auto tensordot (const A& a, std::index_sequence<II...> aSeq,
  * - inner product of 2-tensors: `c = a(i,j) * b(i,j)` is `tensordot<2>(a,b)`
  **/
 template <std::size_t N,
-          Concept::RandomAccessTensor A,
-          Concept::RandomAccessTensor B,
+          Concept::TensorLike A,
+          Concept::TensorLike B,
           class BinaryOp1 = std::plus<>, class BinaryOp2 = std::multiplies<>>
 constexpr auto tensordot (const A& a, const B& b,
                           std::integral_constant<std::size_t,N> axes = {},

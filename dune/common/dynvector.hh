@@ -12,6 +12,7 @@
 #include <cstring>
 #include <initializer_list>
 #include <limits>
+#include <span>
 #include <utility>
 #include <vector>
 
@@ -21,7 +22,6 @@
 #include <dune/common/genericiterator.hh>
 #include <dune/common/tensortraits.hh>
 #include <dune/common/std/extents.hh>
-#include <dune/common/std/span.hh>
 
 
 namespace Dune {
@@ -55,7 +55,7 @@ namespace Dune {
   struct TensorTraits< DynamicVector< K, Allocator > >
   {
     using index_type = typename DenseMatVecTraits<DynamicVector<K,Allocator>>::size_type;
-    using extents_type = Std::extents<index_type, Std::dynamic_extent>;
+    using extents_type = Std::extents<index_type, std::dynamic_extent>;
     using rank_type = typename extents_type::rank_type;
 
 
@@ -69,7 +69,7 @@ namespace Dune {
     static constexpr rank_type rank_dynamic () noexcept { return 1; }
 
     /// \brief Number of elements in the r'th dimension of the tensor
-    static constexpr std::size_t static_extent (rank_type /*r*/) noexcept { return Std::dynamic_extent; }
+    static constexpr std::size_t static_extent (rank_type /*r*/) noexcept { return std::dynamic_extent; }
 
     /// \brief Number of elements in the r'th dimension of the tensor
     static constexpr index_type extent (const DynamicVector<K,Allocator>& tensor, rank_type /*r*/) noexcept { return tensor.size(); }

@@ -5,12 +5,18 @@
 #ifndef DUNE_COMMON_TENSORTRAITS_HH
 #define DUNE_COMMON_TENSORTRAITS_HH
 
+#include <concepts>
 #include <cstddef>
+
+#include <dune/common/concepts/tensor.hh>
 
 namespace Dune {
 
 template <class T>
-struct TensorTraits
+struct TensorTraits;
+
+template <Concept::Tensor T>
+struct TensorTraits<T>
 {
   using extents_type = typename T::extents_type;
   using index_type = typename extents_type::index_type;
@@ -32,6 +38,28 @@ struct TensorTraits
   /// \brief Number of elements in the r'th dimension of the tensor
   static constexpr index_type extent (const T& tensor, rank_type r) noexcept { return extents(tensor).extent(r); }
 };
+
+
+namespace Concept {
+
+/// \brief The concept TensorLike applies to container types that have a proper specialization of TensorTraits
+template <class T>
+concept TensorLike = Extents<typename TensorTraits<T>::extents_type> &&
+requires(T tensor, std::array<typename TensorTraits<T>::index_type, TensorTraits<T>::rank()> indices)
+{
+  { TensorTraits<T>::extents(tensor) } -> std::convertible_to<typename T::extents_type>;
+  tensor[indices];
+};
+
+/// \brief A TensorLike type of rank 1
+template <class T>
+concept VectorLike = TensorLike<T> && TensorTraits<T>::rank() == 1;
+
+/// \brief A TensorLike type of rank 2
+template <class T>
+concept MatrixLike = TensorLike<T> && TensorTraits<T>::rank() == 2;
+
+} // end namespace Concept
 
 } // end namespace Dune
 

@@ -12,14 +12,14 @@
 #include <initializer_list>
 
 #include <dune/common/boundschecking.hh>
+#include <dune/common/densematrix.hh>
 #include <dune/common/exceptions.hh>
 #include <dune/common/fvector.hh>
-#include <dune/common/densematrix.hh>
+#include <dune/common/matrixconcepts.hh>
 #include <dune/common/precision.hh>
 #include <dune/common/promotiontraits.hh>
-#include <dune/common/typetraits.hh>
-#include <dune/common/matrixconcepts.hh>
 #include <dune/common/tensortraits.hh>
+#include <dune/common/typetraits.hh>
 #include <dune/common/std/extents.hh>
 
 namespace Dune
