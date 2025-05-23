@@ -21,11 +21,11 @@ int main(int argc, char** argv)
   TestSuite testSuite;
 
   auto dTensor = Dune::Tensor<double>{};
-  auto dTensor2 = Dune::Tensor<double,Dune::dynamic>{2};
-  auto dTensor3 = Dune::Tensor<double,Dune::dynamic>{3};
-  auto dTensor23 = Dune::Tensor<double,Dune::dynamic,Dune::dynamic>{2,3};
-  auto dTensor32 = Dune::Tensor<double,Dune::dynamic,Dune::dynamic>{3,2};
-  auto dTensor234 = Dune::Tensor<double,Dune::dynamic,Dune::dynamic,Dune::dynamic>{2,3,4};
+  auto dTensor2 = Dune::Tensor<double,std::dynamic_extent>{2};
+  auto dTensor3 = Dune::Tensor<double,std::dynamic_extent>{3};
+  auto dTensor23 = Dune::Tensor<double,std::dynamic_extent,std::dynamic_extent>{2,3};
+  auto dTensor32 = Dune::Tensor<double,std::dynamic_extent,std::dynamic_extent>{3,2};
+  auto dTensor234 = Dune::Tensor<double,std::dynamic_extent,std::dynamic_extent,std::dynamic_extent>{2,3,4};
 
   auto dVector2 = Dune::DynamicVector<double>(2);
   auto dVector3 = Dune::DynamicVector<double>(3);
@@ -267,7 +267,7 @@ int main(int argc, char** argv)
   {
     auto fTensor22 = Tensor<double,2,2>{};
     tensordotOut<1>(dTensor23,dTensor32,fTensor22);
-    auto dTensor22 = Tensor<double,Dune::dynamic,Dune::dynamic>{2,2};
+    auto dTensor22 = Tensor<double,std::dynamic_extent,std::dynamic_extent>{2,2};
     tensordotOut<1>(fTensor23,fTensor32,dTensor22);
   }
 

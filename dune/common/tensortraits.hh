@@ -47,7 +47,7 @@ template <class T>
 concept TensorLike = Extents<typename TensorTraits<T>::extents_type> &&
 requires(T tensor, std::array<typename TensorTraits<T>::index_type, TensorTraits<T>::rank()> indices)
 {
-  { TensorTraits<T>::extents(tensor) } -> std::convertible_to<typename T::extents_type>;
+  { TensorTraits<T>::extents(tensor) } -> std::convertible_to<typename TensorTraits<T>::extents_type>;
   tensor[indices];
 };
 
