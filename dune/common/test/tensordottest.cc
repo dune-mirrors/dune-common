@@ -3,13 +3,13 @@
 // SPDX-FileCopyrightInfo: Copyright © DUNE Project contributors, see file LICENSE.md in module root
 // SPDX-License-Identifier: LicenseRef-GPL-2.0-only-with-DUNE-exception
 
+#include <dune/common/densetensor.hh>
+#include <dune/common/densetensorspan.hh>
 #include <dune/common/dynmatrix.hh>
 #include <dune/common/dynvector.hh>
 #include <dune/common/fmatrix.hh>
 #include <dune/common/fvector.hh>
-#include <dune/common/tensor.hh>
 #include <dune/common/tensordot.hh>
-#include <dune/common/tensorspan.hh>
 #include <dune/common/parallel/mpihelper.hh>
 #include <dune/common/test/testsuite.hh>
 
@@ -20,24 +20,24 @@ int main(int argc, char** argv)
 
   TestSuite testSuite;
 
-  auto dTensor = Dune::Tensor<double>{};
-  auto dTensor2 = Dune::Tensor<double,std::dynamic_extent>{2};
-  auto dTensor3 = Dune::Tensor<double,std::dynamic_extent>{3};
-  auto dTensor23 = Dune::Tensor<double,std::dynamic_extent,std::dynamic_extent>{2,3};
-  auto dTensor32 = Dune::Tensor<double,std::dynamic_extent,std::dynamic_extent>{3,2};
-  auto dTensor234 = Dune::Tensor<double,std::dynamic_extent,std::dynamic_extent,std::dynamic_extent>{2,3,4};
+  auto dTensor = Dune::DenseTensor<double>{};
+  auto dTensor2 = Dune::DenseTensor<double,std::dynamic_extent>{2};
+  auto dTensor3 = Dune::DenseTensor<double,std::dynamic_extent>{3};
+  auto dTensor23 = Dune::DenseTensor<double,std::dynamic_extent,std::dynamic_extent>{2,3};
+  auto dTensor32 = Dune::DenseTensor<double,std::dynamic_extent,std::dynamic_extent>{3,2};
+  auto dTensor234 = Dune::DenseTensor<double,std::dynamic_extent,std::dynamic_extent,std::dynamic_extent>{2,3,4};
 
   auto dVector2 = Dune::DynamicVector<double>(2);
   auto dVector3 = Dune::DynamicVector<double>(3);
   auto dMatrix23 = Dune::DynamicMatrix<double>(2,3);
   auto dMatrix32 = Dune::DynamicMatrix<double>(3,2);
 
-  auto fTensor = Dune::Tensor<double>{};
-  auto fTensor2 = Dune::Tensor<double,2>{};
-  auto fTensor3 = Dune::Tensor<double,3>{};
-  auto fTensor23 = Dune::Tensor<double,2,3>{};
-  auto fTensor32 = Dune::Tensor<double,3,2>{};
-  auto fTensor234 = Dune::Tensor<double,2,3,4>{};
+  auto fTensor = Dune::DenseTensor<double>{};
+  auto fTensor2 = Dune::DenseTensor<double,2>{};
+  auto fTensor3 = Dune::DenseTensor<double,3>{};
+  auto fTensor23 = Dune::DenseTensor<double,2,3>{};
+  auto fTensor32 = Dune::DenseTensor<double,3,2>{};
+  auto fTensor234 = Dune::DenseTensor<double,2,3,4>{};
 
   auto fVector2 = Dune::FieldVector<double,2>{};
   auto fVector3 = Dune::FieldVector<double,3>{};
@@ -265,9 +265,9 @@ int main(int argc, char** argv)
 
   // test output-tensor
   {
-    auto fTensor22 = Tensor<double,2,2>{};
+    auto fTensor22 = DenseTensor<double,2,2>{};
     tensordotOut<1>(dTensor23,dTensor32,fTensor22);
-    auto dTensor22 = Tensor<double,std::dynamic_extent,std::dynamic_extent>{2,2};
+    auto dTensor22 = DenseTensor<double,std::dynamic_extent,std::dynamic_extent>{2,2};
     tensordotOut<1>(fTensor23,fTensor32,dTensor22);
   }
 
@@ -339,13 +339,13 @@ int main(int argc, char** argv)
 
   {
     // a tensor of complex number initialized with initilizer-lists
-    Dune::Tensor<std::complex<double>, 2,2> cTensor22{
+    Dune::DenseTensor<std::complex<double>, 2,2> cTensor22{
       {std::complex<double>(1.0,2.0), std::complex<double>(-1.0,0.5)},
       {std::complex<double>(-1.0,0.4), std::complex<double>( 1.0,3.0)}
     };
 
     // construct the complex numbers using brace-init lists
-    Dune::Tensor<std::complex<double>, 2,2> cTensor22_{
+    Dune::DenseTensor<std::complex<double>, 2,2> cTensor22_{
       { {1.0,2.0},  {-1.0,0.5} },
       { {-1.0,0.4}, {1.0,3.0}  }
     };

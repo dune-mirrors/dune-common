@@ -25,7 +25,7 @@ namespace Dune {
 
 // forward declaration
 template <class V, std::size_t... exts>
-class Tensor;
+class DenseTensor;
 
 namespace Impl {
 
@@ -286,7 +286,7 @@ constexpr auto tensordot (const A& a, std::index_sequence<II...> aSeq,
   using VA = decltype(std::declval<A>()[std::array<typename ATraits::index_type,ATraits::rank()>{}]);
   using VB = decltype(std::declval<B>()[std::array<typename BTraits::index_type,BTraits::rank()>{}]);
   using V = std::invoke_result_t<BinaryOp2,VA,VB>;
-  auto c = Tensor{cExtents, V(0)};
+  auto c = DenseTensor{cExtents, V(0)};
   Impl::tensorDotImpl(a,aSeq,aSeqInv,b,bSeq,bSeqInv,c,std::ref(op1),std::ref(op2));
   return c;
 }

@@ -422,6 +422,17 @@ DenseTensorSpan (const DenseTensor<V,exts...>&)
   -> DenseTensorSpan<const V,typename Impl::DenseTensorStorageType<V,exts...>::extents_type,Std::layout_right,Std::default_accessor<const V>>;
 
 
+/// Type trait to define a DenseTensor type based on a given ExtentsType
+template <class ElementType, class ExtentsType>
+struct DenseTensorType;
+
+template <class ElementType, class IndexType, std::size_t... exts>
+struct DenseTensorType<ElementType, Std::extents<IndexType, exts...>>
+{
+  using type = DenseTensor<ElementType, exts...>;
+};
+
+
 template <class V, std::size_t... exts>
 struct FieldTraits< DenseTensor<V,exts...> >
 {

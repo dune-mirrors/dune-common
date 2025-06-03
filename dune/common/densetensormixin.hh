@@ -7,6 +7,7 @@
 
 #include <cassert>
 #include <concepts>
+#include <span>
 #include <type_traits>
 #include <utility>
 
@@ -15,6 +16,7 @@
 #include <dune/common/ftraits.hh>
 #include <dune/common/indices.hh>
 #include <dune/common/math.hh>
+#include <dune/common/promotiontraits.hh>
 #include <dune/common/rangeutilities.hh>
 #include <dune/common/tensordot.hh>
 #include <dune/common/concepts/number.hh>
@@ -38,6 +40,14 @@ constexpr auto combinedExtents (const Std::extents<I1,exts1...>& e1,
 }
 
 } // end namespace Impl
+
+// forward declarations
+template <class Element, std::size_t... extents>
+class DenseTensor;
+
+template <class Element, class ExtentsType>
+struct DenseTensorType;
+
 
 /**
  * \brief A tensor interface-class providing common functionality.
@@ -230,9 +240,9 @@ public:
   // @{
 
   /// \brief Vector space operation ( *this += x )
-  template <Concept::TensorWithRank<extents_type::rank()> T>
-    requires (Impl::checkStaticExtents<T::rank(), extents_type, typename T::extents_type>())
-  constexpr derived_type& operator+= (const T& x)
+  template <Concept::TensorWithRank<extents_type::rank()> Tensor>
+    requires (Impl::checkStaticExtents<Tensor::rank(), extents_type, typename Tensor::extents_type>())
+  constexpr derived_type& operator+= (const Tensor& x)
   {
     assert(base_type::extents() == x.extents());
     forEachIndex(base_type::extents(), [&](auto&& index) {
@@ -242,18 +252,16 @@ public:
   }
 
   /// \brief Binary elementwise addition of two tensors (*this + x)
-  template <Concept::TensorWithRank<extents_type::rank()> T>
-    requires (Impl::checkStaticExtents<T::rank(), extents_type, typename T::extents_type>())
-  constexpr Concept::Tensor auto operator+ (const T& x) const
+  template <Concept::TensorWithRank<extents_type::rank()> Tensor>
+    requires (Impl::checkStaticExtents<Tensor::rank(), extents_type, typename Tensor::extents_type>())
+  constexpr Concept::Tensor auto operator+ (const Tensor& x) const
   {
     assert(base_type::extents() == x.extents());
-    using I1 = std::array<index_type,extents_type::rank()>;
-    using I2 = std::array<typename T::index_type,T::rank()>;
-    using V = std::decay_t<decltype((*this)[std::declval<I1>()] + x[std::declval<I2>()])>;
+    using V = typename PromotionTraits<value_type,typename Tensor::value_type>::PromotedType;
 
     // create a copy of *this with as many static extents as possible
     auto result = [&]<class I, std::size_t... exts>(const Std::extents<I,exts...>&) {
-      return Tensor<V,exts...>{*this};
+      return DenseTensor<V,exts...>{*this};
     }(Impl::combinedExtents(base_type::extents(), x.extents()));
 
     result += x;
@@ -261,9 +269,9 @@ public:
   }
 
   /// \brief Vector space operation ( *this -= x )
-  template <Concept::TensorWithRank<extents_type::rank()> T>
-    requires (Impl::checkStaticExtents<T::rank(), extents_type, typename T::extents_type>())
-  constexpr derived_type& operator-= (const T& x)
+  template <Concept::TensorWithRank<extents_type::rank()> Tensor>
+    requires (Impl::checkStaticExtents<Tensor::rank(), extents_type, typename Tensor::extents_type>())
+  constexpr derived_type& operator-= (const Tensor& x)
   {
     assert(base_type::extents() == x.extents());
     forEachIndex(base_type::extents(), [&](auto&& index) {
@@ -273,18 +281,16 @@ public:
   }
 
   /// \brief Binary elementwise subtraction of two tensors (*this - x)
-  template <Concept::TensorWithRank<extents_type::rank()> T>
-    requires (Impl::checkStaticExtents<T::rank(), extents_type, typename T::extents_type>())
-  constexpr Concept::Tensor auto operator- (const T& x) const
+  template <Concept::TensorWithRank<extents_type::rank()> Tensor>
+    requires (Impl::checkStaticExtents<Tensor::rank(), extents_type, typename Tensor::extents_type>())
+  constexpr Concept::Tensor auto operator- (const Tensor& x) const
   {
     assert(base_type::extents() == x.extents());
-    using I1 = std::array<index_type,extents_type::rank()>;
-    using I2 = std::array<typename T::index_type,T::rank()>;
-    using V = std::decay_t<decltype((*this)[std::declval<I1>()] - x[std::declval<I2>()])>;
+    using V = typename PromotionTraits<value_type,typename Tensor::value_type>::PromotedType;
 
     // create a copy of *this with as many static extents as possible
     auto result = [&]<class I, std::size_t... exts>(const Std::extents<I,exts...>&) {
-      return Tensor<V,exts...>{*this};
+      return DenseTensor<V,exts...>{*this};
     }(Impl::combinedExtents(base_type::extents(), x.extents()));
 
     result -= x;
@@ -295,7 +301,7 @@ public:
   constexpr Concept::Tensor auto operator- () const
   {
     // create a copy of *this
-    auto result = Tensor{base_type::extents(), value_type(0)};
+    auto result = DenseTensor{base_type::extents(), value_type(0)};
     forEachIndex(base_type::extents(), [&](auto&& index) {
       result[index] = -(*this)[index];
     });
@@ -303,9 +309,9 @@ public:
   }
 
   /// \brief Vector space axpy operation ( *this += alpha x )
-  template <Concept::TensorWithRank<extents_type::rank()> T>
-    requires (Impl::checkStaticExtents<T::rank(), extents_type, typename T::extents_type>())
-  constexpr derived_type& axpy (const field_type& alpha, const T& x)
+  template <Concept::TensorWithRank<extents_type::rank()> Tensor>
+    requires (Impl::checkStaticExtents<Tensor::rank(), extents_type, typename Tensor::extents_type>())
+  constexpr derived_type& axpy (const field_type& alpha, const Tensor& x)
   {
     assert(base_type::extents() == x.extents());
     forEachIndex(base_type::extents(), [&](auto&& index) {
@@ -315,9 +321,9 @@ public:
   }
 
   /// \brief Vector space aypx operation ( *this = alpha * (*this) + x )
-  template <Concept::TensorWithRank<extents_type::rank()> T>
-    requires (Impl::checkStaticExtents<T::rank(), extents_type, typename T::extents_type>())
-  constexpr derived_type& aypx (const field_type& alpha, const T& x)
+  template <Concept::TensorWithRank<extents_type::rank()> Tensor>
+    requires (Impl::checkStaticExtents<Tensor::rank(), extents_type, typename Tensor::extents_type>())
+  constexpr derived_type& aypx (const field_type& alpha, const Tensor& x)
   {
     assert(base_type::extents() == x.extents());
     forEachIndex(base_type::extents(), [&](auto&& index) {
@@ -345,6 +351,8 @@ public:
   template <Concept::Number S>
   constexpr friend Concept::Tensor auto operator* (const self_type& self, const S& scalar)
   {
+    using V = typename PromotionTraits<value_type,S>::PromotedType;
+    using Tensor = typename DenseTensorType<V,extents_type>::type;
     auto result = Tensor{self};
     result *= scalar;
     return result;
@@ -354,6 +362,8 @@ public:
   template <Concept::Number S>
   constexpr friend Concept::Tensor auto operator* (const S& scalar, const self_type& self)
   {
+    using V = typename PromotionTraits<value_type,S>::PromotedType;
+    using Tensor = typename DenseTensorType<V,extents_type>::type;
     auto result = Tensor{self};
     result *= scalar;
     return result;
@@ -373,6 +383,8 @@ public:
   template <Concept::Number S>
   constexpr friend Concept::Tensor auto operator/ (const self_type& self, const S& scalar)
   {
+    using V = typename PromotionTraits<value_type,S>::PromotedType;
+    using Tensor = typename DenseTensorType<V,extents_type>::type;
     auto result = Tensor{self};
     result /= scalar;
     return result;
@@ -385,28 +397,28 @@ public:
   // @{
 
   /// \brief Returns the tensor product with contraction over a single index `A_{ij} B_{jkl}`
-  template <Concept::Tensor T>
-    requires (extents_type::rank() >= 1 && T::rank() >= 1 &&
-      Impl::checkStaticExtents<1, extents_type, typename T::extents_type>())
-  constexpr Concept::Tensor auto operator* (const T& tensor) const
+  template <Concept::Tensor Tensor>
+    requires (extents_type::rank() >= 1 && Tensor::rank() >= 1 &&
+      Impl::checkStaticExtents<1, extents_type, typename Tensor::extents_type>())
+  constexpr Concept::Tensor auto operator* (const Tensor& tensor) const
   {
     return tensordot<1>(*this, tensor);
   }
 
   /// \brief Returns the Hermitian tensor product with contraction over a single index `conj(A_{ij}) B_{jkl}`
-  template <Concept::Tensor T>
-    requires (extents_type::rank() >= 1 && T::rank() >= 1 &&
-      Impl::checkStaticExtents<1, extents_type, typename T::extents_type>())
-  constexpr Concept::Tensor auto dot (const T& tensor) const
+  template <Concept::Tensor Tensor>
+    requires (extents_type::rank() >= 1 && Tensor::rank() >= 1 &&
+      Impl::checkStaticExtents<1, extents_type, typename Tensor::extents_type>())
+  constexpr Concept::Tensor auto dot (const Tensor& tensor) const
   {
     return tensordot(*this, tensor, Indices::_1, std::plus<>{}, DotProduct{});
   }
 
   /// \brief Returns the Hermitian tensor product with contraction over two indices `conj(A_{ijk}) B_{jkl}`
-  template <Concept::Tensor T>
-    requires (extents_type::rank() >= 2 && T::rank() >= 2 &&
-      Impl::checkStaticExtents<1, extents_type, typename T::extents_type>())
-  constexpr Concept::Tensor auto ddot (const T& tensor) const
+  template <Concept::Tensor Tensor>
+    requires (extents_type::rank() >= 2 && Tensor::rank() >= 2 &&
+      Impl::checkStaticExtents<1, extents_type, typename Tensor::extents_type>())
+  constexpr Concept::Tensor auto ddot (const Tensor& tensor) const
   {
     return tensordot(*this, tensor, Indices::_2, std::plus<>{}, DotProduct{});
   }
@@ -527,11 +539,11 @@ public:
   // @{
 
   /// \brief Returns the Hermitian tensor inner product with contraction over all indices `conj(A_{ij}) B_{ij}`
-  template <Concept::TensorWithRank<extents_type::rank()> T>
-    requires (Impl::checkStaticExtents<T::rank(), extents_type, typename T::extents_type>())
-  constexpr Concept::Number auto inner (const T& tensor) const
+  template <Concept::TensorWithRank<extents_type::rank()> Tensor>
+    requires (Impl::checkStaticExtents<Tensor::rank(), extents_type, typename Tensor::extents_type>())
+  constexpr Concept::Number auto inner (const Tensor& tensor) const
   {
-    auto result = tensordot(*this, tensor, std::integral_constant<std::size_t,T::rank()>{},
+    auto result = tensordot(*this, tensor, std::integral_constant<std::size_t,Tensor::rank()>{},
       std::plus<>{}, DotProduct{});
     using F = typename FieldTraits<typename decltype(result)::value_type>::field_type;
     return F(result);
@@ -608,7 +620,7 @@ private:
 
   // a range over all values in the tensor-span
   template <class BaseType>
-  auto valueRange (BaseType&& base) const
+  static auto valueRange (BaseType&& base)
       requires requires { base.accessor(); base.data_handle(); }
   {
     assert(base.is_exhaustive());
@@ -618,7 +630,7 @@ private:
 
   // a range over all values in the tensor
   template <class BaseType>
-  auto valueRange (BaseType&& base) const
+  static auto valueRange (BaseType&& base)
       requires requires { base.container_data(); }
   {
     assert(base.is_exhaustive());
@@ -667,10 +679,10 @@ constexpr bool operator== (const S& number, const DenseTensorMixin<D,B>& rhs) no
 
 /** \brief Output stream overload for tensor types */
 template <class D, class B>
-std::ostream& operator<< (std::ostream& out, const Dune::TensorMixin<D,B>& tensor)
+std::ostream& operator<< (std::ostream& out, const Dune::DenseTensorMixin<D,B>& tensor)
 {
-  using extents_type = typename Dune::TensorMixin<D,B>::extents_type;
-  using index_type = typename Dune::TensorMixin<D,B>::index_type;
+  using extents_type = typename Dune::DenseTensorMixin<D,B>::extents_type;
+  using index_type = typename Dune::DenseTensorMixin<D,B>::index_type;
   if constexpr(extents_type::rank() == 0) {
     out << tensor();
   } else if constexpr(extents_type::rank() == 1) {
