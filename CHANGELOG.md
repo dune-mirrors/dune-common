@@ -108,6 +108,8 @@ In order to build the DUNE core modules you need at least the following software
 - Add converting constructor and assignment operator to `FieldMatrix` and `DiagonalMatrix` to
   allow assignments between `FieldMatrix`es of different field types.
 
+- Add tensor data-structure `DenseTensor` and span `DenseTensorSpan` based on a common interface class `DenseTensorMixin`
+
 ## C++: Deprecations and removals
 
 - Remove deprecated alias `Dune::Std::bool_constant`. Please use `std::bool_constant` directly.
