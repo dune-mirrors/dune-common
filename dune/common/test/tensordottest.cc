@@ -35,6 +35,8 @@ int main(int argc, char** argv)
   auto fTensor = Dune::DenseTensor<double>{};
   auto fTensor2 = Dune::DenseTensor<double,2>{};
   auto fTensor3 = Dune::DenseTensor<double,3>{};
+  auto fTensor4 = Dune::DenseTensor<double,4>{};
+  auto fTensor22 = Dune::DenseTensor<double,2,2>{};
   auto fTensor23 = Dune::DenseTensor<double,2,3>{};
   auto fTensor32 = Dune::DenseTensor<double,3,2>{};
   auto fTensor234 = Dune::DenseTensor<double,2,3,4>{};
@@ -377,6 +379,22 @@ int main(int argc, char** argv)
     auto x1 = cTensor22 * cTensor22;
     auto x2 = cTensor22.dot(cTensor22);
     testSuite.check(x1 != x2);
+  }
+
+  // test multi-dot
+  {
+    auto s = fTensor234.multiDot(fTensor2,fTensor3,fTensor4);
+    static_assert(decltype(s)::rank() == 0);
+
+    auto t32 = fTensor234.multiDot(fMatrix23,fMatrix32,fTensor4);
+    static_assert(decltype(t32)::rank() == 2);
+    static_assert(decltype(t32)::static_extent(0) == 3);
+    static_assert(decltype(t32)::static_extent(1) == 2);
+
+    auto t33 = fTensor22.multiDot(fTensor23,fTensor23);
+    static_assert(decltype(t33)::rank() == 2);
+    static_assert(decltype(t33)::static_extent(0) == 3);
+    static_assert(decltype(t33)::static_extent(1) == 3);
   }
 
   return testSuite.exit();

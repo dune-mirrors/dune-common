@@ -19,6 +19,7 @@
 #include <dune/common/promotiontraits.hh>
 #include <dune/common/rangeutilities.hh>
 #include <dune/common/tensordot.hh>
+#include <dune/common/tensormultidot.hh>
 #include <dune/common/concepts/number.hh>
 #include <dune/common/concepts/tensor.hh>
 #include <dune/common/std/type_traits.hh>
@@ -423,6 +424,18 @@ public:
     return tensordot(*this, tensor, Indices::_2, std::plus<>{}, DotProduct{});
   }
 
+  /**
+   * \brief Return the dot product with all passed tensors, i.e., `tensordot(tensordot(A, tensors^0), tensors^1),...)`.
+   *
+   * \b Example:
+   * An application of a multDot product is the equivalent transform operation `B^T * A * B`.
+   **/
+  template <Concept::TensorLike... Tensors>
+    requires (sizeof...(Tensors) == extents_type::rank())
+  constexpr Concept::Tensor auto multiDot (const Tensors&... tensors)
+  {
+    return tensorMultiDot(*this, tensors...);
+  }
 
   /// \brief y = A x
   template <Concept::VectorLike VectorIn, Concept::VectorLike VectorOut>
