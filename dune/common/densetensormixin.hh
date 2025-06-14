@@ -397,27 +397,27 @@ public:
   // @{
 
   /// \brief Returns the tensor product with contraction over a single index `A_{ij} B_{jkl}`
-  template <Concept::Tensor Tensor>
-    requires (extents_type::rank() >= 1 && Tensor::rank() >= 1 &&
-      Impl::checkStaticExtents<1, extents_type, typename Tensor::extents_type>())
+  template <Concept::TensorLike Tensor>
+    requires (extents_type::rank() >= 1 && TensorTraits<Tensor>::rank() >= 1 &&
+      Impl::checkStaticExtents<1, extents_type, typename TensorTraits<Tensor>::extents_type>())
   constexpr Concept::Tensor auto operator* (const Tensor& tensor) const
   {
     return tensordot<1>(*this, tensor);
   }
 
   /// \brief Returns the Hermitian tensor product with contraction over a single index `conj(A_{ij}) B_{jkl}`
-  template <Concept::Tensor Tensor>
-    requires (extents_type::rank() >= 1 && Tensor::rank() >= 1 &&
-      Impl::checkStaticExtents<1, extents_type, typename Tensor::extents_type>())
+  template <Concept::TensorLike Tensor>
+    requires (extents_type::rank() >= 1 && TensorTraits<Tensor>::rank() >= 1 &&
+      Impl::checkStaticExtents<1, extents_type, typename TensorTraits<Tensor>::extents_type>())
   constexpr Concept::Tensor auto dot (const Tensor& tensor) const
   {
     return tensordot(*this, tensor, Indices::_1, std::plus<>{}, DotProduct{});
   }
 
   /// \brief Returns the Hermitian tensor product with contraction over two indices `conj(A_{ijk}) B_{jkl}`
-  template <Concept::Tensor Tensor>
-    requires (extents_type::rank() >= 2 && Tensor::rank() >= 2 &&
-      Impl::checkStaticExtents<1, extents_type, typename Tensor::extents_type>())
+  template <Concept::TensorLike Tensor>
+    requires (extents_type::rank() >= 2 && TensorTraits<Tensor>::rank() >= 2 &&
+      Impl::checkStaticExtents<1, extents_type, typename TensorTraits<Tensor>::extents_type>())
   constexpr Concept::Tensor auto ddot (const Tensor& tensor) const
   {
     return tensordot(*this, tensor, Indices::_2, std::plus<>{}, DotProduct{});
@@ -425,7 +425,7 @@ public:
 
 
   /// \brief y = A x
-  template <Concept::Vector VectorIn, Concept::Vector VectorOut>
+  template <Concept::VectorLike VectorIn, Concept::VectorLike VectorOut>
   constexpr void mv (const VectorIn& x, VectorOut& y) const
       requires (extents_type::rank() == 2)
   {
@@ -434,7 +434,7 @@ public:
   }
 
   /// \brief y = A^T x
-  template <Concept::Vector VectorIn, Concept::Vector VectorOut>
+  template <Concept::VectorLike VectorIn, Concept::VectorLike VectorOut>
   constexpr void mtv (const VectorIn& x, VectorOut& y) const
       requires (extents_type::rank() == 2)
   {
@@ -443,7 +443,7 @@ public:
   }
 
   /// \brief y = A^H x
-  template <Concept::Vector VectorIn, Concept::Vector VectorOut>
+  template <Concept::VectorLike VectorIn, Concept::VectorLike VectorOut>
   constexpr void mhv (const VectorIn& x, VectorOut& y) const
       requires (extents_type::rank() == 2)
   {
@@ -453,7 +453,7 @@ public:
   }
 
   /// \brief y += A x
-  template <Concept::Vector VectorIn, Concept::Vector VectorOut>
+  template <Concept::VectorLike VectorIn, Concept::VectorLike VectorOut>
   constexpr void umv (const VectorIn& x, VectorOut& y) const
       requires (extents_type::rank() == 2)
   {
@@ -461,7 +461,7 @@ public:
   }
 
   /// \brief y -= A x
-  template <Concept::Vector VectorIn, Concept::Vector VectorOut>
+  template <Concept::VectorLike VectorIn, Concept::VectorLike VectorOut>
   constexpr void mmv (const VectorIn& x, VectorOut& y) const
       requires (extents_type::rank() == 2)
   {
@@ -469,7 +469,7 @@ public:
   }
 
   /// \brief y += A^T x
-  template <Concept::Vector VectorIn, Concept::Vector VectorOut>
+  template <Concept::VectorLike VectorIn, Concept::VectorLike VectorOut>
   constexpr void umtv (const VectorIn& x, VectorOut& y) const
       requires (extents_type::rank() == 2)
   {
@@ -477,7 +477,7 @@ public:
   }
 
   /// \brief y -= A^T x
-  template <Concept::Vector VectorIn, Concept::Vector VectorOut>
+  template <Concept::VectorLike VectorIn, Concept::VectorLike VectorOut>
   constexpr void mmtv (const VectorIn& x, VectorOut& y) const
       requires (extents_type::rank() == 2)
   {
@@ -485,7 +485,7 @@ public:
   }
 
   /// \brief y += A^H x
-  template <Concept::Vector VectorIn, Concept::Vector VectorOut>
+  template <Concept::VectorLike VectorIn, Concept::VectorLike VectorOut>
   constexpr void umhv (const VectorIn& x, VectorOut& y) const
       requires (extents_type::rank() == 2)
   {
@@ -494,7 +494,7 @@ public:
   }
 
   /// \brief y -= A^H x
-  template <Concept::Vector VectorIn, Concept::Vector VectorOut>
+  template <Concept::VectorLike VectorIn, Concept::VectorLike VectorOut>
   constexpr void mmhv (const VectorIn& x, VectorOut& y) const
       requires (extents_type::rank() == 2)
   {
@@ -503,7 +503,7 @@ public:
   }
 
   /// \brief y += alpha A x
-  template <Concept::Vector VectorIn, Concept::Vector VectorOut>
+  template <Concept::VectorLike VectorIn, Concept::VectorLike VectorOut>
   constexpr void usmv (const typename FieldTraits<VectorOut>::field_type& alpha,
                        const VectorIn& x, VectorOut& y) const
       requires (extents_type::rank() == 2)
@@ -513,7 +513,7 @@ public:
   }
 
   /// \brief y += alpha A^T x
-  template <Concept::Vector VectorIn, Concept::Vector VectorOut>
+  template <Concept::VectorLike VectorIn, Concept::VectorLike VectorOut>
   constexpr void usmtv (const typename FieldTraits<VectorOut>::field_type& alpha,
                         const VectorIn& x, VectorOut& y) const
       requires (extents_type::rank() == 2)
@@ -523,7 +523,7 @@ public:
   }
 
   /// \brief y += alpha A^H x
-  template <Concept::Vector VectorIn, Concept::Vector VectorOut>
+  template <Concept::VectorLike VectorIn, Concept::VectorLike VectorOut>
   constexpr void usmhv (const typename FieldTraits<VectorOut>::field_type& alpha,
                         const VectorIn& x, VectorOut& y) const
       requires (extents_type::rank() == 2)
@@ -539,11 +539,11 @@ public:
   // @{
 
   /// \brief Returns the Hermitian tensor inner product with contraction over all indices `conj(A_{ij}) B_{ij}`
-  template <Concept::TensorWithRank<extents_type::rank()> Tensor>
-    requires (Impl::checkStaticExtents<Tensor::rank(), extents_type, typename Tensor::extents_type>())
+  template <Concept::TensorLikeWithRank<extents_type::rank()> Tensor>
+    requires (Impl::checkStaticExtents<extents_type::rank(), extents_type, typename TensorTraits<Tensor>::extents_type>())
   constexpr Concept::Number auto inner (const Tensor& tensor) const
   {
-    auto result = tensordot(*this, tensor, std::integral_constant<std::size_t,Tensor::rank()>{},
+    auto result = tensordot(*this, tensor, std::integral_constant<std::size_t,extents_type::rank()>{},
       std::plus<>{}, DotProduct{});
     using F = typename FieldTraits<typename decltype(result)::value_type>::field_type;
     return F(result);

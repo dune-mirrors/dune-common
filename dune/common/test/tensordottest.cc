@@ -300,41 +300,59 @@ int main(int argc, char** argv)
   // test tensor mixin methods
   {
     Concept::Tensor auto d = fTensor2 * dTensor2;
+    Concept::Tensor auto d_ = fTensor2 * dVector2;
     Concept::Tensor auto d3 = fTensor32 * dTensor2;
+    Concept::Tensor auto d3_ = fTensor32 * dVector2;
     Concept::Tensor auto d34 = fTensor2 * dTensor234;
   }
 
   {
     Concept::Tensor auto d = fTensor2.dot(dTensor2);
+    Concept::Tensor auto d_ = fTensor2.dot(dVector2);
     Concept::Tensor auto d3 = fTensor32.dot(dTensor2);
+    Concept::Tensor auto d3_ = fTensor32.dot(dVector2);
     Concept::Tensor auto d34 = fTensor2.dot(dTensor234);
   }
 
   {
     Concept::Tensor auto d = dTensor23.ddot(fTensor23);
+    Concept::Tensor auto d_ = dTensor23.ddot(fMatrix23);
     Concept::Tensor auto d4 = dTensor23.ddot(fTensor234);
   }
 
   {
     fTensor32.mv(dTensor2, fTensor3);
+    fTensor32.mv(dTensor2, fVector3);
     fTensor23.mtv(dTensor2, fTensor3);
+    fTensor23.mtv(dTensor2, fVector3);
     fTensor23.mhv(dTensor2, fTensor3);
+    fTensor23.mhv(dTensor2, fVector3);
 
     fTensor32.umv(dTensor2, fTensor3);
+    fTensor32.umv(dTensor2, fVector3);
     fTensor23.umtv(dTensor2, fTensor3);
+    fTensor23.umtv(dTensor2, fVector3);
     fTensor23.umhv(dTensor2, fTensor3);
+    fTensor23.umhv(dTensor2, fVector3);
 
     fTensor32.mmv(dTensor2, fTensor3);
+    fTensor32.mmv(dTensor2, fVector3);
     fTensor23.mmtv(dTensor2, fTensor3);
+    fTensor23.mmtv(dTensor2, fVector3);
     fTensor23.mmhv(dTensor2, fTensor3);
+    fTensor23.mmhv(dTensor2, fVector3);
 
     fTensor32.usmv(2.0, dTensor2, fTensor3);
+    fTensor32.usmv(2.0, dTensor2, fVector3);
     fTensor23.usmtv(2.0, dTensor2, fTensor3);
+    fTensor23.usmtv(2.0, dTensor2, fVector3);
     fTensor23.usmhv(2.0, dTensor2, fTensor3);
+    fTensor23.usmhv(2.0, dTensor2, fVector3);
   }
 
   {
     std::floating_point auto x1 = dTensor23.inner(fTensor23);
+    std::floating_point auto x1_ = dTensor23.inner(fMatrix23);
     std::floating_point auto x2 = dTensor23.frobenius_norm2();
     std::floating_point auto x3 = dTensor23.frobenius_norm();
 

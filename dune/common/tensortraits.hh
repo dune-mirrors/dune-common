@@ -52,6 +52,10 @@ requires(T tensor, std::array<typename TensorTraits<T>::index_type, TensorTraits
 };
 
 /// \brief A TensorLike type of rank 1
+template <class T, std::size_t rank>
+concept TensorLikeWithRank = TensorLike<T> && TensorTraits<T>::rank() == rank;
+
+/// \brief A TensorLike type of rank 1
 template <class T>
 concept VectorLike = TensorLike<T> && TensorTraits<T>::rank() == 1;
 
