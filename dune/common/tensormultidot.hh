@@ -77,7 +77,7 @@ struct TensorMultiDot
     for (typename A::index_type i = 0; i < a.extent(0); ++i)
       for (typename A::index_type j = 0; j < a.extent(1); ++j)
         for (typename A::index_type k = 0; k < TensorTraits<T1>::extent(t0,1); ++k)
-          for (typename A::index_type l = 0; j < TensorTraits<T1>::extent(t1,1); ++l)
+          for (typename A::index_type l = 0; l < TensorTraits<T1>::extent(t1,1); ++l)
             out(k,l) += a(i,j) * t0[std::array{i,k}] * t1[std::array{j,l}];
 
     return out;

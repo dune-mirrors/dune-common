@@ -202,12 +202,14 @@ namespace Dune
     }
 
     //! random access with array of indices
-    value_type & operator[] (std::array<size_type,2> i)
+    template <std::convertible_to<size_type> SizeType>
+    value_type & operator[] (std::array<SizeType,2> i)
     {
       return asImp().mat_access(i[0])[i[1]];
     }
 
-    const value_type & operator[] (std::array<size_type,2> i) const
+    template <std::convertible_to<size_type> SizeType>
+    const value_type & operator[] (std::array<SizeType,2> i) const
     {
       return asImp().mat_access(i[0])[i[1]];
     }
