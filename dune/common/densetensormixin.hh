@@ -354,7 +354,7 @@ public:
   {
     using V = typename PromotionTraits<value_type,S>::PromotedType;
     using Tensor = typename DenseTensorType<V,extents_type>::type;
-    auto result = Tensor{self};
+    auto result = Tensor{self.asDerived()};
     result *= scalar;
     return result;
   }
@@ -365,7 +365,7 @@ public:
   {
     using V = typename PromotionTraits<value_type,S>::PromotedType;
     using Tensor = typename DenseTensorType<V,extents_type>::type;
-    auto result = Tensor{self};
+    auto result = Tensor{self.asDerived()};
     result *= scalar;
     return result;
   }
@@ -386,7 +386,7 @@ public:
   {
     using V = typename PromotionTraits<value_type,S>::PromotedType;
     using Tensor = typename DenseTensorType<V,extents_type>::type;
-    auto result = Tensor{self};
+    auto result = Tensor{self.asDerived()};
     result /= scalar;
     return result;
   }
