@@ -590,6 +590,25 @@ public:
     return frobenius_norm();
   }
 
+  typename FieldTraits<value_type>::real_type infinity_norm () const
+  {
+    using std::abs;
+    using R = typename FieldTraits<value_type>::real_type;
+    if (this->is_exhaustive()) {
+      R result(0);
+      for (auto const& vi : valueRange(this->asBase()))
+        result = std::max<R>(result, abs(vi));
+      return result;
+    } else {
+      R result(0);
+      forEachIndex(base_type::extents(), [&](auto&& index) {
+        auto const& vi = (*this)[index];
+        result = std::max<R>(result, abs(vi));
+      });
+      return result;
+    }
+  }
+
   /// @}
 
 
