@@ -262,7 +262,7 @@ public:
 
     // create a copy of *this with as many static extents as possible
     auto result = [&]<class I, std::size_t... exts>(const Std::extents<I,exts...>&) {
-      return DenseTensor<V,exts...>{*this};
+      return DenseTensor<V,exts...>{asDerived()};
     }(Impl::combinedExtents(base_type::extents(), x.extents()));
 
     result += x;
@@ -291,7 +291,7 @@ public:
 
     // create a copy of *this with as many static extents as possible
     auto result = [&]<class I, std::size_t... exts>(const Std::extents<I,exts...>&) {
-      return DenseTensor<V,exts...>{*this};
+      return DenseTensor<V,exts...>{asDerived()};
     }(Impl::combinedExtents(base_type::extents(), x.extents()));
 
     result -= x;
