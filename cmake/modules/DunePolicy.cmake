@@ -76,7 +76,9 @@ function(dune_get_policy _policy _var)
       if(NOT _policy_warning AND NOT DUNE_POLICY_DISABLE_WARNING)
         message(AUTHOR_WARNING "Policy ${_policy} is not set: ${_policy_doc} "
           "Use the dune_policy(SET) command to set the policy and suppress this warning. "
-          "The default value ${DUNE_POLICY_DEFAULT} will be used in the meantime.")
+          "The default value ${DUNE_POLICY_DEFAULT} will be used in the meantime."
+          "When the module ${_policy_module} reaches version ${_policy_version} or higher, "
+          "the default value will be set to NEW.")
         set_property(GLOBAL PROPERTY ${PROJECT_NAME}_POLICY_${_policy}_WARNING TRUE)
       endif()
       set(_policy_value ${DUNE_POLICY_DEFAULT})
