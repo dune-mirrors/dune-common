@@ -15,8 +15,8 @@
 #include <type_traits>
 #include <utility>
 
-#include "pybind11.h"
-#include "numpy.h"
+#include <pybind11/pybind11.h>
+#include <pybind11/numpy.h>
 
 PYBIND11_NAMESPACE_BEGIN(PYBIND11_NAMESPACE)
 

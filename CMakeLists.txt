@@ -29,6 +29,10 @@ dune_policy(SET DP_SUGGESTED_MODULE_DEPENDENCIES_REQUIRED_DOWNSTREAM NEW)
 # start a dune project with information from dune.module
 dune_project()
 
+# if(NOT DUNE_USE_SYSTEM_PYBIND11)
+#   dune_add_library(pybind11 INTERFACE EXPORT_NAME module NAMESPACE pybind11::)
+# endif()
+
 # Create a target for dune-common with a Dune::Common alias
 dune_add_library(dunecommon EXPORT_NAME Common NAMESPACE Dune::)
 
@@ -41,6 +45,22 @@ target_compile_features(dunecommon PUBLIC cxx_std_20)
 # Set properties to the dunecommon target
 add_dune_blas_lapack_flags(dunecommon)
 add_dune_tbb_flags(dunecommon)
+
+# Option to disable the local copy of pybind11
+option(DUNE_USE_SYSTEM_PYBIND11 "Use system version of pybind11, not our vendored copy" FALSE)
+add_feature_info(DUNE_USE_SYSTEM_PYBIND11 DUNE_USE_SYSTEM_PYBIND11 "Use system version of pybind11, not our vendored copy")
+
+if(DUNE_ENABLE_PYTHONBINDINGS)
+  if(DUNE_USE_SYSTEM_PYBIND11)
+    find_package(pybind11 CONFIG REQUIRED)
+    target_link_libraries(dunecommon PUBLIC pybind11::module)
+  else()
+    target_include_directories(dunecommon INTERFACE
+        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/external> # <dune/python/pybind11/...>
+        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/external/dune/python> # <pybind11/...>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/dune/python>) # <pybind11/...>
+  endif()
+endif()
 
 # collect dependencies to be added into the dune-common-config.cmake files
 set(DUNE_COMMON_PACKAGE_DEPENDENCIES
@@ -58,12 +78,16 @@ endif()
 if (TBB_FOUND)
   list(APPEND DUNE_COMMON_PACKAGE_DEPENDENCIES "find_dependency(TBB)")
 endif()
+if (DUNE_ENABLE_PYTHONBINDINGS AND DUNE_USE_SYSTEM_PYBIND11)
+  list(APPEND DUNE_COMMON_PACKAGE_DEPENDENCIES "find_dependency(pybind11)")
+endif()
 
 # add subdirectories to execute CMakeLists.txt there
 add_subdirectory(bin)
 add_subdirectory(cmake)
 add_subdirectory(doc)
 add_subdirectory(dune)
+add_subdirectory(external)
 add_subdirectory(lib)
 add_subdirectory(share)
 
