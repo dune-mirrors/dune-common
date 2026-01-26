@@ -46,11 +46,6 @@ int main(int argc, char** argv)
   auto fMatrix23 = Dune::FieldMatrix<double,2,3>{};
   auto fMatrix32 = Dune::FieldMatrix<double,3,2>{};
 
-  auto fVector2 = Dune::FieldVector<double,2>{};
-  auto fVector3 = Dune::FieldVector<double,3>{};
-  auto fMatrix23 = Dune::FieldMatrix<double,2,3>{};
-  auto fMatrix32 = Dune::FieldMatrix<double,3,2>{};
-
   // test dynamic tensors
   {
     auto d = tensordot<0>(dTensor,dTensor);
@@ -301,25 +296,25 @@ int main(int argc, char** argv)
 
   // test tensor mixin methods
   {
-    Concept::Tensor auto d = fTensor2 * dTensor2;
-    Concept::Tensor auto d_ = fTensor2 * dVector2;
-    Concept::Tensor auto d3 = fTensor32 * dTensor2;
-    Concept::Tensor auto d3_ = fTensor32 * dVector2;
-    Concept::Tensor auto d34 = fTensor2 * dTensor234;
+    [[maybe_unused]] Concept::Tensor auto d = fTensor2 * dTensor2;
+    [[maybe_unused]] Concept::Tensor auto d_ = fTensor2 * dVector2;
+    [[maybe_unused]] Concept::Tensor auto d3 = fTensor32 * dTensor2;
+    [[maybe_unused]] Concept::Tensor auto d3_ = fTensor32 * dVector2;
+    [[maybe_unused]] Concept::Tensor auto d34 = fTensor2 * dTensor234;
   }
 
   {
-    Concept::Tensor auto d = fTensor2.dot(dTensor2);
-    Concept::Tensor auto d_ = fTensor2.dot(dVector2);
-    Concept::Tensor auto d3 = fTensor32.dot(dTensor2);
-    Concept::Tensor auto d3_ = fTensor32.dot(dVector2);
-    Concept::Tensor auto d34 = fTensor2.dot(dTensor234);
+    [[maybe_unused]] Concept::Tensor auto d = fTensor2.dot(dTensor2);
+    [[maybe_unused]] Concept::Tensor auto d_ = fTensor2.dot(dVector2);
+    [[maybe_unused]] Concept::Tensor auto d3 = fTensor32.dot(dTensor2);
+    [[maybe_unused]] Concept::Tensor auto d3_ = fTensor32.dot(dVector2);
+    [[maybe_unused]] Concept::Tensor auto d34 = fTensor2.dot(dTensor234);
   }
 
   {
-    Concept::Tensor auto d = dTensor23.ddot(fTensor23);
-    Concept::Tensor auto d_ = dTensor23.ddot(fMatrix23);
-    Concept::Tensor auto d4 = dTensor23.ddot(fTensor234);
+    [[maybe_unused]] Concept::Tensor auto d = dTensor23.ddot(fTensor23);
+    [[maybe_unused]] Concept::Tensor auto d_ = dTensor23.ddot(fMatrix23);
+    [[maybe_unused]] Concept::Tensor auto d4 = dTensor23.ddot(fTensor234);
   }
 
   {
@@ -353,13 +348,13 @@ int main(int argc, char** argv)
   }
 
   {
-    std::floating_point auto x1 = dTensor23.inner(fTensor23);
-    std::floating_point auto x1_ = dTensor23.inner(fMatrix23);
-    std::floating_point auto x2 = dTensor23.frobenius_norm2();
-    std::floating_point auto x3 = dTensor23.frobenius_norm();
+    [[maybe_unused]] std::floating_point auto x1 = dTensor23.inner(fTensor23);
+    [[maybe_unused]] std::floating_point auto x1_ = dTensor23.inner(fMatrix23);
+    [[maybe_unused]] std::floating_point auto x2 = dTensor23.frobenius_norm2();
+    [[maybe_unused]] std::floating_point auto x3 = dTensor23.frobenius_norm();
 
-    std::floating_point auto x4 = fTensor3.two_norm2();
-    std::floating_point auto x5 = fTensor3.two_norm();
+    [[maybe_unused]] std::floating_point auto x4 = fTensor3.two_norm2();
+    [[maybe_unused]] std::floating_point auto x5 = fTensor3.two_norm();
   }
 
   {
