@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightInfo: Copyright © DUNE Project contributors, see file LICENSE.md in module root
+# SPDX-License-Identifier: LicenseRef-GPL-2.0-only-with-DUNE-exception
+
 if(DUNE_USE_SYSTEM_PYBIND11)
   # handle the extra file extensions.h
   configure_file(
