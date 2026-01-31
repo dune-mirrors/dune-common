@@ -258,6 +258,15 @@ class Builder:
                 # new dune package is added
                 tagfile = os.path.join(self.dune_py_dir, ".noconfigure")
                 if not os.path.isfile(tagfile):
+
+                    if self.dune_py_dir.find(' ') != -1:
+                        msg = f"""The DUNE Python bindings do not work directories that contain white spaces.
+ Please remove all white spaces from '{self.dune_py_dir}'.
+ You may also need to remove and re-create any
+ virtual environments create in this directory."""
+                        raise OSError(msg)
+
+
                     logger.info('Generating dune-py module in ' + self.dune_py_dir)
                     # create module cache for external modules that have been registered with dune-py
                     self.cacheExternalModules()
@@ -630,9 +639,9 @@ class MakefileBuilder(Builder):
                     buildScript.write('set -e\n')
                     # add launcher before compiler
                     buildScript.write('if [ "$DUNE_CXX_COMPILER_LAUNCHER" == "" ]; then\n')
-                    buildScript.write(' DUNE_CXX_COMPILER_LAUNCHER='+launcher+'\n')
+                    buildScript.write('  DUNE_CXX_COMPILER_LAUNCHER="'+launcher+'"\n')
                     buildScript.write('fi\n')
-                    buildScript.write("$DUNE_CXX_COMPILER_LAUNCHER " + compilerCmd+"\n")
+                    buildScript.write('exec "$DUNE_CXX_COMPILER_LAUNCHER" ' + compilerCmd+"\n")
                     # write linker commands
                     with open(linkerSourceName, "r") as linkerSource:
                         linkerCmd = linkerSource.read()
