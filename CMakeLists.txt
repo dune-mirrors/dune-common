@@ -46,22 +46,6 @@ target_compile_features(dunecommon PUBLIC cxx_std_20)
 add_dune_blas_lapack_flags(dunecommon)
 add_dune_tbb_flags(dunecommon)
 
-# Option to disable the local copy of pybind11
-option(DUNE_USE_SYSTEM_PYBIND11 "Use system version of pybind11, not our vendored copy" FALSE)
-add_feature_info(DUNE_USE_SYSTEM_PYBIND11 DUNE_USE_SYSTEM_PYBIND11 "Use system version of pybind11, not our vendored copy")
-
-if(DUNE_ENABLE_PYTHONBINDINGS)
-  if(DUNE_USE_SYSTEM_PYBIND11)
-    find_package(pybind11 CONFIG REQUIRED)
-    target_link_libraries(dunecommon PUBLIC pybind11::module)
-  else()
-    target_include_directories(dunecommon INTERFACE
-        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/external> # <dune/python/pybind11/...>
-        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/external/dune/python> # <pybind11/...>
-        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/dune/python>) # <pybind11/...>
-  endif()
-endif()
-
 # collect dependencies to be added into the dune-common-config.cmake files
 set(DUNE_COMMON_PACKAGE_DEPENDENCIES
   [[set(THREADS_PREFER_PTHREAD_FLAG TRUE CACHE BOOL "Prefer -pthread compiler and linker flag")]])
@@ -93,6 +77,9 @@ add_subdirectory(share)
 
 # if Python bindings are enabled, include necessary sub directories.
 if(DUNE_ENABLE_PYTHONBINDINGS)
+  # Option to disable the local copy of pybind11
+  option(DUNE_USE_SYSTEM_PYBIND11 "Use system version of pybind11, not our vendored copy" FALSE)
+  add_feature_info(DUNE_USE_SYSTEM_PYBIND11 DUNE_USE_SYSTEM_PYBIND11 "Use system version of pybind11, not our vendored copy")
   add_subdirectory(python)
 endif()
 

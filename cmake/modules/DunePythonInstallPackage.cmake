@@ -238,11 +238,26 @@ function(dune_python_configure_dependencies)
     set(DUNE_PYTHON_VENVSETUP TRUE CACHE BOOL "The internal venv setup successful")
   endif()
 
+  # Check if pybind11 is available as system package:
+  # at this stage finding the package is not required yet
+  # since we could still install pybind11 into venv
+  if(DUNE_USE_SYSTEM_PYBIND11)
+    find_package(pybind11 CONFIG)
+    target_link_libraries(dunecommon PUBLIC pybind11::module)
+  endif()
+
   # find the generated egg-info folder and install each dependency listed on the requires.txt file
   file(GLOB EGG_INFO_PATH LIST_DIRECTORIES TRUE "${EGG_INFO_PATH}/*.egg-info")
   if(EXISTS "${EGG_INFO_PATH}/requires.txt")
     file(READ "${EGG_INFO_PATH}/requires.txt" PACKAGE_REQUIREMENTS)
     string(REPLACE "\n" ";" PACKAGE_REQUIREMENTS ${PACKAGE_REQUIREMENTS})
+
+    if(NOT pybind11_FOUND AND DUNE_USE_SYSTEM_PYBIND11)
+      # no pybind11 found but local copy is not to be used
+      # so install it with other packages
+      string(APPEND PACKAGE_REQUIREMENTS " pybind11[global]~=3.0.1")
+    endif()
+
     string(REPLACE ";" " " PACKAGE_REQUIREMENTS_STR "${PACKAGE_REQUIREMENTS}")
     message(STATUS "Installing python package abstract requirements: " ${PACKAGE_REQUIREMENTS_STR})
     foreach(requirement IN LISTS PACKAGE_REQUIREMENTS)
@@ -255,6 +270,7 @@ function(dune_python_configure_dependencies)
         set(PYCONFDEPS_OPT "(optional) ")
         continue()
       endif()
+
       # Install requirements (e.g. not dune packages) once at configure stage
       dune_execute_process(COMMAND ${DUNE_PYTHON_VIRTUALENV_EXECUTABLE} -m pip install
                                     "${WHEEL_OPTION}"
@@ -276,6 +292,17 @@ function(dune_python_configure_dependencies)
         endif()
       endif()
     endforeach()
+  endif()
+
+  # If the internal copy of pybind11 is not to be sued then
+  # at this point we require pybind11 to be found on by find_package
+  if(NOT pybind11_FOUND AND DUNE_USE_SYSTEM_PYBIND11)
+    find_package(pybind11 CONFIG REQUIRED)
+  else()
+    target_include_directories(dunecommon INTERFACE
+        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/external> # <dune/python/pybind11/...>
+        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/external/dune/python> # <pybind11/...>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/dune/python>) # <pybind11/...>
   endif()
 
   set(${PYCONFDEPS_RESULT} 0 PARENT_SCOPE)
