@@ -3,6 +3,9 @@ SPDX-FileCopyrightInfo: Copyright © DUNE Project contributors, see file LICENSE
 SPDX-License-Identifier: LicenseRef-GPL-2.0-only-with-DUNE-exception
 -->
 
+[![coverage](https://gitlab.dune-project.org/core/dune-common/badges/master/coverage.svg?job=debian%3A12%20gcc-12-20%20%28with%20checking%2C%20coverage%2C%20no%20python%29)](https://gitlab.dune-project.org/core/dune-common/-/pipelines)
+
+
 DUNE-library
 ============
 
