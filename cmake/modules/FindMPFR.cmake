@@ -50,21 +50,16 @@ set_package_properties(MPFR PROPERTIES
   URL "https://www.mpfr.org/"
 )
 
-# Try finding the package with pkg-config
+# Try finding the package with pkg-config to obtain hints and version information
 find_package(PkgConfig QUIET)
-pkg_check_modules(PkgConfigMPFR mpfr IMPORTED_TARGET GLOBAL)
-
-# check whether the static library was found
-if(PkgConfigMPFR_STATIC_FOUND)
-  set(_mpfr PkgConfigMPFR_STATIC)
-else()
-  set(_mpfr PkgConfigMPFR)
+if(PkgConfig_FOUND)
+  pkg_check_modules(PkgConfigMPFR QUIET mpfr IMPORTED_TARGET GLOBAL)
 endif()
 
 # search for location of header mpfr.h, only at positions given by the user
 find_path(MPFR_INCLUDE_DIR
   NAMES "mpfr.h"
-  HINTS ${${_mpfr}_INCLUDEDIR}
+  HINTS ${PkgConfigMPFR_INCLUDEDIR}
   PATHS ${MPFR_ROOT}
   PATH_SUFFIXES include
   NO_DEFAULT_PATH)
@@ -72,10 +67,22 @@ find_path(MPFR_INCLUDE_DIR
 find_path(MPFR_INCLUDE_DIR
   NAMES "mpfr.h")
 
+# search for location of the MPFR library, only at positions given by the user
+find_library(MPFR_LIBRARY
+  NAMES mpfr
+  HINTS ${PkgConfigMPFR_LIBDIR}
+  PATHS ${MPFR_ROOT}
+  PATH_SUFFIXES lib lib64
+  NO_DEFAULT_PATH)
+# try default paths now
+find_library(MPFR_LIBRARY
+  NAMES mpfr)
+
 # search for location of header mpreal.h, only at positions given by the user
 find_path(MPREAL_INCLUDE_DIR
   NAMES "mpreal.h"
-  PATHS ${MPREAL_ROOT}
+  HINTS ${PkgConfigMPFR_INCLUDEDIR}
+  PATHS ${MPREAL_ROOT} ${MPFR_ROOT}
   PATH_SUFFIXES include
   NO_DEFAULT_PATH)
 # try default paths now
@@ -86,24 +93,28 @@ find_path(MPREAL_INCLUDE_DIR
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args("MPFR"
   REQUIRED_VARS
-    ${_mpfr}_LINK_LIBRARIES ${_mpfr}_FOUND MPFR_INCLUDE_DIR MPREAL_INCLUDE_DIR PkgConfig_FOUND
+    MPFR_LIBRARY MPFR_INCLUDE_DIR MPREAL_INCLUDE_DIR
   VERSION_VAR
-    ${_mpfr}_VERSION
+    PkgConfigMPFR_VERSION
   FAIL_MESSAGE "Could NOT find MPFR (set MPFR_ROOT or MPREAL_ROOT to path containing mpfr.h or mpreal.h, respectively)"
 )
 
-mark_as_advanced(MPFR_INCLUDE_DIR MPREAL_INCLUDE_DIR)
+mark_as_advanced(MPFR_INCLUDE_DIR MPFR_LIBRARY MPREAL_INCLUDE_DIR)
 
 # C library
-if(${_mpfr}_FOUND AND NOT TARGET MPFR::mpfr)
-  add_library(MPFR::mpfr ALIAS PkgConfig::PkgConfigMPFR)
+if(MPFR_FOUND AND NOT TARGET MPFR::mpfr)
+  add_library(MPFR::mpfr UNKNOWN IMPORTED)
+  set_target_properties(MPFR::mpfr PROPERTIES
+    IMPORTED_LOCATION "${MPFR_LIBRARY}"
+    INTERFACE_INCLUDE_DIRECTORIES "${MPFR_INCLUDE_DIR}"
+  )
 endif()
 
 # C++ library, which requires a link to the C library
-if(MPREAL_INCLUDE_DIR AND NOT TARGET MPFR::mpreal)
+if(MPFR_FOUND AND NOT TARGET MPFR::mpreal)
   add_library(MPFR::mpreal INTERFACE IMPORTED)
   set_target_properties(MPFR::mpreal PROPERTIES
-    INTERFACE_INCLUDE_DIRECTORIES ${MPREAL_INCLUDE_DIR}
+    INTERFACE_INCLUDE_DIRECTORIES "${MPREAL_INCLUDE_DIR}"
     INTERFACE_LINK_LIBRARIES MPFR::mpfr
   )
 endif()

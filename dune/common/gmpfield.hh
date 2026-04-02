@@ -10,6 +10,8 @@
  */
 
 #include <iostream>
+#include <iomanip>
+#include <sstream>
 #include <string>
 #include <type_traits>
 
@@ -21,6 +23,7 @@
 #include <gmpxx.h> // fallback implementation
 #endif
 
+#include <dune/common/deprecated.hh>
 #include <dune/common/math.hh>
 #include <dune/common/promotiontraits.hh>
 #include <dune/common/typetraits.hh>
@@ -49,26 +52,59 @@ namespace Dune
 
   static_assert(precision > 0 && precision < std::numeric_limits<Prec>::max());
 
+    struct StringInitTag {};
+
+    GMPField (StringInitTag, const char* str)
+      : Base(str, Prec(precision))
+    {}
+
+    GMPField (StringInitTag, const std::string& str)
+      : Base(str, Prec(precision))
+    {}
+
+#if HAVE_GMPXX
+    static std::string longDoubleToString (long double value)
+    {
+      std::ostringstream stream;
+      stream << std::setprecision(std::numeric_limits<long double>::max_digits10) << value;
+      return stream.str();
+    }
+#endif
+
   public:
     //! default constructor, initialize to zero.
     GMPField ()
       : Base(0, Prec(precision))
     {}
 
+    //! Initialize from a string without using deprecated implicit conversion.
+    static GMPField fromString (const char* str)
+    {
+      return GMPField(StringInitTag{}, str);
+    }
+
+    //! Initialize from a string without using deprecated implicit conversion.
+    static GMPField fromString (const std::string& str)
+    {
+      return GMPField(StringInitTag{}, str);
+    }
+
     /**
      * \brief initialize from a string
      * \note this is the only reliable way to initialize with higher precision values
      */
-    explicit GMPField (const char* str)
-      : Base(str, Prec(precision))
+    [[deprecated("Implicit string conversion to GMPField is deprecated. Use GMPField::fromString(...) instead. This constructor will become explicit in a future release.")]]
+    GMPField (const char* str)
+      : GMPField(StringInitTag{}, str)
     {}
 
     /**
      * \brief initialize from a string
      * \note this is the only reliable way to initialize with higher precision values
      */
-    explicit GMPField (const std::string& str)
-      : Base(str, Prec(precision))
+    [[deprecated("Implicit string conversion to GMPField is deprecated. Use GMPField::fromString(...) instead. This constructor will become explicit in a future release.")]]
+    GMPField (const std::string& str)
+      : GMPField(StringInitTag{}, str)
     {}
 
     //! initialize from from mpreal value.
@@ -76,16 +112,31 @@ namespace Dune
       : Base(v)
     {}
 
+#if HAVE_MPFR
     //! initialize from a compatible scalar type.
     template <class T,
       std::enable_if_t<std::is_arithmetic_v<T>,int> = 0>
     GMPField (const T& v)
       : Base(v, Prec(precision))
     {}
+#elif HAVE_GMPXX
+    //! initialize from a type that can be converted to the GMP backend.
+    template <class T,
+      typename std::enable_if<std::is_convertible<T, Base>::value, int>::type = 0>
+    GMPField (const T& v)
+      : Base(v, Prec(precision))
+    {}
+
+    //! initialize from long double using a string round-trip for the GMPXX fallback.
+    GMPField (long double v)
+      : Base(longDoubleToString(v), Prec(precision))
+    {}
+#endif
 
     GMPField (const GMPField&) = default;
     GMPField (GMPField&&) = default;
 
+    using Base::operator=;
     GMPField& operator= (GMPField const&) = default;
     GMPField& operator= (GMPField&&) = default;
 
@@ -96,6 +147,12 @@ namespace Dune
       return this->toDouble();
     }
 #endif
+
+    [[deprecated("Implicit conversion from GMPField to double is deprecated. Use get_d() or an explicit cast instead. This operator will be removed in a future release.")]]
+    operator double () const
+    {
+      return this->get_d();
+    }
   };
 
 } // end namespace Dune
