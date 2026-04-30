@@ -12,4 +12,6 @@ cast.h         eigen.h    functional.h  numpy.h               pytypes.h   typing
 chrono.h       embed.h    gil.h         operators.h           stl_bind.h)
 
 
+if(NOT DUNE_USE_SYSTEM_PYBIND11)
 install(FILES ${HEADERS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/dune/python/pybind11)
+endif()
