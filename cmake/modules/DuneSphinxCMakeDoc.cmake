@@ -49,6 +49,7 @@ include_guard(GLOBAL)
 
 find_package(Sphinx)
 # text for feature summary
+include(FeatureSummary)
 set_package_properties("Sphinx" PROPERTIES
   DESCRIPTION "Documentation generator"
   URL "www.sphinx-doc.org"

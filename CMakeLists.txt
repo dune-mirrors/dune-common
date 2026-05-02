@@ -30,10 +30,7 @@ dune_policy(SET DP_SUGGESTED_MODULE_DEPENDENCIES_REQUIRED_DOWNSTREAM NEW)
 dune_project()
 
 # Create a target for dune-common with a Dune::Common alias
-dune_add_library(dunecommon EXPORT_NAME Common NAMESPACE Dune::)
-
-# set include directories for dunecommon library
-dune_default_include_directories(dunecommon PUBLIC)
+dune_module_library(dunecommon EXPORT_NAME Common NAMESPACE Dune::)
 
 # minimal c++ standard required
 target_compile_features(dunecommon PUBLIC cxx_std_20)
