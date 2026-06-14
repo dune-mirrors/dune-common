@@ -14,6 +14,12 @@ dune_python_add_test(NAME tuplevectortest
                      LABELS quick
 )
 
+dune_python_add_test(NAME packagemetadatatest
+                     SCRIPT packagemetadatatest.py
+                     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                     LABELS quick
+)
+
 if(TARGET Python3::Python)
     dune_add_test(SOURCES test_embed1.cc
                 LINK_LIBRARIES ${DUNE_LIBS} Python3::Python
