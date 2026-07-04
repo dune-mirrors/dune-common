@@ -22,6 +22,12 @@ SPDX-License-Identifier: LicenseRef-GPL-2.0-only-with-DUNE-exception
 
 ## Build system: Changelog
 
+- Add the CMake option `DUNE_REQUIRE_PYTHONBINDINGS`. When enabled, missing
+  Python development packages or other unmet requirements for building the
+  Python bindings produce a `FATAL_ERROR` during configuration instead of a
+  `NOTICE`. This helps to catch broken Python bindings early in restricted
+  environments where the bindings are built but cannot work at runtime.
+
 - Enable cross references in the doxygen documentation towards the upstream modules' documentation.
   This is done by using doxygen tag files which are also installed along with the documentation.
 
