@@ -310,7 +310,7 @@ namespace Dune
     requires (std::is_enum_v<T>)
   constexpr static IntegralRange<std::underlying_type_t<T>> range(T from, T to) noexcept
   {
-    return IntegralRange<T>(from, to);
+    return IntegralRange<std::underlying_type_t<T>>(from, to);
   }
 
   template<class T, T from, T to>
