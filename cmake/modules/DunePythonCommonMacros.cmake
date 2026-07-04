@@ -76,13 +76,13 @@ if(NOT DUNE_ENABLE_PYTHONBINDINGS)
   set(DUNE_ENABLE_PYTHONMODULE_PRECOMPILE OFF)
 endif()
 
-# this option changes some internal NOTEs to FATAL_ERRORs in case python bindings are enabled but this is actually
-# not possible, e.g. if some required dependencies or development packages are not found. This option might be set
-# to ON in modules that require python bindings and do not work properly without it.
+# this option changes some internal NOTICEs to FATAL_ERRORs in case python bindings are enabled but
+# cannot be built, e.g., due to missing dependencies or development packages. Enable this option in
+# modules that require python bindings to function properly.
 option(DUNE_REQUIRE_PYTHONBINDINGS "Require Python bindings for DUNE. Leads to hard errors if not possible." OFF)
 
 # helper message used below in various user messages
-set(DUNE_PYTHON_BINDINGS_USER_NOTICE "If you do not plan to use the Dune Python bindings you can ignore this information")
+set(DUNE_PYTHON_BINDINGS_USER_NOTICE "To resolve this issue either install the required packages or disable Python bindings by setting DUNE_ENABLE_PYTHONBINDINGS=OFF")
 
 # Turn a message NOTE into a FATAL_ERROR in case python bindings are required
 if(SKBUILD OR (DUNE_ENABLE_PYTHONBINDINGS AND DUNE_REQUIRE_PYTHONBINDINGS))
