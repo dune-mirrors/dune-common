@@ -673,6 +673,7 @@ def _extractCMakeFlags():
             k, v = y.split("=", 1)
             if k.startswith('-D'):
                 k = k[2:]
+            k, _, _cmake_type = k.partition(":")
             cmakeFlags[k] = v.strip()
         except ValueError:  # no '=' in line
             pass
