@@ -52,6 +52,13 @@ SPDX-License-Identifier: LicenseRef-GPL-2.0-only-with-DUNE-exception
   documentation blocks, public/internal command separation, generated command
   and variable reference pages, and links to upstream CMake command docs.
 
+## Python: Changelog
+
+- Fix `dune.generator.algorithm.load` for calls that pass several source
+  include files as a list. All listed files are now included in the generated
+  module source, so multi-file algorithm definitions are compiled and cached
+  according to their complete source content.
+
 ## Deprecation and Removals
 
 - Remove the deprecated method `HybridMultiIndex::element`. From now on,

@@ -166,7 +166,7 @@ def load(functionName, includes, *args, pythonName=None):
         for includefile in includes:
             with open(includefile, "r") as include:
                 cppSource += include.read()
-        sppSource += "\n"
+        cppSource += "\n"
         includes = []
 
     argTypes = []
