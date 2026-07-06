@@ -177,6 +177,15 @@ void staticTests()
   // base classes `tuple<void>` must be determined to figure out whether
   // `tuple<void>*` can be converted to `Expr<T>*`.
   checkNonTypeList<std::tuple<void> >(skipOverloadTest);
+
+  // Check UniqueTypes_t
+  {
+    static_assert(std::is_same_v<
+        Dune::UniqueTypes_t<Dune::TypeList, char, double, double, int, double, int, char>,
+        Dune::TypeList<char, double, int>
+      >,
+      "UniqueTypes_t has incorrect entries or different order");
+  }
 }
 
 struct NonConstructible {
