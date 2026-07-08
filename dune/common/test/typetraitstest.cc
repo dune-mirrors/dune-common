@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: LicenseRef-GPL-2.0-only-with-DUNE-exception
 
 #include <type_traits>
+#include <vector>
 #include <dune/common/indices.hh>
 #include <dune/common/typetraits.hh>
 
@@ -34,4 +35,9 @@ int main()
   static_assert(not IsCompileTimeConstant<int>::value);
   static_assert(not IsCompileTimeConstant<A>::value);
   static_assert(not IsCompileTimeConstant<B>::value);
+
+  static_assert(std::is_same_v<Dune::AutonomousValue<std::vector<bool>::reference>, bool>);
+  static_assert(std::is_same_v<Dune::AutonomousValue<std::vector<bool>::const_reference>, bool>);
+  static_assert(std::is_same_v<Dune::AutonomousValue<const std::vector<bool>::reference>, bool>);
+  static_assert(std::is_same_v<Dune::AutonomousValue<const std::vector<bool>::const_reference>, bool>);
 }
