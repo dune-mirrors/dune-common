@@ -531,6 +531,13 @@ namespace Dune
     using type = bool;
   };
 
+  //! Specialization for the proxies of `vector<bool>`
+  template<>
+  struct AutonomousValueType<std::vector<bool>::const_reference>
+  {
+    using type = bool;
+  };
+
   //! Specialization to remove both const and volatile qualifiers
   template<class T>
   struct AutonomousValueType<volatile const T> : AutonomousValueType<T> {};
