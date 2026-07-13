@@ -14,6 +14,11 @@
   #include <version>
 #endif
 
+#if __cpp_lib_mdspan >= 202207L
+#include <mdspan>
+namespace Dune::Std { using std::extents, std::dextents; }
+#else
+
 #include <dune/common/indices.hh>
 #include <dune/common/std/no_unique_address.hh>
 #include <dune/common/std/impl/fwd_layouts.hh>
@@ -259,4 +264,5 @@ using dextents = typename Impl::DExtentsImpl<IndexType, std::make_integer_sequen
 
 } // end namespace Dune::Std
 
+#endif // __cpp_lib_mdspan
 #endif // DUNE_COMMON_STD_EXTENTS_HH

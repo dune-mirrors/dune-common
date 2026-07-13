@@ -13,6 +13,12 @@
   #include <version>
 #endif
 
+
+#if __cpp_lib_mdspan >= 202207L
+#include <mdspan>
+namespace Dune::Std { using std::mdspan; }
+#else
+
 #include <dune/common/indices.hh>
 #include <dune/common/std/default_accessor.hh>
 #include <dune/common/std/extents.hh>
@@ -383,4 +389,5 @@ mdspan (const DataHandle&, const Mapping&, const Accessor&)
 
 } // end namespace Dune::Std
 
+#endif // __cpp_lib_mdspan
 #endif // DUNE_COMMON_STD_MDSPAN_HH

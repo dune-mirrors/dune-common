@@ -7,6 +7,13 @@
 
 #include <array>
 #include <type_traits>
+#include <version>
+
+
+#if __cpp_lib_mdspan >= 202207L
+#include <mdspan>
+namespace Dune::Std { using std::layout_left; }
+#else
 
 #include <dune/common/indices.hh>
 #include <dune/common/std/no_unique_address.hh>
@@ -141,4 +148,5 @@ private:
 
 } // end namespace Dune::Std
 
+#endif // __cpp_lib_mdspan
 #endif // DUNE_COMMON_STD_LAYOUT_LEFT_HH

@@ -6,6 +6,12 @@
 #define DUNE_COMMON_STD_DEFAULT_ACCESSOR_HH
 
 #include <type_traits>
+#include <version>
+
+#if __cpp_lib_mdspan >= 202207L
+#include <mdspan>
+namespace Dune::Std { using std::default_accessor; }
+#else
 
 namespace Dune::Std {
 
@@ -53,4 +59,5 @@ public:
 
 } // end namespace Dune::Std
 
+#endif // __cpp_lib_mdspan
 #endif // DUNE_COMMON_STD_DEFAULT_ACCESSOR_HH
