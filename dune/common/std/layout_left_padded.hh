@@ -38,9 +38,9 @@ inline constexpr bool is_layout_left_padded_v = IsLayoutLeftPadded<Layout>::valu
  * and the C++ standard working draft
  * <a href="https://eel.is/c++draft/views.multidim#mdspan.layout.leftpad">[mdspan.layout.leftpad]</a>.
  * It is useful when the leftmost dimension should remain contiguous but the
- * leading stride of the remaining dimensions should be rounded up, for example
- * to satisfy alignment, cache-line, SIMD, or accelerator memory-coalescing
- * requirements.
+ * leading stride of the remaining dimensions should be supplied explicitly, for
+ * example to satisfy alignment, cache-line, SIMD, or accelerator
+ * memory-coalescing requirements.
  *
  * For rank two, `stride(0) == 1` and `stride(1)` is either `extent(0)` or a
  * padded value. The padding can leave unused memory between columns while still
@@ -72,9 +72,9 @@ public:
     std::enable_if_t<std::is_nothrow_constructible_v<index_type,OtherIndexType>, int> = 0>
   constexpr mapping (const extents_type& e, OtherIndexType padding) noexcept
     : extents_(e)
-    , stride1_(padded_stride(index_type(padding), e.extent(0)))
+    , stride1_(index_type(padding))
   {
-    assert(index_type(padding) > 0);
+    assert(Extents::rank() <= 1 || index_type(padding) >= e.extent(0));
     if constexpr(PaddingValue != std::dynamic_extent)
       assert(index_type(PaddingValue) == index_type(padding));
   }
@@ -185,7 +185,8 @@ public:
 private:
   static constexpr index_type padded_stride (index_type padding, index_type extent) noexcept
   {
-    return ((extent + padding - 1) / padding) * padding;
+    assert(padding >= extent);
+    return padding;
   }
 
   static constexpr index_type default_stride1 (const extents_type& e) noexcept

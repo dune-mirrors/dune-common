@@ -38,9 +38,9 @@ inline constexpr bool is_layout_right_padded_v = IsLayoutRightPadded<Layout>::va
  * and the C++ standard working draft
  * <a href="https://eel.is/c++draft/views.multidim#mdspan.layout.rightpad">[mdspan.layout.rightpad]</a>.
  * It is useful when the rightmost dimension should remain contiguous but the
- * stride of the previous dimension should be rounded up, for example to align
- * rows for vectorized kernels, cache lines, GPU memory transactions, or external
- * libraries that require pitched storage.
+ * stride of the previous dimension should be supplied explicitly, for example
+ * to align rows for vectorized kernels, cache lines, GPU memory transactions,
+ * or external libraries that require pitched storage.
  *
  * For rank two, `stride(1) == 1` and `stride(0)` is either `extent(1)` or a
  * padded value. The padding can leave unused memory between rows while still
@@ -72,9 +72,9 @@ public:
     std::enable_if_t<std::is_nothrow_constructible_v<index_type,OtherIndexType>, int> = 0>
   constexpr mapping (const extents_type& e, OtherIndexType padding) noexcept
     : extents_(e)
-    , stride_before_last_(padded_stride(index_type(padding), e.extent(Extents::rank()-1)))
+    , stride_before_last_(index_type(padding))
   {
-    assert(index_type(padding) > 0);
+    assert(Extents::rank() <= 1 || index_type(padding) >= e.extent(Extents::rank()-1));
     if constexpr(PaddingValue != std::dynamic_extent)
       assert(index_type(PaddingValue) == index_type(padding));
   }
@@ -186,7 +186,8 @@ public:
 private:
   static constexpr index_type padded_stride (index_type padding, index_type extent) noexcept
   {
-    return ((extent + padding - 1) / padding) * padding;
+    assert(padding >= extent);
+    return padding;
   }
 
   static constexpr index_type default_stride_before_last (const extents_type& e) noexcept
