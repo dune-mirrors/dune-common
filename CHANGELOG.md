@@ -20,6 +20,9 @@ SPDX-License-Identifier: LicenseRef-GPL-2.0-only-with-DUNE-exception
   `std::numeric_limits` in `dune/common/bigfloat.hh`. Use `find_package(MPFR)` and
   `add_dune_mpfr_flags(target)` to activate this package on your target.
 
+- Add `Dune::Std::submdspan` and the corresponding standard-style slice
+  specifiers for creating non-owning subviews of `Dune::Std::mdspan`.
+
 ## Build system: Changelog
 
 - Enable cross references in the doxygen documentation towards the upstream modules' documentation.
