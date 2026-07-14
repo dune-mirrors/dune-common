@@ -20,6 +20,13 @@ SPDX-License-Identifier: LicenseRef-GPL-2.0-only-with-DUNE-exception
   `std::numeric_limits` in `dune/common/bigfloat.hh`. Use `find_package(MPFR)` and
   `add_dune_mpfr_flags(target)` to activate this package on your target.
 
+- Add `Dune::Std::layout_left_padded` and `Dune::Std::layout_right_padded`
+  layout mappings for `Dune::Std::mdspan`.
+
+- Extend `Dune::Std::submdspan` to return padded layout mappings for
+  submatrix-like slices whenever the resulting strides can be represented by
+  `layout_left_padded` or `layout_right_padded`.
+
 ## Build system: Changelog
 
 - Enable cross references in the doxygen documentation towards the upstream modules' documentation.
