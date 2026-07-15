@@ -51,6 +51,10 @@ struct extent_slice
   DUNE_NO_UNIQUE_ADDRESS stride_type stride{};
 };
 
+template <class OffsetType, class ExtentType, class StrideType>
+extent_slice(OffsetType, ExtentType, StrideType)
+  -> extent_slice<OffsetType,ExtentType,StrideType>;
+
 /**
  * \brief Slice specifier selecting the half-open range `[first,last)` with a stride.
  * \ingroup CxxUtilities
@@ -70,6 +74,14 @@ struct range_slice
   DUNE_NO_UNIQUE_ADDRESS last_type last{};
   DUNE_NO_UNIQUE_ADDRESS stride_type stride{};
 };
+
+template <class FirstType, class LastType>
+range_slice(FirstType, LastType)
+  -> range_slice<FirstType,LastType>;
+
+template <class FirstType, class LastType, class StrideType>
+range_slice(FirstType, LastType, StrideType)
+  -> range_slice<FirstType,LastType,StrideType>;
 
 /**
  * \brief Compatibility spelling for a strided extent slice.
