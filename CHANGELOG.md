@@ -10,6 +10,8 @@ SPDX-License-Identifier: LicenseRef-GPL-2.0-only-with-DUNE-exception
 - Add `Dune::Std::dims`, the standard mdspan alias template for dynamic
   extents with default index type `std::size_t`.
 
+- Add bounds-checked `at()` element access to `Std::mdspan` and `Std::mdarray`.
+
 - Add five variants of the method `insert(pos, ...)` to `ReservedVector`.
   These are exactly the methods known from `std::vector`.
 
