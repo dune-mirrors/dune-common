@@ -68,12 +68,11 @@ namespace Dune
       if (n > this->max_size())
         throw std::bad_alloc();
 
-#if __APPLE__
-      // Apple is also restrictive regarding the allocation size.
-      // size must be at least the alignment size.
-      size_type size = n * sizeof(T) >= alignment ? n * sizeof(T) : alignment;
-#else
       size_type size = n * sizeof(T);
+#if __APPLE__
+      // Apple is also restrictive regarding the allocation size: size must be a multiple of the alignment.
+      const size_type remainder = size % alignment;
+      size += alignment - remainder;
 #endif
 
       /*
