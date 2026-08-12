@@ -245,6 +245,7 @@ namespace Dune
       return result;
     }
 
+#ifdef DUNE_FIELDMATRIX_LIKE_SCALAR
     //! Binary addition, when using FieldVector<K,1,1> like K
     template <Concept::Number S>
     [[deprecated("Please use 1x1 FieldMatrix objects like matrices, not like scalars!")]]
@@ -274,6 +275,7 @@ namespace Dune
       _data[0][0] += scalar;
       return *this;
     }
+#endif
 
     using Base::operator+=;
 
@@ -289,6 +291,7 @@ namespace Dune
       return result;
     }
 
+#ifdef DUNE_FIELDMATRIX_LIKE_SCALAR
     //! Binary subtraction, when using FieldMatrix<K,1,1> like K
     template<Concept::Number S>
     [[deprecated("Please use 1x1 FieldMatrix objects like matrices, not like scalars!")]]
@@ -318,6 +321,7 @@ namespace Dune
       _data[0][0] -= scalar;
       return *this;
     }
+#endif
 
     using Base::operator-=;
 
@@ -343,6 +347,7 @@ namespace Dune
       return result;
     }
 
+#ifdef DUNE_FIELDMATRIX_LIKE_SCALAR
     /** \brief multiplication with scalar
      *
      * \deprecated This method implements a special handling for 1x1 matrices,
@@ -358,6 +363,7 @@ namespace Dune
       _data[0][0] *= scalar;
       return *this;
     }
+#endif
 
     using Base::operator*=;
 
@@ -372,6 +378,7 @@ namespace Dune
       return result;
     }
 
+#ifdef DUNE_FIELDMATRIX_LIKE_SCALAR
     //! Binary division, when using FieldMatrix<K,1,1> like K
     template<Concept::Number S>
     [[deprecated("Please use 1x1 FieldMatrix objects like matrices, not like scalars!")]]
@@ -397,6 +404,7 @@ namespace Dune
       _data[0][0] /= scalar;
       return *this;
     }
+#endif
 
     using Base::operator/=;
 
@@ -529,6 +537,7 @@ namespace Dune
       return _data[i];
     }
 
+#ifdef DUNE_FIELDMATRIX_LIKE_SCALAR
     //! Conversion operator
     [[deprecated("Please use 1x1 FieldMatrix objects like matrices, not like scalars!")]]
     constexpr operator const_reference () const noexcept
@@ -544,6 +553,7 @@ namespace Dune
     {
       return _data[0][0];
     }
+#endif
 
     /// @}
 
@@ -551,6 +561,7 @@ namespace Dune
     /// \name Comparison operators
     /// @{
 
+#ifdef DUNE_FIELDMATRIX_LIKE_SCALAR
     //! comparing FieldMatrix<1,1> with scalar for equality
     template<Concept::Number S>
     [[deprecated("Please use 1x1 FieldMatrix objects like matrices, not like scalars!")]]
@@ -568,6 +579,7 @@ namespace Dune
     {
       return a == b._data[0];
     }
+#endif
 
     //! three-way comparison of FieldMatrix
     template<class OtherK>
@@ -581,6 +593,7 @@ namespace Dune
 #endif
     }
 
+#ifdef DUNE_FIELDMATRIX_LIKE_SCALAR
     //! three-way comparison of FieldMatrix<1,1> with scalar
     template<Concept::Number S>
     [[deprecated("Please use 1x1 FieldMatrix objects like matrices, not like scalars!")]]
@@ -598,10 +611,12 @@ namespace Dune
     {
       return a <=> b._data[0];
     }
+#endif
 
     /// @}
   };
 
+#ifdef DUNE_FIELDMATRIX_LIKE_SCALAR
   /** \brief Sends the matrix to an output stream
    *
    * \deprecated This method implements a special handling for 1x1 matrices,
@@ -615,6 +630,7 @@ namespace Dune
     s << a[0][0];
     return s;
   }
+#endif
 
   namespace FMatrixHelp {
 

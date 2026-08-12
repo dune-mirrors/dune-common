@@ -4,6 +4,9 @@
 include(DuneStreams)
 dune_set_minimal_debug_level()
 
+# option to enable 1x1 FieldMatrix to be likescalar for transition period
+option(DUNE_FIELDMATRIX_LIKE_SCALAR "enable 1x1 FieldMatrix to be like scalar for transition period" ON)
+
 # search for lapack
 find_package(LAPACK)
 include(AddBLASLapackFlags)

@@ -39,6 +39,9 @@
 /* Define to 1 if you have the Threading Building Blocks (TBB) library */
 #cmakedefine HAVE_TBB 1
 
+/* Define to 1 to enable 1x1 FieldMatrix to be like scalar for transition period */
+#cmakedefine DUNE_FIELDMATRIX_LIKE_SCALAR 1
+
 /* begin private */
 
 /* Name of package */

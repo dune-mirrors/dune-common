@@ -656,6 +656,7 @@ DUNE_NO_DEPRECATED_BEGIN
 
     v = a;
     v = w = v;
+#ifdef DUNE_FIELDMATRIX_LIKE_SCALAR
     a = v;
 
     a = v + a;
@@ -665,30 +666,41 @@ DUNE_NO_DEPRECATED_BEGIN
 
     v = v + a;
     v = v - a;
+#endif
     v = v * a;
     v = v / a;
 
+#ifdef DUNE_FIELDMATRIX_LIKE_SCALAR
     a = a + v;
     a = a - v;
     a = a * v;
     a = a / v;
+#endif
 
     v = a + v;
     v = a - v;
     v = a * v;
+#ifdef DUNE_FIELDMATRIX_LIKE_SCALAR
     v = a / v;
+#endif
 
     v -= w;
+#ifdef DUNE_FIELDMATRIX_LIKE_SCALAR
     v -= a;
+#endif
     v += w;
+#ifdef DUNE_FIELDMATRIX_LIKE_SCALAR
     v += a;
+#endif
     v *= a;
     v /= a;
 
+#ifdef DUNE_FIELDMATRIX_LIKE_SCALAR
     b = (v == a);
     b = (v != a);
     b = (a == v);
     b = (a != v);
+#endif
 DUNE_NO_DEPRECATED_END
 
   }
