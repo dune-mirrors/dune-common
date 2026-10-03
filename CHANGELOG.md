@@ -51,6 +51,16 @@ In order to build the DUNE core modules you need at least the following software
   modules find it through the variables `DOXYSTYLE_FILE` and `DOXYGENMACROS_FILE`
   as before.
 
+- Add support for Doxygen themes. Modules select a theme with
+  `add_doxygen_target(THEME <name>)`. Modules can provide themes in
+  `doc/doxygen/themes/<name>/` and install them with
+  `dune_add_doxygen_theme(NAME <name>)`, which makes them available to all
+  downstream modules. dune-common provides the theme `awesome`,
+  based on [doxygen-awesome-css](https://jothepro.github.io/doxygen-awesome-css).
+  The cache variable `DUNE_DOXYGEN_THEME` overrides the theme of all modules,
+  the value `none` selects the classic look. By default, the documentation
+  keeps its classic look.
+
 - Dune buildsystem policies, such as `DP_DEFAULT_INCLUDE_DIRS`, `DP_TEST_ADD_ALL_FLAGS`,
   and `DP_SUGGESTED_MODULE_DEPENDENCIES_REQUIRED_DOWNSTREAM`, do not change automatically
   to `NEW` if a certain event, like a dune version number increment, occurred. Any

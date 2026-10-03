@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightInfo: Copyright © DUNE Project contributors, see file LICENSE.md in module root
+# SPDX-License-Identifier: LicenseRef-GPL-2.0-only-with-DUNE-exception
+
+# Doxygen settings of the "awesome" theme, based on doxygen-awesome-css
+# (https://jothepro.github.io/doxygen-awesome-css) in its sidebar-only
+# variant with an interactive table of contents.
+#
+# These settings are inserted between the Doxystyle and the module's
+# Doxylocal, so a module can still override them in its Doxylocal.
+
+GENERATE_TREEVIEW     = YES
+DISABLE_INDEX         = NO
+FULL_SIDEBAR          = NO
+# must match --side-nav-fixed-width in custom.css
+TREEVIEW_WIDTH        = 300
+HTML_COLORSTYLE       = LIGHT
+LAYOUT_FILE           = @DUNE_DOXYGEN_THEME_DIR@/DoxygenLayout.xml
+HTML_HEADER           = @DUNE_DOXYGEN_THEME_DIR@/header.html
+HTML_EXTRA_STYLESHEET = @DUNE_DOXYGEN_THEME_DIR@/doxygen-awesome.css \
+                        @DUNE_DOXYGEN_THEME_DIR@/doxygen-awesome-sidebar-only.css \
+                        @DUNE_DOXYGEN_THEME_DIR@/custom.css
+HTML_EXTRA_FILES     += @DUNE_DOXYGEN_THEME_DIR@/doxygen-awesome-interactive-toc.js
+
+# Render a link as a button, e.g. \button{\ref mypage "Read more"}
+ALIASES              += button{1}="<span class=\"primary-button\">\1</span>"

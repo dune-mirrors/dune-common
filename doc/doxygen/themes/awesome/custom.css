@@ -1,0 +1,18 @@
+/* SPDX-FileCopyrightInfo: Copyright © DUNE Project contributors, see file LICENSE.md in module root */
+/* SPDX-License-Identifier: LicenseRef-GPL-2.0-only-with-DUNE-exception */
+
+html {
+  --side-nav-fixed-width: 300px;
+  --toc-font-size: 11px;
+  --toc-width: 150px;
+}
+
+div.fragment:empty {
+  display: none;
+}
+
+.primary-button > a {
+  padding: var(--spacing-medium) var(--spacing-medium) var(--spacing-medium) var(--spacing-medium);
+  color: var(--page-background-color) !important;
+  text-decoration: none;
+}

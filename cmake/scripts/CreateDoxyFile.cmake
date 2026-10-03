@@ -5,16 +5,22 @@ if (NOT DEFINED DOXYFILE)
   set(DOXYFILE "${CMAKE_CURRENT_BINARY_DIR}/Doxyfile")
 endif()
 
-# For now we just support appending Doxyfile and Doxylocal
+# Concatenate Doxystyle, the predefined C preprocessor macros, the settings
+# of the theme (if any) and the module's Doxylocal (if any). Later settings
+# override earlier ones.
 file(READ ${DOXYSTYLE} file_contents)
 file(WRITE ${DOXYFILE}.in ${file_contents})
 # Write the list of predefined C preprocessor macros
 file(READ ${DOXYGENMACROS} file_contents)
 file(APPEND ${DOXYFILE}.in ${file_contents})
+if(DOXYTHEME)
+  file(READ ${DOXYTHEME} file_contents)
+  file(APPEND ${DOXYFILE}.in ${file_contents})
+endif()
 if(DOXYLOCAL)
   file(READ ${DOXYLOCAL} file_contents)
+  file(APPEND ${DOXYFILE}.in ${file_contents})
 endif()
-file(APPEND ${DOXYFILE}.in ${file_contents})
 
 # configure_file does not work as it insists an existing input file, which in our
 # needs to be generated first.
