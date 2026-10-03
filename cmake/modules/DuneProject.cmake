@@ -284,7 +284,7 @@ macro(finalize_dune_project)
   #create cmake-config files for installation tree
   include(CMakePackageConfigHelpers)
   include(GNUInstallDirs)
-  set(DOXYSTYLE_DIR ${CMAKE_INSTALL_DATAROOTDIR}/dune-common/doc/doxygen/)
+  set(DOXYSTYLE_DIR ${CMAKE_INSTALL_DATAROOTDIR}/dune/doxygen/)
   set(SCRIPT_DIR ${CMAKE_INSTALL_DATAROOTDIR}/dune/cmake/scripts)
   # Set the location where the doc sources are installed.
   # Needed by custom package configuration

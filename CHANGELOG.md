@@ -46,6 +46,11 @@ In order to build the DUNE core modules you need at least the following software
 - Enable cross references in the doxygen documentation towards the upstream modules' documentation.
   This is done by using doxygen tag files which are also installed along with the documentation.
 
+- The global Doxygen configuration (`Doxystyle` and `doxygen-macros`) is now installed
+  to `share/dune/doxygen/` instead of `share/dune-common/doc/doxygen/`. Downstream
+  modules find it through the variables `DOXYSTYLE_FILE` and `DOXYGENMACROS_FILE`
+  as before.
+
 - Dune buildsystem policies, such as `DP_DEFAULT_INCLUDE_DIRS`, `DP_TEST_ADD_ALL_FLAGS`,
   and `DP_SUGGESTED_MODULE_DEPENDENCIES_REQUIRED_DOWNSTREAM`, do not change automatically
   to `NEW` if a certain event, like a dune version number increment, occurred. Any

@@ -9,5 +9,5 @@ install(
     Doxystyle
     doxygen-macros
   DESTINATION
-    ${CMAKE_INSTALL_DATAROOTDIR}/dune-common/doc/doxygen
+    ${CMAKE_INSTALL_DATAROOTDIR}/dune/doxygen
   )
