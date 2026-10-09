@@ -19,6 +19,7 @@ mpi-finalize-diagnostics:
     MPI_DIAGNOSTIC_RUNNER_TAG: "duneci-dresden"
     MPI_DIAGNOSTIC_ITERATIONS: "20"
     MPI_DIAGNOSTIC_JOBS: "4"
+    MPI_DIAGNOSTIC_TRACE_MODES: "off on verbose"
     DUNECI_BUILD_TYPE: Release
     DUNECI_CMAKE_FLAGS: "-DDUNE_MAX_TEST_CORES=4 -DDUNE_ENABLE_PYTHONBINDINGS=OFF -DCMAKE_DISABLE_FIND_PACKAGE_Python3=TRUE"
   rules:
@@ -37,6 +38,7 @@ mpi-finalize-diagnostics:
       --output mpi-finalize-results
       --iterations "$MPI_DIAGNOSTIC_ITERATIONS"
       --jobs "$MPI_DIAGNOSTIC_JOBS"
+      --trace-modes $MPI_DIAGNOSTIC_TRACE_MODES
   artifacts:
     when: always
     expire_in: 2 weeks

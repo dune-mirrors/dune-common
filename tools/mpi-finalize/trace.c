@@ -5,7 +5,9 @@
 #include <mpi.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <signal.h>
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
@@ -40,6 +42,37 @@ static void record(const char *event, int rc)
   }
 }
 
+/* Termination signals are recorded, then re-delivered with the previous action.
+ * This shows whether a rank still inside MPI_Finalize was killed by the launcher.
+ * snprintf is not formally async-signal-safe; acceptable for this diagnostic. */
+static const int traced_signals[] = {SIGTERM, SIGINT, SIGHUP, SIGQUIT, SIGPIPE};
+#define TRACED_SIGNAL_COUNT (sizeof(traced_signals) / sizeof(traced_signals[0]))
+static struct sigaction previous_actions[TRACED_SIGNAL_COUNT];
+
+static void trace_signal(int sig)
+{
+  record("signal", sig);
+  for (size_t i = 0; i < TRACED_SIGNAL_COUNT; ++i) {
+    if (traced_signals[i] == sig) {
+      sigaction(sig, &previous_actions[i], NULL);
+      break;
+    }
+  }
+  raise(sig);
+}
+
+static void install_signal_handlers(void)
+{
+  struct sigaction action;
+  memset(&action, 0, sizeof(action));
+  action.sa_handler = trace_signal;
+  sigemptyset(&action.sa_mask);
+  action.sa_flags = SA_RESETHAND;
+  for (size_t i = 0; i < TRACED_SIGNAL_COUNT; ++i)
+    if (sigaction(traced_signals[i], &action, &previous_actions[i]) != 0)
+      perror("MPI finalize trace: sigaction");
+}
+
 static void trace_atexit(void)
 {
   record("atexit", 0);
@@ -70,6 +103,8 @@ static void initialized(int rc)
   if (atexit(trace_atexit) != 0)
     fputs("MPI finalize trace: atexit registration failed\n", stderr);
   record("init_return", rc);
+  /* After PMPI_Init, so that handlers installed by MPI itself are chained. */
+  install_signal_handlers();
 }
 
 int MPI_Init(int *argc, char ***argv)
