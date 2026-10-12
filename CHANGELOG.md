@@ -44,6 +44,12 @@ In order to build the DUNE core modules you need at least the following software
   provided in the `DenseMatVecTraits`. Implementations of `DenseVector` that define their own
   `operator[]` need to add `using Base::operator[];` to provide the multi-index access.
 
+- Add utilities for `Concept::MultiDimensional` objects in `dune/common/multidimensional.hh`:
+  `asMultiDimensional(t)` represents contiguous ranges, like `std::vector`, as `Std::mdspan`,
+  `indexSpaceSize(t)` returns the number of elements in the index space, which differs from
+  `size()` for matrices, and `indicesOf(t)`, `entriesOf(t)`, and `rowsOf(t)` return ranges
+  over the multi-indices, the elements, and the rows.
+
 - Add `Dune::Std::dims`, the standard mdspan alias template for dynamic
   extents with default index type `std::size_t`.
 

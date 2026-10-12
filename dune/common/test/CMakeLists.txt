@@ -213,6 +213,9 @@ dune_add_test(NAME mpihelpertest2
               TIMEOUT 300
               LABELS quick)
 
+dune_add_test(SOURCES multidimensionaltest.cc
+              LABELS quick)
+
 dune_add_test(SOURCES overloadsettest.cc
               LABELS quick)
 

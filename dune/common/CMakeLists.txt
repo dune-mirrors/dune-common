@@ -82,6 +82,7 @@ install(FILES
         matrixconcepts.hh
         matvectraits.hh
         metis.hh
+        multidimensional.hh
         overloadset.hh
         parameterizedobject.hh
         parametertree.hh
