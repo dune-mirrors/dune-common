@@ -13,6 +13,7 @@
 #include <dune/common/fvector.hh>
 #include <dune/common/typetraits.hh>
 #include <dune/common/matvectraits.hh>
+#include <dune/common/std/extents.hh>
 
 namespace Dune {
 
@@ -112,6 +113,9 @@ namespace Impl {
       return 1;
     }
 
+    //! Access element by a multi-index `{i}`, compatible to the `mdspan` interface
+    using Base::operator[];
+
     /** \brief Random access operator, actually disregards its argument */
     K& operator[] ([[maybe_unused]] size_type i)
     {
@@ -136,6 +140,7 @@ namespace Impl {
     using derived_type = Impl::ScalarVectorView<K>;
     using value_type = std::remove_const_t<K>;
     using size_type = std::size_t;
+    using extents_type = Std::extents<size_type,1>;
   };
 
   template< class K >

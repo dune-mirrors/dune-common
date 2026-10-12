@@ -9,6 +9,10 @@
  * \brief Documentation of the traits classes you need to write for each implementation of DenseVector or DenseMatrix
  */
 
+#include <cstddef>
+
+#include <dune/common/std/extents.hh>
+
 namespace Dune {
 
   /**
@@ -26,9 +30,37 @@ namespace Dune {
      typedef ... size_type;
      \endcode
 
+     Optionally, the traits can export the multi-dimensional index space of the vector or
+     matrix as a specialization of `Std::extents`. If not given, dynamic extents with
+     index type `size_type` are assumed:
+
+     \code
+     //! export the type of the index space, e.g. Std::extents<size_type,ROWS,COLS>
+     typedef ... extents_type;
+     \endcode
+
    */
   template<class T>
   struct DenseMatVecTraits {};
+
+  namespace Impl {
+
+    // The `extents_type` exported by the traits, or dynamic extents of the given rank
+    template <class Traits, std::size_t rank>
+    struct DenseMatVecExtents
+    {
+      using type = Std::dextents<typename Traits::size_type, rank>;
+    };
+
+    template <class Traits, std::size_t rank>
+      requires requires { typename Traits::extents_type; }
+    struct DenseMatVecExtents<Traits, rank>
+    {
+      using type = typename Traits::extents_type;
+      static_assert(type::rank() == rank);
+    };
+
+  } // end namespace Impl
 
 } // end namespace Dune
 

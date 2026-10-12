@@ -15,6 +15,7 @@
 #include <dune/common/densematrix.hh>
 #include <dune/common/fmatrix.hh>
 #include <dune/common/scalarvectorview.hh>
+#include <dune/common/std/extents.hh>
 
 
 namespace Dune {
@@ -185,6 +186,7 @@ namespace Impl {
     using const_row_reference = const row_type&;
     using value_type = std::remove_const_t<K>;
     using size_type = std::size_t;
+    using extents_type = Std::extents<size_type,1,1>;
   };
 
 

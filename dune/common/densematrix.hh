@@ -5,10 +5,12 @@
 #ifndef DUNE_DENSEMATRIX_HH
 #define DUNE_DENSEMATRIX_HH
 
+#include <array>
 #include <cmath>
 #include <cstddef>
 #include <iostream>
 #include <iterator>
+#include <span>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -182,7 +184,25 @@ namespace Dune
     //! The number of block levels we contain. This is the leaf, that is, 1.
     constexpr static int blocklevel = 1;
 
+    //! The type of the two-dimensional index space, see `Std::extents`
+    using extents_type = typename Impl::DenseMatVecExtents<Traits,2>::type;
+
+    //! The type used for indices in the index space
+    using index_type = typename extents_type::index_type;
+
+    //! The type used for the rank of the index space
+    using rank_type = typename extents_type::rank_type;
+
   private:
+    // The number of columns, or 0 for a matrix without rows and dynamic number of columns
+    constexpr size_type extentCols () const
+    {
+      if constexpr(extents_type::static_extent(1) != std::dynamic_extent)
+        return extents_type::static_extent(1);
+      else
+        return rows() > 0 ? cols() : 0;
+    }
+
     //! \brief if value_type is a simd vector, then this is a simd vector of
     //!        the same length that can be used for indices.
     using simd_index_type = Simd::Rebind<std::size_t, value_type>;
@@ -199,6 +219,86 @@ namespace Dune
     constexpr const_row_reference operator[] ( size_type i ) const
     {
       return asImp().mat_access(i);
+    }
+
+    //! Access element at position `{i,j}`, compatible to the `mdspan` interface
+    template <class Index>
+      requires std::is_convertible_v<const Index&, size_type>
+    constexpr decltype(auto) operator[] (const std::array<Index,2>& indices)
+    {
+      return asImp().mat_access(size_type(indices[0]))[size_type(indices[1])];
+    }
+
+    //! Access element at position `{i,j}`, compatible to the `mdspan` interface
+    template <class Index>
+      requires std::is_convertible_v<const Index&, size_type>
+    constexpr decltype(auto) operator[] (const std::array<Index,2>& indices) const
+    {
+      return asImp().mat_access(size_type(indices[0]))[size_type(indices[1])];
+    }
+
+    //! Access element at position `{i,j}`, compatible to the `mdspan` interface
+    template <class Index>
+      requires std::is_convertible_v<const Index&, size_type>
+    constexpr decltype(auto) operator[] (std::span<Index,2> indices)
+    {
+      return asImp().mat_access(size_type(indices[0]))[size_type(indices[1])];
+    }
+
+    //! Access element at position `{i,j}`, compatible to the `mdspan` interface
+    template <class Index>
+      requires std::is_convertible_v<const Index&, size_type>
+    constexpr decltype(auto) operator[] (std::span<Index,2> indices) const
+    {
+      return asImp().mat_access(size_type(indices[0]))[size_type(indices[1])];
+    }
+
+#if __cpp_multidimensional_subscript >= 202110L
+    //! Access element at position `[i,j]`, compatible to the `mdspan` interface
+    template <class I0, class I1>
+      requires (std::is_convertible_v<I0, size_type> && std::is_convertible_v<I1, size_type>)
+    constexpr decltype(auto) operator[] (I0 i, I1 j)
+    {
+      return asImp().mat_access(size_type(std::move(i)))[size_type(std::move(j))];
+    }
+
+    //! Access element at position `[i,j]`, compatible to the `mdspan` interface
+    template <class I0, class I1>
+      requires (std::is_convertible_v<I0, size_type> && std::is_convertible_v<I1, size_type>)
+    constexpr decltype(auto) operator[] (I0 i, I1 j) const
+    {
+      return asImp().mat_access(size_type(std::move(i)))[size_type(std::move(j))];
+    }
+#endif
+
+    //===== multi-dimensional index space (mdspan interface)
+
+    //! Number of dimensions of the index space, always 2
+    static constexpr rank_type rank () noexcept { return extents_type::rank(); }
+
+    //! Number of dimensions with dynamic extent
+    static constexpr rank_type rank_dynamic () noexcept { return extents_type::rank_dynamic(); }
+
+    //! The static extent in dimension `r`, or `std::dynamic_extent`
+    static constexpr std::size_t static_extent (rank_type r) noexcept { return extents_type::static_extent(r); }
+
+    /**
+     * \brief The extent in dimension `r`, i.e., the number of rows for `r == 0` and columns for `r == 1`
+     *
+     * \note For a matrix without rows and a dynamic number of columns, the extent of the
+     * columns is 0, since some implementations, e.g. `DynamicMatrix`, cannot determine
+     * the number of columns in this case.
+     */
+    constexpr index_type extent (rank_type r) const
+    {
+      DUNE_ASSERT_BOUNDS(r < rank());
+      return index_type(r == 0 ? rows() : extentCols());
+    }
+
+    //! The index space of the matrix, see `extent()`
+    constexpr extents_type extents () const
+    {
+      return extents_type(rows(), extentCols());
     }
 
     //! size method (number of rows)

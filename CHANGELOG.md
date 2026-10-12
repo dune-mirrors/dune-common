@@ -30,6 +30,14 @@ In order to build the DUNE core modules you need at least the following software
   available if the standard library provides these types, which is indicated
   by `DUNE_HAVE_CXX_EXPERIMENTAL_SIMD`.
 
+- `DenseVector` and `DenseMatrix`, and thus `FieldVector`, `FieldMatrix`, `DynamicVector`,
+  and `DynamicMatrix`, provide the `mdspan`-like index-space interface `extents()`, `extent(r)`,
+  `rank()`, `rank_dynamic()`, `static_extent(r)`, and the element access by a multi-index,
+  `v[std::array{i}]` and `m[std::array{i,j}]`, and `m[i,j]` if the compiler supports multi-argument
+  `operator[]`. Thereby, these types model `Concept::MultiDimensional`. The `extents_type` can be
+  provided in the `DenseMatVecTraits`. Implementations of `DenseVector` that define their own
+  `operator[]` need to add `using Base::operator[];` to provide the multi-index access.
+
 - Add `Dune::Std::dims`, the standard mdspan alias template for dynamic
   extents with default index type `std::size_t`.
 

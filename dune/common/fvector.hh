@@ -26,6 +26,7 @@
 #include <dune/common/concepts/number.hh>
 #include <dune/common/std/algorithm.hh>
 #include <dune/common/std/compare.hh>
+#include <dune/common/std/extents.hh>
 
 namespace Dune {
 
@@ -46,6 +47,7 @@ namespace Dune {
     typedef std::array<K,SIZE> container_type;
     typedef K value_type;
     typedef typename container_type::size_type size_type;
+    typedef Std::extents<size_type,SIZE> extents_type;
   };
 
   template< class K, int SIZE >
@@ -230,6 +232,9 @@ namespace Dune {
 
     /// \name Element access
     /// @{
+
+    //! Access element by a multi-index `{i}`, compatible to the `mdspan` interface
+    using Base::operator[];
 
     /**
      * \brief Return a reference to the `i`th element.

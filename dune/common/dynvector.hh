@@ -149,6 +149,7 @@ namespace Dune {
 
     //==== make this thing a vector
     size_type size() const { return _data.size(); }
+    using Base::operator[];
     K & operator[](size_type i) {
       DUNE_ASSERT_BOUNDS(i < size());
       return _data[i];

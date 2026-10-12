@@ -6,7 +6,10 @@
 #define DUNE_DENSEVECTOR_HH
 
 #include <algorithm>
+#include <array>
+#include <cstddef>
 #include <limits>
+#include <span>
 #include <type_traits>
 
 #include "std/cmath.hh"
@@ -279,6 +282,39 @@ namespace Dune {
     //! The number of block levels we contain. This is the leaf, that is, 1.
     constexpr static int blocklevel = 1;
 
+    //! The type of the one-dimensional index space, see `Std::extents`
+    using extents_type = typename Impl::DenseMatVecExtents<Traits,1>::type;
+
+    //! The type used for indices in the index space
+    using index_type = typename extents_type::index_type;
+
+    //! The type used for the rank of the index space
+    using rank_type = typename extents_type::rank_type;
+
+    //===== multi-dimensional index space (mdspan interface)
+
+    //! Number of dimensions of the index space, always 1
+    static constexpr rank_type rank () noexcept { return extents_type::rank(); }
+
+    //! Number of dimensions with dynamic extent
+    static constexpr rank_type rank_dynamic () noexcept { return extents_type::rank_dynamic(); }
+
+    //! The static extent in dimension `r`, or `std::dynamic_extent`
+    static constexpr std::size_t static_extent (rank_type r) noexcept { return extents_type::static_extent(r); }
+
+    //! The extent in dimension `r`, i.e., the size of the vector for `r == 0`
+    constexpr index_type extent ([[maybe_unused]] rank_type r) const
+    {
+      DUNE_ASSERT_BOUNDS(r < rank());
+      return index_type(size());
+    }
+
+    //! The index space of the vector
+    constexpr extents_type extents () const
+    {
+      return extents_type(size());
+    }
+
     //===== assignment from scalar
     //! Assignment operator for scalar
     constexpr inline derived_type& operator= (const value_type& k)
@@ -318,6 +354,38 @@ namespace Dune {
     constexpr const value_type & operator[] (size_type i) const
     {
       return asImp()[i];
+    }
+
+    //! Access element at position `{i}`, compatible to the `mdspan` interface
+    template <class Index>
+      requires std::is_convertible_v<const Index&, size_type>
+    constexpr decltype(auto) operator[] (const std::array<Index,1>& index)
+    {
+      return asImp()[size_type(index[0])];
+    }
+
+    //! Access element at position `{i}`, compatible to the `mdspan` interface
+    template <class Index>
+      requires std::is_convertible_v<const Index&, size_type>
+    constexpr decltype(auto) operator[] (const std::array<Index,1>& index) const
+    {
+      return asImp()[size_type(index[0])];
+    }
+
+    //! Access element at position `{i}`, compatible to the `mdspan` interface
+    template <class Index>
+      requires std::is_convertible_v<const Index&, size_type>
+    constexpr decltype(auto) operator[] (std::span<Index,1> index)
+    {
+      return asImp()[size_type(index[0])];
+    }
+
+    //! Access element at position `{i}`, compatible to the `mdspan` interface
+    template <class Index>
+      requires std::is_convertible_v<const Index&, size_type>
+    constexpr decltype(auto) operator[] (std::span<Index,1> index) const
+    {
+      return asImp()[size_type(index[0])];
     }
 
     //! return reference to first element

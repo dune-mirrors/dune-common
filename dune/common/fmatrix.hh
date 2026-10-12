@@ -20,6 +20,7 @@
 #include <dune/common/promotiontraits.hh>
 #include <dune/common/typetraits.hh>
 #include <dune/common/matrixconcepts.hh>
+#include <dune/common/std/extents.hh>
 
 namespace Dune
 {
@@ -96,6 +97,7 @@ namespace Dune
     typedef std::array<row_type,ROWS> container_type;
     typedef K value_type;
     typedef typename container_type::size_type size_type;
+    typedef Std::extents<size_type,ROWS,COLS> extents_type;
   };
 
   template< class K, int ROWS, int COLS >
