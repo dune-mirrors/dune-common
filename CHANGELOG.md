@@ -30,6 +30,12 @@ In order to build the DUNE core modules you need at least the following software
   available if the standard library provides these types, which is indicated
   by `DUNE_HAVE_CXX_EXPERIMENTAL_SIMD`.
 
+- Add the concept `Dune::Concept::MultiDimensional` in `dune/common/concepts/multidimensional.hh`
+  for objects with an `mdspan`-like interface, i.e., `extents()`, `extent(r)`, `rank()`, and
+  element access `t[std::array{i,j,...}]`. Generic code constrained by this concept should
+  restrict itself to this interface. An archetype for testing such code is provided in
+  `dune/common/concepts/archetypes/multidimensional.hh`.
+
 - `DenseVector` and `DenseMatrix`, and thus `FieldVector`, `FieldMatrix`, `DynamicVector`,
   and `DynamicMatrix`, provide the `mdspan`-like index-space interface `extents()`, `extent(r)`,
   `rank()`, `rank_dynamic()`, `static_extent(r)`, and the element access by a multi-index,
