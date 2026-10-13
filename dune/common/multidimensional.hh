@@ -106,23 +106,46 @@ constexpr auto asMultiDimensional (R&& r)
 namespace Concept {
 
 /**
- * \brief Types that can be represented as `MultiDimensional` by `asMultiDimensional()`.
+ * \brief Types of arbitrary rank that can be represented by `asMultiDimensional()`.
  * \ingroup CxxConcepts
  *
  * The concept is satisfied if an lvalue of type `T` can be passed to `asMultiDimensional()`.
  * In addition to models of \ref MultiDimensional, this includes contiguous ranges like
  * `std::vector` and `std::array`.
  *
- * \note In contrast to \ref MultiDimensional, the type `T` might be a reference or cv-qualified type.
+ * \note In contrast to \ref MultiDimensional, the type `T` might be a reference or
+ * cv-qualified type.
  *
  * \experimental
  * \hideinitializer
  **/
 template <class T>
-concept MultiDimensionalLike = requires(std::remove_reference_t<T>& t)
+concept MultiDimensionalViewable = requires(std::remove_reference_t<T>& t)
 {
   { Dune::asMultiDimensional(t) };
 };
+
+/**
+ * \brief Types that can be represented by `asMultiDimensional()` as an object of the given `rank`.
+ * \ingroup CxxConcepts
+ *
+ * Contiguous ranges like `std::vector` and `std::array` satisfy this concept for `rank == 1`.
+ *
+ * \b Example:
+ * \code{.cpp}
+   template <Concept::MultiDimensionalViewableOfRank<1> Vector>
+   double sumOfSquares (const Vector& v);
+
+   sumOfSquares(std::vector{1.0, 2.0});
+   sumOfSquares(FieldVector<double,2>{1.0, 2.0});
+ * \endcode
+ *
+ * \experimental
+ * \hideinitializer
+ **/
+template <class T, std::size_t rank>
+concept MultiDimensionalViewableOfRank = MultiDimensionalViewable<T> &&
+  (std::remove_cvref_t<decltype(Dune::asMultiDimensional(std::declval<std::remove_reference_t<T>&>()))>::rank() == rank);
 
 } // end namespace Concept
 
@@ -134,7 +157,7 @@ concept MultiDimensionalLike = requires(std::remove_reference_t<T>& t)
  * `Concept::MultiDimensional` has a different meaning, e.g., `FieldMatrix::size()` returns
  * the number of rows.
  */
-template <Concept::MultiDimensionalLike T>
+template <Concept::MultiDimensionalViewable T>
 constexpr std::size_t indexSpaceSize (const T& t)
 {
   const auto& md = asMultiDimensional(t);
@@ -331,7 +354,7 @@ namespace Impl {
  * The multi-indices are of type `std::array<index_type,rank>` and can directly be used
  * for element access, e.g., `for (auto const& i : indicesOf(t)) t[i] = 0;`
  */
-template <Concept::MultiDimensionalLike T>
+template <Concept::MultiDimensionalViewable T>
 constexpr auto indicesOf (const T& t)
 {
   const auto& md = asMultiDimensional(t);
@@ -346,7 +369,7 @@ constexpr auto indicesOf (const T& t)
  *
  * \note The range refers to `t`. Thus, `t` must be an lvalue that lives longer than the range.
  */
-template <Concept::MultiDimensionalLike T>
+template <Concept::MultiDimensionalViewable T>
 constexpr auto entriesOf (T& t)
 {
   return transformedRangeView(indicesOf(t),
@@ -363,7 +386,7 @@ constexpr auto entriesOf (T&& t) = delete;
 /**
  * \brief A range of the rows of a rank-2 object `t`.
  *
- * Each row is a rank-1 view modeling `Concept::MultiDimensional`, with element access
+ * Each row is a rank-1 view modeling `Concept::MultiDimensionalOfRank<1>`, with element access
  * `row[j]` and iteration over the row elements. Since the rows are one-dimensional,
  * their `size()` is the number of elements, i.e., the number of columns of `t`.
  *
@@ -376,12 +399,11 @@ constexpr auto entriesOf (T&& t) = delete;
  *
  * \note The range refers to `t`. Thus, `t` must be an lvalue that lives longer than the range.
  */
-template <Concept::MultiDimensionalLike T>
+template <Concept::MultiDimensionalViewableOfRank<2> T>
 constexpr auto rowsOf (T& t)
 {
   using Storage = decltype(Impl::storeMultiDimensional(t));
   using MD = std::remove_cvref_t<decltype(asMultiDimensional(t))>;
-  static_assert(MD::rank() == 2, "rowsOf() requires a rank-2 object");
   using index_type = typename MD::index_type;
 
   Storage storage = Impl::storeMultiDimensional(t);

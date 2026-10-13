@@ -29,7 +29,7 @@ using namespace Dune;
 // Generic algorithms restricted to the interface of `Concept::MultiDimensional`.
 // They are instantiated with the archetype to check this restriction.
 
-template <Concept::MultiDimensionalLike T>
+template <Concept::MultiDimensionalViewable T>
 double sumOfEntries (const T& t)
 {
   double s = 0;
@@ -38,7 +38,7 @@ double sumOfEntries (const T& t)
   return s;
 }
 
-template <Concept::MultiDimensionalLike T>
+template <Concept::MultiDimensionalViewable T>
 double sumOfEntriesByIndex (const T& t)
 {
   const auto& md = asMultiDimensional(t);
@@ -48,7 +48,14 @@ double sumOfEntriesByIndex (const T& t)
   return s;
 }
 
-template <Concept::MultiDimensionalLike T>
+// Overloads for a specific rank are preferred over the rank-independent overload
+template <Concept::MultiDimensional T>
+constexpr int rankOverload (const T&) { return -1; }
+
+template <Concept::MultiDimensionalOfRank<2> T>
+constexpr int rankOverload (const T&) { return 2; }
+
+template <Concept::MultiDimensionalViewableOfRank<2> T>
 void fillRows (T& t)
 {
   for (auto&& row : rowsOf(t)) {
@@ -65,7 +72,7 @@ void checkDenseVector (TestSuite& testSuite, V& v)
 {
   TestSuite subTestSuite("checkDenseVector");
 
-  static_assert(Concept::MultiDimensionalWithRank<V,1>);
+  static_assert(Concept::MultiDimensionalOfRank<V,1>);
   static_assert(V::rank() == 1);
   subTestSuite.check(v.extent(0) == v.size());
   subTestSuite.check(v.extents().extent(0) == v.size());
@@ -87,7 +94,7 @@ void checkDenseMatrix (TestSuite& testSuite, M& m)
 {
   TestSuite subTestSuite("checkDenseMatrix");
 
-  static_assert(Concept::MultiDimensionalWithRank<M,2>);
+  static_assert(Concept::MultiDimensionalOfRank<M,2>);
   static_assert(M::rank() == 2);
   subTestSuite.check(m.extent(0) == m.N());
   subTestSuite.check(m.extent(1) == m.M());
@@ -134,11 +141,28 @@ int main ()
   static_assert(not Concept::MultiDimensional<std::array<double,3>>);
   static_assert(not Concept::MultiDimensional<FieldMatrix<double,2,3>&>);
 
-  static_assert(Concept::MultiDimensionalLike<std::vector<double>&>);
-  static_assert(Concept::MultiDimensionalLike<const std::array<double,3>&>);
-  static_assert(Concept::MultiDimensionalLike<std::span<double>>);
-  static_assert(Concept::MultiDimensionalLike<std::vector<double>>);
-  static_assert(not Concept::MultiDimensionalLike<double>);
+  static_assert(Concept::MultiDimensionalViewable<std::vector<double>&>);
+  static_assert(Concept::MultiDimensionalViewable<const std::array<double,3>&>);
+  static_assert(Concept::MultiDimensionalViewable<std::span<double>>);
+  static_assert(Concept::MultiDimensionalViewable<std::vector<double>>);
+  static_assert(not Concept::MultiDimensionalViewable<double>);
+
+  // models with fixed rank
+  static_assert(Concept::MultiDimensionalOfRank<FieldVector<double,3>,1>);
+  static_assert(Concept::MultiDimensionalOfRank<FieldMatrix<double,2,3>,2>);
+  static_assert(Concept::MultiDimensionalOfRank<Std::mdspan<double,Std::dims<3>>,3>);
+  static_assert(not Concept::MultiDimensionalOfRank<FieldMatrix<double,2,3>,1>);
+  static_assert(not Concept::MultiDimensionalOfRank<std::vector<double>,1>);
+
+  static_assert(Concept::MultiDimensionalViewableOfRank<std::vector<double>,1>);
+  static_assert(Concept::MultiDimensionalViewableOfRank<const std::array<double,3>&,1>);
+  static_assert(Concept::MultiDimensionalViewableOfRank<FieldMatrix<double,2,3>,2>);
+  static_assert(not Concept::MultiDimensionalViewableOfRank<std::vector<double>,2>);
+  static_assert(not Concept::MultiDimensionalViewableOfRank<double,0>);
+
+  // overload resolution by rank
+  static_assert(rankOverload(FieldMatrix<double,2,3>{}) == 2);
+  static_assert(rankOverload(FieldVector<double,3>{}) == -1);
 
   // static extents of the dense types
   static_assert(std::is_same_v<FieldVector<double,3>::extents_type, Std::extents<std::size_t,3>>);
@@ -229,7 +253,7 @@ int main ()
 
     std::size_t numRows = 0;
     for (auto&& row : rowsOf(fm)) {
-      static_assert(Concept::MultiDimensionalWithRank<std::remove_cvref_t<decltype(row)>,1>);
+      static_assert(Concept::MultiDimensionalOfRank<std::remove_cvref_t<decltype(row)>,1>);
       testSuite.check(row.size() == 3);
       testSuite.check(row.extent(0) == 3);
       ++numRows;

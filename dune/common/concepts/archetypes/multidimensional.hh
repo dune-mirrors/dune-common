@@ -15,7 +15,8 @@
 namespace Dune::Concept::Archetypes {
 
 /**
- * \brief A minimal model of the concept \ref Dune::Concept::MultiDimensional.
+ * \brief A minimal model of the concepts \ref Dune::Concept::MultiDimensional
+ * and \ref Dune::Concept::MultiDimensionalOfRank with the rank of `Extents`.
  * \ingroup CxxConcepts
  *
  * The archetype is a non-owning view of a contiguous array of elements in row-major order.

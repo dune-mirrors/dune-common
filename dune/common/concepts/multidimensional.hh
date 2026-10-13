@@ -53,7 +53,7 @@ requires(const E e, typename E::rank_type r)
 
 /**
  * \brief A `MultiDimensional` object provides element access on a multi-dimensional
- * index space, following the interface of `mdspan`.
+ * index space of arbitrary rank, following the interface of `mdspan`.
  * \ingroup CxxConcepts
  *
  * The index space is described by the `extents()` of the object, a model of \ref Extents.
@@ -65,6 +65,9 @@ requires(const E e, typename E::rank_type r)
  * `FieldMatrix::size()` returns the number of rows, while `mdspan::size()` returns
  * the total number of elements, and `FieldMatrix` provides an iterator over its rows
  * and `m[i][j]` element access, which `mdspan` does not provide.
+ *
+ * Most algorithms are written for objects of a fixed rank, e.g., vectors or matrices.
+ * These should be constrained by \ref MultiDimensionalOfRank instead.
  *
  * \par Notation:
  * - `t`: a const object of type `T`
@@ -107,14 +110,25 @@ requires(const T t, typename T::rank_type r,
 
 
 /**
- * \brief A \ref MultiDimensional object with a given rank.
+ * \brief A \ref MultiDimensional object with the given `rank`, e.g., a vector for
+ * `rank == 1` or a matrix for `rank == 2`.
  * \ingroup CxxConcepts
+ *
+ * Since this concept refines \ref MultiDimensional, a function constrained by
+ * `MultiDimensionalOfRank<T,2>` is preferred in overload resolution over a function constrained
+ * by `MultiDimensional<T>`.
+ *
+ * \b Example:
+ * \code{.cpp}
+   template <Concept::MultiDimensionalOfRank<2> Matrix>
+   auto trace (const Matrix& A);
+ * \endcode
  *
  * \experimental
  * \hideinitializer
  **/
 template <class T, std::size_t rank>
-concept MultiDimensionalWithRank = MultiDimensional<T> && (T::rank() == rank);
+concept MultiDimensionalOfRank = MultiDimensional<T> && (T::rank() == rank);
 
 } // end namespace Dune::Concept
 
