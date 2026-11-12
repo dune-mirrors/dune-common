@@ -121,7 +121,28 @@ def main(argv):
     f.write("    from packagemetadata import metaData\n")
     f.write("from skbuild import setup\n")
 
-    f.write("setup(**metaData('"+version+"')[1])\n")
+    f.write("""
+from pathlib import Path
+import importlib.util
+def apply_local_setup_hook(params):
+    hook_path = Path(__file__).resolve().parent / "module_setup.py"
+    if not hook_path.is_file():
+        return params
+
+    spec = importlib.util.spec_from_file_location("_dune_setup", hook_path)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"Cannot load setup hook: {hook_path}")
+
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+
+    return module.modifyParams(params)
+""")
+
+    f.write(f"setupParams = apply_local_setup_hook( metaData(\"{version}\")[1] )\n")
+
+    f.write("setup(**setupParams)\n")
     f.close()
 
     # Generate pyproject.toml
