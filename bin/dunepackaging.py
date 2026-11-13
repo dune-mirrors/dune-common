@@ -82,6 +82,7 @@ def _requirement_name(requirement: str) -> str:
 
 def _read_existing_build_requirements(pyproject: Path) -> list[str]:
     """Read [build-system].requires from an existing pyproject, if present."""
+    return []
     if not pyproject.is_file():
         return []
 
@@ -259,7 +260,7 @@ def build_sdist(
         _run(
             [
                 sys.executable, "-m", "build",
-                "--sdist",
+                "--sdist", "--no-isolation",
                 "--outdir", str(output_dir),
                 str(staging_dir),
             ]
