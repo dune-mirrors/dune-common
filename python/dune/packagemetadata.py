@@ -28,6 +28,7 @@ import subprocess
 import email.utils
 import glob
 import logging
+from pathlib import Path
 from datetime import date
 from urllib.parse import urlparse
 from packaging.version import Version as PkgVersion
@@ -437,88 +438,6 @@ def forceConfigure():
         os.remove(tagfile)
 
 
-def metaData(version=None, dependencyCheck=True):
-    data = Data(version)
-
-    # check if all dependencies are listed in pyproject.toml
-    if dependencyCheck:
-        try:
-            with io.open('pyproject.toml', 'r', encoding='utf-8') as f:
-                for line in f:
-                    if not line.startswith("#") and 'requires' in line:
-                        line = line.split('=', maxsplit=1)[1].strip()
-                        modules = ast.literal_eval(line)
-                        modules = [
-                            x for x in modules
-                            if x not in [
-                                "setuptools", "wheel", "scikit-build", "cmake", "ninja", "requests"
-                            ]
-                        ]
-                        for dep in data.depends:
-                            if not any([mod.startswith(dep[0]) for mod in modules]):
-                                raise RuntimeError("""
-    pyproject.toml file does not contain all required dune projects defined in the
-    dune.module file: """ + dep[0])
-
-        except IOError:
-            pass
-
-    install_requires = data.asPythonRequirementString(data.python_requires + data.depends)
-    install_requires = list(set(install_requires))
-
-    try:
-        with open("README.md", "r") as fh:
-            long_description = fh.read()
-    except FileNotFoundError:
-        try:
-            with open("README", "r") as fh:
-                long_description = fh.read()
-        except FileNotFoundError:
-            long_description = 'No long description available for this package'
-            print("Warning: no README[.md] file found so providing a default 'long_description' for this package")
-
-    # sdist name should not use '-' (see PEP 625) so use '_' instead
-    setupParams = {
-        "name": data.name.replace("-","_"),
-        "version": data.version,
-        "author": data.author,
-        "author_email": data.author_email,
-        "description": data.description,
-        "long_description": long_description,
-        "long_description_content_type": "text/markdown",
-        "url": data.url if data.url is not None else '',
-        "classifiers": [
-            "Programming Language :: C++",
-            "Programming Language :: Python :: 3",
-            "License :: OSI Approved :: GNU General Public License (GPL)",
-        ],
-        "cmake_args": defaultCMakeFlags(),
-    }
-    if os.path.isdir('python'):
-        setupParams.update({
-            "packages": find_namespace_packages(where="python"),
-            "package_dir": {"": "python"},
-            "install_requires": install_requires,
-            "python_requires": ">=3.4",
-        })
-
-    try:
-        from skbuild.command.build_py import build_py
-    except ModuleNotFoundError:
-        from setuptools.command.build_py import build_py
-
-    class DunepyConfigure(build_py):
-        def run(self):
-            build_py.run(self)
-            subprocess.call([sys.executable, '-m', 'dune', 'configure'])
-
-    setupParams['cmdclass'] = {
-        'build_py': DunepyConfigure,
-    }
-
-    return data, setupParams
-
-
 class BuildMetaData(dict):
     """Dictionary with some data processing patterns"""
 
@@ -728,3 +647,79 @@ def registerExternalModule(moduleName, modulePath):
         # update metadata structures
         _buildMetaData = _extractBuildMetaData()
         _cmakeFlags = _extractCMakeFlags()
+
+
+def metaData(version=None, dependencyCheck=True):
+    """Return the legacy metadata and setup-style values used by the generator."""
+    data = Data(version)
+
+    if dependencyCheck:
+        try:
+            with io.open("pyproject.toml", "r", encoding="utf-8") as f:
+                for line in f:
+                    if not line.startswith("#") and "requires" in line:
+                        line = line.split("=", maxsplit=1)[1].strip()
+                        modules = ast.literal_eval(line)
+                        modules = [
+                            x for x in modules
+                            if x not in {
+                                "setuptools",
+                                "wheel",
+                                "scikit-build",
+                                "cmake",
+                                "ninja",
+                                "requests",
+                                "scikit-build-core",
+                            }
+                        ]
+                        for dep in data.depends:
+                            if not any(mod.startswith(dep[0]) for mod in modules):
+                                raise RuntimeError(
+                                    "pyproject.toml does not contain all required "
+                                    "DUNE projects defined in dune.module: " + dep[0]
+                                )
+        except FileNotFoundError:
+            pass
+
+    install_requires = data.asPythonRequirementString(
+        data.python_requires + data.depends
+    )
+    install_requires = sorted(set(install_requires))
+
+    try:
+        with open("README.md", "r", encoding="utf-8") as fh:
+            long_description = fh.read()
+    except FileNotFoundError:
+        try:
+            with open("README", "r", encoding="utf-8") as fh:
+                long_description = fh.read()
+        except FileNotFoundError:
+            long_description = "No long description available for this package"
+            print(
+                "Warning: no README[.md] file found; using a default "
+                "long description."
+            )
+
+    # Keep the legacy sdist name normalization.
+    setupParams = {
+        "name": data.name.replace("-", "_"),
+        "version": data.version,
+        "author": data.author,
+        "author_email": data.author_email,
+        "description": data.description,
+        "long_description": long_description,
+        "long_description_content_type": "text/markdown",
+        "url": data.url or "",
+        "classifiers": [
+            "Programming Language :: C++",
+            "Programming Language :: Python :: 3",
+            "License :: OSI Approved :: GNU General Public License (GPL)",
+        ],
+        "cmake_args": defaultCMakeFlags(),
+        "install_requires": install_requires,
+    }
+
+    if os.path.isdir("python"):
+        setupParams["python_requires"] = ">=3.9"
+
+    return data, setupParams

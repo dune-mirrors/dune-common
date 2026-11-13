@@ -33,26 +33,19 @@ pushd $TMPDIR
 
 python3 -m venv env
 source env/bin/activate
-python -m pip install pip-download twine
+python -m pip install --upgrade pip-download twine==6.1.0
 
 pip-download -d $(pwd)/downloads \
-  # dune-common \
-  # dune-geometry \
-  # dune-grid \
-  # dune-istl \
-  # dune-localfunctions \
-  # dune-alugrid \
-  # dune-fem \
   pyparsing \
   mpi4py \
   wheel \
   setuptools \
   jinja2 \
   portalocker \
-  fenics-ufl==2019.1.0 \
+  fenics-ufl \
   matplotlib \
   scipy \
-  pip>=21 \
+  pip \
   ninja \
   sortedcontainers
 

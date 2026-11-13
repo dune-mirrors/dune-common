@@ -2,265 +2,440 @@
 # SPDX-FileCopyrightInfo: Copyright © DUNE Project contributors, see file LICENSE.md in module root
 # SPDX-License-Identifier: LicenseRef-GPL-2.0-only-with-DUNE-exception
 
-import sys, os, io, getopt, re, shutil
+"""Generate DUNE packaging metadata, build an sdist, and optionally upload it."""
+
+from __future__ import annotations
+
+import argparse
+import ast
+import json
+import os
+import re
+import shutil
+import subprocess
+import tempfile
+import sys
+from pathlib import Path
+from typing import Any
+
+# Import metadata from this dune-common checkout rather than an installed copy.
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+MODULE_ROOT = Path.cwd().resolve()
+# Only useful when dunepackaging.py is running from a dune-common checkout.
+DUNE_COMMON_ROOT = (
+    SCRIPT_DIR.parent
+    if SCRIPT_DIR.name == "bin"
+    else SCRIPT_DIR
+)
+LOCAL_DUNE_PYTHON = DUNE_COMMON_ROOT / "python" / "dune"
+
+
+if LOCAL_DUNE_PYTHON.is_dir():
+    sys.path.insert(0, str(LOCAL_DUNE_PYTHON))
+
 try:
-    import skbuild
+    from packagemetadata import Data, metaData
 except ImportError:
-    print("skbuild needed for packaging, run 'pip install scikit-build'")
-    sys.exit(0)
-try:
-    import requests
-except ImportError:
-    print("'requests' package needed, run 'pip install requests'")
-    sys.exit(0)
+    from dune.packagemetadata import Data, metaData
 
-import importlib, subprocess
-import email.utils
-from datetime import date
 
-# make sure that 'metadata' is taken from the current `dune-common` folder
-# and not some installed version which might be different from the one I'm
-# packaging (by mistake). The path to `packagemetadata.py` needs to be
-# added to the python path (to work here) and to the environment so that a
-# later call to `python setup.py` also works.
-here = os.path.dirname(os.path.abspath(__file__))
-mods = os.path.join(here, "..", "python", "dune")
-sys.path.append(mods)
-pythonpath  = mods + ":" + os.environ.get('PYTHONPATH','.')
-os.environ['PYTHONPATH'] = pythonpath
-try:
-    from packagemetadata import metaData, Data
-except ImportError:
-    # not calling from within a dune-common source module so use installed
-    # version after all
-    from dune.packagemetadata import metaData, Data
+BACKEND = "dune_build_backend"
+LEGACY_BUILD_TOOLS = {"setuptools", "wheel", "scikit-build"}
+SCRIPT_DIR = Path(__file__).resolve().parent
+BACKEND_SOURCE = SCRIPT_DIR / "dune_build_backend.py"
 
-def main(argv):
 
-    repositories = ["gitlab", "testpypi", "pypi"]
-    def usage():
-        return 'usage: dunepackaging.py [--upload <'+"|".join(repositories)+'> | -c | --clean | --version <version> | --onlysdist | --bdist_conda | --getversion]'
+def install_backend(project_root: Path = Path('.')) -> None:
+    destination = project_root / "dune_build_backend.py"
+    shutil.copy2(BACKEND_SOURCE, destination)
+
+
+def run(command: list[str], *, cwd: Path = MODULE_ROOT) -> None:
+    """Run a command and raise an error if it fails."""
+    print("+", " ".join(command), flush=True)
+    subprocess.run(command, cwd=cwd, check=True)
+
+
+def _toml_string(value: str) -> str:
+    return json.dumps(str(value), ensure_ascii=False)
+
+
+def _toml_key(value: str) -> str:
+    if re.fullmatch(r"[A-Za-z0-9_-]+", value):
+        return value
+    return _toml_string(value)
+
+
+def _toml_value(value: Any) -> str:
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, (int, float)):
+        return str(value)
+    if isinstance(value, str):
+        return _toml_string(value)
+    if isinstance(value, (list, tuple)):
+        return "[" + ", ".join(_toml_value(item) for item in value) + "]"
+    if isinstance(value, dict):
+        contents = ", ".join(
+            f"{_toml_key(str(key))} = {_toml_value(item)}"
+            for key, item in value.items()
+        )
+        return "{ " + contents + " }"
+    raise TypeError(f"Unsupported TOML value: {value!r}")
+
+
+def _toml_table(name: str, values: dict[str, Any]) -> list[str]:
+    lines = [f"[{name}]"]
+    for key, value in values.items():
+        if value is not None:
+            lines.append(f"{_toml_key(key)} = {_toml_value(value)}")
+    return lines
+
+
+def _requirement_name(requirement: str) -> str:
+    match = re.match(r"\s*([A-Za-z0-9][A-Za-z0-9._-]*)", requirement)
+    return match.group(1).lower().replace("_", "-") if match else ""
+
+
+def _read_existing_build_requirements(pyproject: Path) -> list[str]:
+    """Read [build-system].requires from an existing pyproject, if present."""
+    if not pyproject.is_file():
+        return []
+
+    in_build_system = False
+    for line in pyproject.read_text(encoding="utf-8").splitlines():
+        stripped = line.strip()
+
+        if stripped.startswith("[") and stripped.endswith("]"):
+            in_build_system = stripped == "[build-system]"
+            continue
+
+        if in_build_system and stripped.startswith("requires"):
+            _, separator, rhs = stripped.partition("=")
+            if not separator:
+                raise ValueError("Malformed [build-system].requires entry")
+
+            requirements = ast.literal_eval(rhs.strip())
+            if not isinstance(requirements, list) or not all(
+                isinstance(item, str) for item in requirements
+            ):
+                raise ValueError(
+                    "[build-system].requires must be a list of strings"
+                )
+            return requirements
+
+    return []
+
+
+def _make_build_requirements(
+    data: Any,
+    existing: list[str],
+    additional: list[str],
+) -> list[str]:
+    """Retain existing requirements and add DUNE build requirements."""
+    requirements = list(existing)
+
+    # Preserve DUNE module requirements for isolated builds.
+    requirements.extend(
+        data.asPythonRequirementString(data.depends + data.python_requires)
+    )
+    requirements.extend(additional)
+
+    requirements = [
+        requirement
+        for requirement in requirements
+        if _requirement_name(requirement) not in LEGACY_BUILD_TOOLS
+    ]
+
+    if not any(
+        _requirement_name(requirement) == "scikit-build-core"
+        for requirement in requirements
+    ):
+        requirements.insert(0, "scikit-build-core")
+
+    # Keep the first occurrence of each exact requirement.
+    return list(dict.fromkeys(requirements))
+
+
+def generate_pyproject(
+    *,
+    version: str | None = None,
+    dependency_check: bool = False,
+    additional_build_requirements: list[str] | None = None,
+    output: Path | None = None,
+) -> Path:
+    """Generate pyproject.toml from dune.module and existing build requirements."""
+    output = output or (MODULE_ROOT / "pyproject.toml")
+    existing_requirements = _read_existing_build_requirements(output)
+
+    data, setup = metaData(version, dependencyCheck=dependency_check)
+    build_requirements = _make_build_requirements(
+        data,
+        existing_requirements,
+        additional_build_requirements or [],
+    )
+
+    project: dict[str, Any] = {
+        # Preserve the old sdist name normalization.
+        "name": setup["name"],
+        "version": str(setup["version"]),
+        "description": setup.get("description", ""),
+        "classifiers": setup.get("classifiers", []),
+        "readme": {
+            "text": setup.get("long_description", ""),
+            "content-type": setup.get(
+                "long_description_content_type", "text/markdown"
+            ),
+        },
+        "dependencies": setup.get("install_requires", []),
+    }
+
+    if setup.get("python_requires"):
+        project["requires-python"] = setup["python_requires"]
+
+    if setup.get("author"):
+        author: dict[str, str] = {"name": setup["author"]}
+        if setup.get("author_email"):
+            author["email"] = setup["author_email"]
+        project["authors"] = [author]
+
+    if setup.get("url"):
+        project["urls"] = {"Homepage": setup["url"]}
+
+    lines = [
+        "# DO NOT MODIFY THIS FILE!",
+        "# Generated by bin/dunepackaging.py.",
+        "",
+    ]
+    lines += _toml_table(
+        "build-system",
+        {
+            "requires": build_requirements,
+            "build-backend": BACKEND,
+            "backend-path": ["."],
+        },
+    )
+    lines += [""] + _toml_table("project", project)
+    lines += [
+        "",
+        "[tool.scikit-build]",
+        "cmake.args = " + _toml_value(setup.get("cmake_args", [])),
+    ]
+
+    # module_setup.py wheel-package mapping is intentionally deferred.
+    # Tutorial handling is module-dependent and is intentionally omitted here.
+
+    output.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    print(f"Wrote {output}")
+
+    install_backend(output.parent)
+
+    return output
+
+
+def clean_generated_files() -> None:
+    """Remove common generated build and distribution artifacts."""
+    for name in ("dist", "_skbuild", "build", "pyproject.toml", "dune_build_backend.py"):
+        path = MODULE_ROOT / name
+        if path.is_dir():
+            print(f"Removing {path}")
+            shutil.rmtree(path)
+        elif path.exists():
+            path.unlink()
+
+    for path in MODULE_ROOT.glob("*.egg-info"):
+        print(f"Removing {path}")
+        shutil.rmtree(path)
+
+    cache = MODULE_ROOT / "__pycache__"
+    if cache.exists():
+        shutil.rmtree(cache)
+
+
+def _append_git_hash_to_readme() -> tuple[Path, bytes] | None:
+    """Temporarily append the current commit hash to README.md, if possible."""
+    readme = MODULE_ROOT / "README.md"
+    if not readme.is_file():
+        return None
 
     try:
-        opts, args = getopt.getopt(argv, "hc", ["upload=", "clean", "version=", "onlysdist", "bdist_conda", "getversion"])
-    except getopt.GetoptError:
-        print(usage())
-        sys.exit(2)
+        commit = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"],
+            cwd=MODULE_ROOT,
+            text=True,
+            stderr=subprocess.DEVNULL,
+        ).strip()
+    except (OSError, subprocess.CalledProcessError):
+        return None
 
-    upload = False
-    repository = "gitlab"
-    clean = False
-    version = None
-    onlysdist = False
-    bdistconda = False
-    for opt, arg in opts:
-        if opt == '-h':
-            print(usage())
-            sys.exit(2)
-        elif opt in ("--upload"):
-            upload = True
-            if arg != '':
-                repository = arg
-                if repository not in repositories:
-                    print("Specified repository must be one of: " + " ".join(repositories))
-                    sys.exit(2)
-        elif opt in ("-c", "--clean"):
-            clean = True
-        elif opt in ("--version"):
-            version = arg
-        elif opt in ("--onlysdist"):
-            onlysdist = True
-        elif opt in ("--bdist_conda"):
-            onlysdist  = True
-            bdistconda = True
-        elif opt in ("--getversion"):
-            print(Data().version)
-            sys.exit(0)
+    original = readme.read_bytes()
+    with readme.open("a", encoding="utf-8") as stream:
+        stream.write(f"\n\ngit-{commit}\n")
+    return readme, original
 
-    # Remove generated files
-    def removeFiles():
-        import glob
-        files = ['MANIFEST', 'dist', '_skbuild', '__pycache__']
-        print("Remove generated files: " + ", ".join(files))
-        remove = ['rm', '-rf'] + files
-        subprocess.call(remove)
-        # checkout setup.py and pyproject.toml
-        checkout = ['git', 'checkout', 'setup.py', 'pyproject.toml']
-        subprocess.call(checkout)
 
-    if clean:
-        removeFiles()
-        sys.exit(0)
+def build_sdist(
+    project_root: Path = Path("."),
+    output_dir: Path = Path("dist"),
+) -> None:
+    project_root = project_root.resolve()
+    output_dir = output_dir.resolve()
+    output_dir.mkdir(parents=True, exist_ok=True)
 
-    data, cmake_flags = metaData(version, dependencyCheck=False)
+    with tempfile.TemporaryDirectory(prefix="dune-sdist-") as tmp:
+        staging_dir = Path(tmp) / "source"
+        staging_dir.mkdir()
 
-    if version is None:
-        version = data.version
+        archive = staging_dir / "source.tar"
+        subprocess.run(
+            [
+                "git", "-C", str(project_root),
+                "archive", "--format=tar",
+                f"--output={archive}", "HEAD",
+            ],
+            check=True,
+        )
 
-    # Generate setup.py
-    print("Generate setup.py")
-    f = open("setup.py", "w")
-    f.write("""#
-# DO NOT MODIFY THIS FILE!
-# This file is autogenerated by the `dunepackaging.py` script and
-# only used for the pypi dune packages. This file will not be included in
-# the build directory.
-#
-# See https://www.dune-project.org/dev/adding_python/ for docs on
-# Python packaging for Dune modules.
-#
-""")
-    f.write("import os, sys\n")
-    if data.name == 'dune-common':
-        f.write("here = os.path.dirname(os.path.abspath(__file__))\n")
-        f.write("mods = os.path.join(here, \"python\", \"dune\")\n")
-        f.write("sys.path.append(mods)\n\n")
-    f.write("try:\n")
-    f.write("    from dune.packagemetadata import metaData\n")
-    f.write("except ImportError:\n")
-    f.write("    from packagemetadata import metaData\n")
-    f.write("from skbuild import setup\n")
+        # Extract the committed snapshot into a clean staging directory.
+        subprocess.run(
+            ["tar", "-xf", str(archive), "-C", str(staging_dir)],
+            check=True,
+        )
+        archive.unlink()
 
-    f.write("setup(**metaData('"+version+"')[1])\n")
-    f.close()
+        subprocess.run(
+                ["git", "-C", str(staging_dir), "init", "--quiet", "--initial-branch=main"],
+                check=True,
+        )
+        subprocess.run(
+            ["git", "-C", str(staging_dir), "add", "--all"],
+            check=True,
+        )
+        subprocess.run(
+            [
+                "python", "-m", "build",
+                "--sdist",
+                "--outdir", str(output_dir),
+                str(staging_dir),
+            ],
+            check=True,
+        )
 
-    # Generate pyproject.toml
-    print("Generate pyproject.toml")
-    f = open("pyproject.toml", "w")
-    f.write("""#
-# DO NOT MODIFY THIS FILE!
-# This file is autogenerated by the `dunepackaging.py` script and
-# only used for the pypi dune packages. This file will not be included in
-# the build directory.
-#
-# See https://www.dune-project.org/dev/adding_python/ for docs on
-# Python packaging for Dune modules.
-#
-# This is uses the `Python-Requires` field in the `dune.modules` file to
-# populate the `requires` entry. Additional packages needed for the package
-# build should be added in the `dune.modules`. These packages will then also be
-# included in the package install from source.
-#
-""")
-    requires = data.asPythonRequirementString(data.depends + data.python_requires)
-    requires = list(set(requires)) # make requirements unique
-    minimal = ["pip", "setuptools", "wheel", "scikit-build", "cmake>=3.16", "ninja", "requests"]
-    requires += [r for r in minimal if not any([a.startswith(r) for a in requires])]
-    requires.sort()
-    f.write("[build-system]\n")
-    f.write("requires = "+requires.__str__()+"\n")
-    f.write("build-backend = 'setuptools.build_meta'\n")
-    f.close()
+def upload_sdist(repository: str) -> None:
+    """Upload the contents of dist/ with Twine."""
+    archives = sorted((MODULE_ROOT / "dist").glob("*.tar.gz"))
+    if not archives:
+        raise FileNotFoundError("No source distribution found in dist/")
 
-    # Create source distribution and upload to repository
-    python = sys.executable
-    if upload or onlysdist:
-        print("Remove dist")
-        remove = ['rm', '-rf', 'dist']
-        subprocess.call(remove)
+    run(
+        [
+            sys.executable,
+            "-m",
+            "twine",
+            "upload",
+            "--repository",
+            repository,
+            *[str(archive) for archive in archives],
+        ]
+    )
 
-        # check if we have scikit-build
-        import importlib
-        if importlib.util.find_spec("skbuild") is None:
-            print("Please install the pip package 'scikit-build' to build the source distribution.")
-            sys.exit(2)
 
-        # append hash of current git commit to README
-        shutil.copy('README.md', 'tmp_README.md')
-        githash = ['git', 'rev-parse', 'HEAD']
-        hash = subprocess.check_output(githash, encoding='UTF-8')
-        with open("README.md", "a") as f:
-            f.write("\n\ngit-" + hash)
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Generate DUNE packaging files and build/upload an sdist."
+    )
+    parser.add_argument(
+        "--version",
+        help="Use this package version instead of the version from dune.module.",
+    )
+    parser.add_argument(
+        "--getversion",
+        action="store_true",
+        help="Print the package version and exit.",
+    )
+    parser.add_argument(
+        "--clean",
+        action="store_true",
+        help="Remove generated build and distribution artifacts, then exit.",
+    )
+    parser.add_argument(
+        "--onlysdist",
+        action="store_true",
+        help="Build the source distribution but do not upload it.",
+    )
+    parser.add_argument(
+        "--upload",
+        nargs="?",
+        const="gitlab",
+        choices=("gitlab", "testpypi", "pypi"),
+        metavar="REPOSITORY",
+        help="Build and upload to the selected repository (default: gitlab).",
+    )
+    parser.add_argument(
+        "--build-requirement",
+        action="append",
+        default=[],
+        metavar="REQUIREMENT",
+        help="Add a build-system requirement; may be supplied more than once.",
+    )
+    parser.add_argument(
+        "--dependency-check",
+        action="store_true",
+        help="Check dependencies against an existing pyproject.toml.",
+    )
+    parser.add_argument(
+        "--no-clean",
+        action="store_true",
+        help="Do not remove previous dist/ contents before building.",
+    )
+    return parser.parse_args(argv)
 
-        print("Create source distribution")
-        # make sure setup.py/pyproject.toml are tracked by git so that
-        # they get added to the package by scikit
-        gitadd = ['git', 'add', 'setup.py', 'pyproject.toml']
-        subprocess.call(gitadd)
-        # run sdist
-        build = [python, 'setup.py', 'sdist']
-        subprocess.call(build, stdout=subprocess.DEVNULL)
-        # undo the above git add
-        gitreset = ['git', 'reset', 'setup.py', 'pyproject.toml']
-        subprocess.call(gitreset)
+def main(argv: list[str] | None = None) -> int:
+    args = parse_args(argv)
 
-        # restore README.md
-        shutil.move('tmp_README.md', 'README.md')
+    try:
+        if args.getversion:
+            print(Data(args.version).version)
+            return 0
 
-        if not onlysdist:
-            # check if we have twine
-            import importlib
-            if importlib.util.find_spec("twine") is None:
-                print("Please install the pip package 'twine' to upload the source distribution.")
-                sys.exit(2)
+        if args.clean:
+            clean_generated_files()
+            return 0
 
-            twine = [python, '-m', 'twine', 'upload']
-            twine += ['--repository', repository]
-            twine += ['dist/*']
-            subprocess.call(twine)
+        generate_pyproject(
+            version=args.version,
+            dependency_check=args.dependency_check,
+            additional_build_requirements=args.build_requirement,
+        )
 
-            removeFiles()
+        # A bare invocation generates pyproject.toml only. Build when the user
+        # explicitly requests an sdist or an upload.
+        if not args.onlysdist and args.upload is None:
+            return 0
 
-        # create conda package meta.yaml (experimental)
-        if bdistconda:
-            import hashlib
-            remove = ['rm', '-rf', 'dist/'+data.name]
-            subprocess.call(remove)
-            mkdir  = ['mkdir', 'dist/'+data.name ]
-            subprocess.call(mkdir)
+        if not args.no_clean:
+            dist = MODULE_ROOT / "dist"
+            if dist.exists():
+                shutil.rmtree(dist)
 
-            print("Create bdist_conda (experimental)")
-            distfile = 'dist/'+data.name+'-'+version+'.tar.gz'
-            datahash = ''
-            with open(distfile, "rb") as include:
-                source = include.read()
-                datahash = hashlib.sha256( source ).hexdigest()
+        build_sdist()
 
-            print("Generate ",'dist/'+data.name+'/meta.yaml')
-            f = open('dist/'+data.name+'/meta.yaml', "w")
-            f.write('{% set name = "' + data.name + '" %}\n')
-            f.write('{% set version = "' + version + '" %}\n')
-            f.write('{% set hash = "' + datahash + '" %}\n\n')
-            f.write('package:\n')
-            f.write('  name: "{{ name|lower }}"\n')
-            f.write('  version: "{{ version }}"\n\n')
-            f.write('source:\n')
-            f.write('  path: ../{{ name }}-{{ version }}/\n')
-            f.write('  sha256: {{ hash }}\n\n')
-            f.write('build:\n')
-            f.write('  number: 1\n')
-            if 'TMPDIR' in os.environ:
-                f.write('  script_env:\n')
-                f.write('    - TMPDIR=' + os.environ['TMPDIR'] +'\n')
-            f.write('  script: "{{ PYTHON }} -m pip install . --no-deps --ignore-installed -vv "\n\n')
-            f.write('requirements:\n')
+        if args.upload is not None:
+            upload_sdist(args.upload)
 
-            requirements = ['pip', 'python', 'mkl', 'tbb', 'intel-openmp',
-                            'libgcc-ng', 'libstdcxx-ng', 'gmp', 'scikit-build',
-                            'mpi4py', 'matplotlib', 'numpy', 'scipy', 'ufl']
+        return 0
 
-            for dep in data.depends:
-                requirements += [dep[0]]
+    except (
+        OSError,
+        ValueError,
+        RuntimeError,
+        TypeError,
+        subprocess.CalledProcessError,
+    ) as error:
+        print(f"dunepackaging: {error}", file=sys.stderr)
+        return 1
 
-            f.write('  host:\n')
-            for dep in requirements:
-                f.write('    - ' + dep + '\n')
-
-            f.write('\n')
-            f.write('  run:\n')
-            for dep in requirements:
-                f.write('    - ' + dep + '\n')
-
-            f.write('\n')
-            f.write('test:\n')
-            f.write('  imports:\n')
-            f.write('    - ' + data.name.replace('-','.') + '\n\n')
-            f.write('about:\n')
-            f.write('  home: '+data.url+'\n')
-            f.write('  license: GPLv2 with linking exception.\n')
-            f.write('  license_family: GPL\n')
-            f.write('  summary: '+data.description+'\n')
-            f.close()
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    raise SystemExit(main())
