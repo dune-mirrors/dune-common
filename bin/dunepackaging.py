@@ -13,23 +13,22 @@ import os
 import re
 import shutil
 import subprocess
-import tempfile
 import sys
+import tempfile
 from pathlib import Path
 from typing import Any
 
-# Import metadata from this dune-common checkout rather than an installed copy.
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 MODULE_ROOT = Path.cwd().resolve()
-# Only useful when dunepackaging.py is running from a dune-common checkout.
-DUNE_COMMON_ROOT = (
-    SCRIPT_DIR.parent
-    if SCRIPT_DIR.name == "bin"
-    else SCRIPT_DIR
-)
-LOCAL_DUNE_PYTHON = DUNE_COMMON_ROOT / "python" / "dune"
+BACKEND_SOURCE = SCRIPT_DIR / "dune_build_backend.py"
+BACKEND = "dune_build_backend"
+LEGACY_BUILD_TOOLS = {"setuptools", "wheel", "scikit-build"}
 
+# Use packagemetadata from the dune-common checkout when this script is run
+# from its bin/ directory; otherwise fall back to the installed package.
+DUNE_COMMON_ROOT = SCRIPT_DIR.parent if SCRIPT_DIR.name == "bin" else SCRIPT_DIR
+LOCAL_DUNE_PYTHON = DUNE_COMMON_ROOT / "python" / "dune"
 
 if LOCAL_DUNE_PYTHON.is_dir():
     sys.path.insert(0, str(LOCAL_DUNE_PYTHON))
@@ -38,23 +37,6 @@ try:
     from packagemetadata import Data, metaData
 except ImportError:
     from dune.packagemetadata import Data, metaData
-
-
-BACKEND = "dune_build_backend"
-LEGACY_BUILD_TOOLS = {"setuptools", "wheel", "scikit-build"}
-SCRIPT_DIR = Path(__file__).resolve().parent
-BACKEND_SOURCE = SCRIPT_DIR / "dune_build_backend.py"
-
-
-def install_backend(project_root: Path = Path('.')) -> None:
-    destination = project_root / "dune_build_backend.py"
-    shutil.copy2(BACKEND_SOURCE, destination)
-
-
-def run(command: list[str], *, cwd: Path = MODULE_ROOT) -> None:
-    """Run a command and raise an error if it fails."""
-    print("+", " ".join(command), flush=True)
-    subprocess.run(command, cwd=cwd, check=True)
 
 
 def _toml_string(value: str) -> str:
@@ -106,7 +88,6 @@ def _read_existing_build_requirements(pyproject: Path) -> list[str]:
     in_build_system = False
     for line in pyproject.read_text(encoding="utf-8").splitlines():
         stripped = line.strip()
-
         if stripped.startswith("[") and stripped.endswith("]"):
             in_build_system = stripped == "[build-system]"
             continue
@@ -133,10 +114,7 @@ def _make_build_requirements(
     existing: list[str],
     additional: list[str],
 ) -> list[str]:
-    """Retain existing requirements and add DUNE build requirements."""
     requirements = list(existing)
-
-    # Preserve DUNE module requirements for isolated builds.
     requirements.extend(
         data.asPythonRequirementString(data.depends + data.python_requires)
     )
@@ -154,30 +132,28 @@ def _make_build_requirements(
     ):
         requirements.insert(0, "scikit-build-core")
 
-    # Keep the first occurrence of each exact requirement.
     return list(dict.fromkeys(requirements))
 
 
-def generate_pyproject(
+def render_pyproject(
     *,
     version: str | None = None,
     dependency_check: bool = False,
     additional_build_requirements: list[str] | None = None,
-    output: Path | None = None,
-) -> Path:
-    """Generate pyproject.toml from dune.module and existing build requirements."""
-    output = output or (MODULE_ROOT / "pyproject.toml")
-    existing_requirements = _read_existing_build_requirements(output)
-
+    existing_pyproject: Path | None = None,
+) -> str:
+    """Render pyproject.toml using metadata from the current working directory."""
+    existing = _read_existing_build_requirements(
+        existing_pyproject or (Path.cwd() / "pyproject.toml")
+    )
     data, setup = metaData(version, dependencyCheck=dependency_check)
     build_requirements = _make_build_requirements(
         data,
-        existing_requirements,
+        existing,
         additional_build_requirements or [],
     )
 
     project: dict[str, Any] = {
-        # Preserve the old sdist name normalization.
         "name": setup["name"],
         "version": str(setup["version"]),
         "description": setup.get("description", ""),
@@ -222,21 +198,76 @@ def generate_pyproject(
         "[tool.scikit-build]",
         "cmake.args = " + _toml_value(setup.get("cmake_args", [])),
     ]
+    return "\n".join(lines) + "\n"
 
-    # module_setup.py wheel-package mapping is intentionally deferred.
-    # Tutorial handling is module-dependent and is intentionally omitted here.
 
-    output.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    print(f"Wrote {output}")
+def _run(command: list[str], *, cwd: Path | None = None) -> None:
+    print("+", " ".join(command), flush=True)
+    subprocess.run(command, cwd=cwd, check=True)
 
-    install_backend(output.parent)
 
-    return output
+def build_sdist(
+    project_root: Path,
+    output_dir: Path,
+    *,
+    version: str | None = None,
+    dependency_check: bool = False,
+    additional_build_requirements: list[str] | None = None,
+) -> None:
+    project_root = project_root.resolve()
+    output_dir = output_dir.resolve()
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    if not BACKEND_SOURCE.is_file():
+        raise FileNotFoundError(f"Backend file not found: {BACKEND_SOURCE}")
+
+    with tempfile.TemporaryDirectory(prefix="dune-sdist-") as tmp:
+        staging_dir = Path(tmp) / "source"
+        staging_dir.mkdir()
+
+        archive = Path(tmp) / "source.tar"
+        _run(
+            [
+                "git", "-C", str(project_root),
+                "archive", "--format=tar",
+                f"--output={archive}", "HEAD",
+            ]
+        )
+        _run(["tar", "-xf", str(archive), "-C", str(staging_dir)])
+
+        # Generate packaging metadata from the staged, committed dune.module.
+        pyproject_text = render_pyproject(
+            version=version,
+            dependency_check=dependency_check,
+            additional_build_requirements=additional_build_requirements,
+            existing_pyproject=staging_dir / "pyproject.toml",
+        )
+        (staging_dir / "pyproject.toml").write_text(
+            pyproject_text, encoding="utf-8"
+        )
+        shutil.copy2(BACKEND_SOURCE, staging_dir / "dune_build_backend.py")
+
+        # scikit-build-core may use git ls-files while constructing the sdist.
+        _run(
+            [
+                "git", "-c", "init.defaultBranch=main",
+                "-C", str(staging_dir), "init", "--quiet",
+            ]
+        )
+        _run(["git", "-C", str(staging_dir), "add", "--all"])
+
+        _run(
+            [
+                sys.executable, "-m", "build",
+                "--sdist",
+                "--outdir", str(output_dir),
+                str(staging_dir),
+            ]
+        )
 
 
 def clean_generated_files() -> None:
-    """Remove common generated build and distribution artifacts."""
-    for name in ("dist", "_skbuild", "build", "pyproject.toml", "dune_build_backend.py"):
+    for name in ("dist", "_skbuild", "build"):
         path = MODULE_ROOT / name
         if path.is_dir():
             print(f"Removing {path}")
@@ -253,89 +284,15 @@ def clean_generated_files() -> None:
         shutil.rmtree(cache)
 
 
-def _append_git_hash_to_readme() -> tuple[Path, bytes] | None:
-    """Temporarily append the current commit hash to README.md, if possible."""
-    readme = MODULE_ROOT / "README.md"
-    if not readme.is_file():
-        return None
-
-    try:
-        commit = subprocess.check_output(
-            ["git", "rev-parse", "HEAD"],
-            cwd=MODULE_ROOT,
-            text=True,
-            stderr=subprocess.DEVNULL,
-        ).strip()
-    except (OSError, subprocess.CalledProcessError):
-        return None
-
-    original = readme.read_bytes()
-    with readme.open("a", encoding="utf-8") as stream:
-        stream.write(f"\n\ngit-{commit}\n")
-    return readme, original
-
-
-def build_sdist(
-    project_root: Path = Path("."),
-    output_dir: Path = Path("dist"),
-) -> None:
-    project_root = project_root.resolve()
-    output_dir = output_dir.resolve()
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    with tempfile.TemporaryDirectory(prefix="dune-sdist-") as tmp:
-        staging_dir = Path(tmp) / "source"
-        staging_dir.mkdir()
-
-        archive = staging_dir / "source.tar"
-        subprocess.run(
-            [
-                "git", "-C", str(project_root),
-                "archive", "--format=tar",
-                f"--output={archive}", "HEAD",
-            ],
-            check=True,
-        )
-
-        # Extract the committed snapshot into a clean staging directory.
-        subprocess.run(
-            ["tar", "-xf", str(archive), "-C", str(staging_dir)],
-            check=True,
-        )
-        archive.unlink()
-
-        subprocess.run(
-                ["git", "-C", str(staging_dir), "init", "--quiet", "--initial-branch=main"],
-                check=True,
-        )
-        subprocess.run(
-            ["git", "-C", str(staging_dir), "add", "--all"],
-            check=True,
-        )
-        subprocess.run(
-            [
-                "python", "-m", "build",
-                "--sdist",
-                "--outdir", str(output_dir),
-                str(staging_dir),
-            ],
-            check=True,
-        )
-
 def upload_sdist(repository: str) -> None:
-    """Upload the contents of dist/ with Twine."""
     archives = sorted((MODULE_ROOT / "dist").glob("*.tar.gz"))
     if not archives:
         raise FileNotFoundError("No source distribution found in dist/")
 
-    run(
+    _run(
         [
-            sys.executable,
-            "-m",
-            "twine",
-            "upload",
-            "--repository",
-            repository,
+            sys.executable, "-m", "twine", "upload",
+            "--repository", repository,
             *[str(archive) for archive in archives],
         ]
     )
@@ -343,26 +300,15 @@ def upload_sdist(repository: str) -> None:
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Generate DUNE packaging files and build/upload an sdist."
+        description="Generate DUNE packaging metadata, build, or upload an sdist."
     )
-    parser.add_argument(
-        "--version",
-        help="Use this package version instead of the version from dune.module.",
-    )
-    parser.add_argument(
-        "--getversion",
-        action="store_true",
-        help="Print the package version and exit.",
-    )
-    parser.add_argument(
-        "--clean",
-        action="store_true",
-        help="Remove generated build and distribution artifacts, then exit.",
-    )
+    parser.add_argument("--version")
+    parser.add_argument("--getversion", action="store_true")
+    parser.add_argument("--clean", action="store_true")
     parser.add_argument(
         "--onlysdist",
         action="store_true",
-        help="Build the source distribution but do not upload it.",
+        help="Build the sdist without uploading it.",
     )
     parser.add_argument(
         "--upload",
@@ -370,26 +316,17 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         const="gitlab",
         choices=("gitlab", "testpypi", "pypi"),
         metavar="REPOSITORY",
-        help="Build and upload to the selected repository (default: gitlab).",
     )
     parser.add_argument(
         "--build-requirement",
         action="append",
         default=[],
         metavar="REQUIREMENT",
-        help="Add a build-system requirement; may be supplied more than once.",
     )
-    parser.add_argument(
-        "--dependency-check",
-        action="store_true",
-        help="Check dependencies against an existing pyproject.toml.",
-    )
-    parser.add_argument(
-        "--no-clean",
-        action="store_true",
-        help="Do not remove previous dist/ contents before building.",
-    )
+    parser.add_argument("--dependency-check", action="store_true")
+    parser.add_argument("--no-clean", action="store_true")
     return parser.parse_args(argv)
+
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
@@ -403,23 +340,29 @@ def main(argv: list[str] | None = None) -> int:
             clean_generated_files()
             return 0
 
-        generate_pyproject(
+        # No action requested: print the generated TOML, without writing it.
+        if not args.onlysdist and args.upload is None:
+            print(
+                render_pyproject(
+                    version=args.version,
+                    dependency_check=args.dependency_check,
+                    additional_build_requirements=args.build_requirement,
+                ),
+                end="",
+            )
+            return 0
+
+        dist_dir = MODULE_ROOT / "dist"
+        if not args.no_clean and dist_dir.exists():
+            shutil.rmtree(dist_dir)
+
+        build_sdist(
+            MODULE_ROOT,
+            dist_dir,
             version=args.version,
             dependency_check=args.dependency_check,
             additional_build_requirements=args.build_requirement,
         )
-
-        # A bare invocation generates pyproject.toml only. Build when the user
-        # explicitly requests an sdist or an upload.
-        if not args.onlysdist and args.upload is None:
-            return 0
-
-        if not args.no_clean:
-            dist = MODULE_ROOT / "dist"
-            if dist.exists():
-                shutil.rmtree(dist)
-
-        build_sdist()
 
         if args.upload is not None:
             upload_sdist(args.upload)
