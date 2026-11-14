@@ -29,5 +29,5 @@ if( DUNE_ENABLE_PYTHONMODULE_PRECOMPILE )
 endif()
 
 if(SKBUILD)
-  install(TARGETS _common LIBRARY DESTINATION python/dune/common)
+  install(TARGETS _common LIBRARY DESTINATION dune/common)
 endif()

@@ -2,9 +2,11 @@
 # SPDX-License-Identifier: LicenseRef-GPL-2.0-only-with-DUNE-exception
 
 add_subdirectory(dune)
+add_subdirectory(
+  template
+  "${CMAKE_CURRENT_BINARY_DIR}/dune/generator/template"
+)
 
-configure_file(MANIFEST.in MANIFEST.in)
-configure_file(pyproject.toml.in pyproject.toml)
 
 dune_python_configure_bindings(
   PATH "."

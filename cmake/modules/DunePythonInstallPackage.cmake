@@ -394,7 +394,8 @@ function(dune_link_dune_py)
     # but we need to make sure that skbuild correctly installs the
     # existing metadata file into the site-package
     get_filename_component(LINKDUNEPY_CMAKE_METADATA_FILE_DIR ${LINKDUNEPY_CMAKE_METADATA_FILE} DIRECTORY )
-    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${LINKDUNEPY_CMAKE_METADATA_FILE} DESTINATION python/${LINKDUNEPY_CMAKE_METADATA_FILE_DIR})
+    install(FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/${LINKDUNEPY_CMAKE_METADATA_FILE} DESTINATION ${LINKDUNEPY_CMAKE_METADATA_FILE_DIR})
   else()
     # this is the build version - keep in mind there is an install version further down
     message(STATUS "Generating the CMake metadata file at ${LINKDUNEPY_CMAKE_METADATA_FILE}")

@@ -6,5 +6,5 @@ add_python_targets(typeregistry
 )
 dune_add_pybind11_module(NAME _typeregistry)
 if (SKBUILD)
-  install(TARGETS _typeregistry LIBRARY DESTINATION python/dune/typeregistry)
+  install(TARGETS _typeregistry LIBRARY DESTINATION dune/typeregistry)
 endif()

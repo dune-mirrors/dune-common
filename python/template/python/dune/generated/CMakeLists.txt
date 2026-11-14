@@ -4,5 +4,5 @@
 set(templatefiles CMakeLists.txt.template extractCompiler.cc)
 dune_symlink_to_source_files(FILES ${templatefiles})
 if (SKBUILD)
-  install(FILES ${templatefiles} DESTINATION python/dune/generator/template/python/dune/generated)
+  install(FILES ${templatefiles} DESTINATION dune/generator/template/python/dune/generated)
 endif()
