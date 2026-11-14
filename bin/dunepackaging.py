@@ -154,7 +154,7 @@ def _toml_value(value: Any) -> str:
 
 
 def _toml_table(name: str, values: dict[str, Any]) -> list[str]:
-   """Render a TOML table and its key-value pairs as lines."""
+    """Render a TOML table and its key-value pairs as lines."""
 
     lines = [f"[{name}]"]
     for key, value in values.items():
@@ -243,7 +243,7 @@ def _safe_source_path(source_text: str, manifest: Path) -> Path:
 
 
 def _safe_wheel_path(destination_text: str, manifest: Path) -> PurePosixPath:
-   """Validate a relative POSIX destination path inside the wheel."""
+    """Validate a relative POSIX destination path inside the wheel."""
 
     destination = PurePosixPath(destination_text)
     if (
