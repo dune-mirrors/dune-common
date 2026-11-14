@@ -2,7 +2,80 @@
 # SPDX-FileCopyrightInfo: Copyright © DUNE Project contributors, see file LICENSE.md in module root
 # SPDX-License-Identifier: LicenseRef-GPL-2.0-only-with-DUNE-exception
 
-"""Generate DUNE packaging metadata, build an sdist, and optionally upload it."""
+"""Generate DUNE packaging metadata and build or upload a source distribution.
+
+The script supports two modes:
+
+* With no build or upload action, it prints a generated ``pyproject.toml`` to
+  stdout. It does not write that file into the project.
+* With ``--onlysdist`` or ``--upload``, it stages a source tree in a temporary
+  directory, generates ``pyproject.toml`` there, copies in the PEP 517 backend,
+  and invokes ``python -m build --sdist --no-isolation``.
+
+By default, the staged tree comes from ``git archive HEAD``; this builds from
+the committed tree and ignores working-tree changes. ``--source-files tracked``
+instead copies the current contents of Git-tracked files, including uncommitted
+edits while still excluding untracked files. The staging directory is
+initialized as a Git repository because scikit-build-core may consult Git when
+selecting sdist files.
+
+Packaging metadata is obtained from DUNE's ``packagemetadata.py``. The
+generated project metadata includes Python dependencies and requirements,
+while CMake arguments are written to the scikit-build-core configuration.
+Wheel data-file settings can be read from ``wheel-data-files.json``.
+
+The script expects to be run from the module root. Building an sdist requires
+the ``build`` package and the build requirements declared in the generated
+``pyproject.toml`` to be installed, because this script uses ``--no-isolation``.
+Uploading additionally requires ``twine`` and a configured repository.
+
+Examples::
+
+    # Print generated TOML
+    python bin/dunepackaging.py
+
+    # Build from committed HEAD
+    python bin/dunepackaging.py --onlysdist
+
+    # Build from current contents of tracked files
+    python bin/dunepackaging.py --onlysdist --source-files tracked
+
+    # Build and upload to the default repository
+    python bin/dunepackaging.py --upload
+
+
+Wheel data files (module specific hook)
+---------------------------------------
+
+A module may provide a ``wheel-data-files.json`` file in its root to configure
+additional scikit-build-core wheel settings. The script currently supports
+``tool.scikit-build.wheel.force-include`` and
+``tool.scikit-build.wheel.exclude``.
+
+For example::
+
+    {
+      "tool.scikit-build.wheel.force-include": {
+        "data/schema.json": "dune/common/data/schema.json",
+        "licenses": "dune/common/licenses"
+      },
+      "tool.scikit-build.wheel.exclude": [
+        "**/CMakeLists.txt",
+        "**/*.cmake"
+      ]
+    }
+
+Force-include mappings use project-relative source paths and wheel-relative
+POSIX destination paths. A directory source is expanded recursively. Sources
+must exist within the project root; symlinks resolving outside the project are
+rejected. Multiple sources may not map to the same wheel destination.
+
+The manifest is read from the source tree staged for the sdist. Thus, in the
+default ``git archive`` mode, it must be committed to ``HEAD`` to affect the
+sdist; in ``--source-files tracked`` mode, the current contents of a tracked
+manifest are used. Untracked files are not copied into either staged tree.
+"""
+
 
 from __future__ import annotations
 
@@ -42,16 +115,27 @@ except ImportError:
 
 
 def _toml_string(value: str) -> str:
+    """Encode a string as a TOML basic string."""
+
     return json.dumps(str(value), ensure_ascii=False)
 
 
 def _toml_key(value: str) -> str:
+    """Format a TOML key, leaving valid bare and dotted keys unquoted."""
+
     if re.fullmatch(r"[A-Za-z0-9_-]+(\.[A-Za-z0-9_-]+)*", value):
         return value
     return _toml_string(value)
 
 
 def _toml_value(value: Any) -> str:
+    """Serialize a supported Python value as TOML.
+
+    Supports booleans, numbers, strings, lists, tuples, and dictionaries.
+    Raises:
+        TypeError: If ``value`` has an unsupported type.
+    """
+
     if isinstance(value, bool):
         return "true" if value else "false"
     if isinstance(value, (int, float)):
@@ -70,6 +154,8 @@ def _toml_value(value: Any) -> str:
 
 
 def _toml_table(name: str, values: dict[str, Any]) -> list[str]:
+   """Render a TOML table and its key-value pairs as lines."""
+
     lines = [f"[{name}]"]
     for key, value in values.items():
         if value is not None:
@@ -78,6 +164,8 @@ def _toml_table(name: str, values: dict[str, Any]) -> list[str]:
 
 
 def _requirement_name(requirement: str) -> str:
+    """Return a normalized package name from a requirement string."""
+
     match = re.match(r"\s*([A-Za-z0-9][A-Za-z0-9._-]*)", requirement)
     return match.group(1).lower().replace("_", "-") if match else ""
 
@@ -86,6 +174,13 @@ def _make_build_requirements(
     data: Any,
     additional: list[str],
 ) -> list[str]:
+    """Build the isolated-build requirement list from DUNE metadata.
+
+    Legacy build tools are filtered out, scikit-build-core and setuptools are
+    ensured to be present, and duplicate requirements are removed while
+    preserving order.
+    """
+
     requirements = list(
         data.asPythonRequirementString(data.depends + data.python_requires)
     )
@@ -113,7 +208,12 @@ def _make_build_requirements(
 
 @contextmanager
 def _working_directory(path: Path) -> Iterator[None]:
-    """Temporarily change directory for metadata code that reads from cwd."""
+    """Temporarily change cwd, restoring the previous directory on exit.
+
+    This is needed because DUNE's metadata code reads project files relative
+    to the current working directory.
+    """
+
     previous = Path.cwd()
     os.chdir(path)
     try:
@@ -123,6 +223,11 @@ def _working_directory(path: Path) -> Iterator[None]:
 
 
 def _safe_source_path(source_text: str, manifest: Path) -> Path:
+    """Validate a relative source path from the wheel-data manifest.
+
+    Rejects absolute paths, parent-directory traversal, and backslashes.
+    """
+
     source_path = Path(source_text)
     if (
         not source_text
@@ -138,6 +243,8 @@ def _safe_source_path(source_text: str, manifest: Path) -> Path:
 
 
 def _safe_wheel_path(destination_text: str, manifest: Path) -> PurePosixPath:
+   """Validate a relative POSIX destination path inside the wheel."""
+
     destination = PurePosixPath(destination_text)
     if (
         not destination_text
@@ -158,7 +265,14 @@ def _expand_force_include(
     manifest: Path,
     source_to_destination: Any,
 ) -> dict[str, str]:
-    """Validate and expand the force-include source-to-destination mapping."""
+    """Validate and expand wheel force-include mappings.
+
+    A directory source expands recursively to individual files. Symlinks that
+    resolve outside the project root and conflicting destination mappings are
+    rejected. The returned mapping uses project-relative source paths and
+    wheel-relative POSIX destinations.
+    """
+
     if not isinstance(source_to_destination, dict):
         raise ValueError(
             f"{manifest}: tool.scikit-build.wheel.force-include "
@@ -244,7 +358,14 @@ def _expand_force_include(
 
 
 def _load_scikit_build_config(project_root: Path) -> dict[str, Any]:
-    """Read supported scikit-build-core wheel settings from JSON."""
+    """Load supported wheel settings from ``wheel-data-files.json``.
+
+    Returns scikit-build-core configuration keys in the format expected by
+    ``render_pyproject``. Missing manifests produce an empty configuration.
+    Invalid JSON, unsupported sections, or malformed settings raise
+    ``ValueError``.
+    """
+
     manifest = project_root / WHEEL_CONFIG_MANIFEST
     if not manifest.is_file():
         return {}
@@ -300,7 +421,19 @@ def render_pyproject(
     dependency_check: bool = False,
     additional_build_requirements: list[str] | None = None,
 ) -> str:
-    """Render pyproject.toml using metadata and configuration from project_root."""
+    """Generate a ``pyproject.toml`` string without writing it.
+
+    Args:
+        project_root: Module root used to read metadata and the wheel manifest.
+            Defaults to the current working directory.
+        version: Optional version override passed to DUNE metadata handling.
+        dependency_check: Whether metadata generation should check dependencies.
+        additional_build_requirements: Extra PEP 517 build requirements.
+
+    Returns:
+        The generated TOML text, including a final newline.
+    """
+
     root = (project_root or Path.cwd()).resolve()
 
     # packagemetadata reads module metadata relative to the current directory.
@@ -357,7 +490,6 @@ def render_pyproject(
     tool_config: dict[str, Any] = {
         "cmake.args": setup.get("cmake_args", []),
         "wheel.packages": ["python/dune"],
-        # "wheel.install-dir": "python",
     }
     tool_config.update(scikit_build_config)
     tool_config.update({"sdist.exclude": ["setup.py"]})
@@ -367,12 +499,17 @@ def render_pyproject(
 
 
 def _run(command: list[str], *, cwd: Path | None = None) -> None:
+    """Print and run a subprocess command, raising on failure."""
+
     print("+", " ".join(command), flush=True)
     subprocess.run(command, cwd=cwd, check=True)
 
 
 def _stage_git_archive(project_root: Path, staging_dir: Path) -> None:
-    """Extract the committed HEAD tree into staging_dir."""
+    """Populate ``staging_dir`` from the committed ``HEAD`` Git tree.
+
+    Working-tree edits and untracked files are not included.
+    """
     archive_path = staging_dir.parent / "source.tar"
     _run(
         [
@@ -405,7 +542,12 @@ def _stage_git_archive(project_root: Path, staging_dir: Path) -> None:
 
 
 def _stage_tracked_files(project_root: Path, staging_dir: Path) -> None:
-    """Copy tracked files using their current working-tree contents."""
+    """Copy Git-tracked files using their current working-tree contents.
+
+    Includes uncommitted edits to tracked files, skips tracked files deleted
+    from the working tree, and does not copy untracked files.
+    """
+
     result = subprocess.run(
         ["git", "-C", str(project_root), "ls-files", "-z"],
         check=True,
@@ -440,6 +582,23 @@ def build_sdist(
     dependency_check: bool = False,
     additional_build_requirements: list[str] | None = None,
 ) -> None:
+    """Stage a source tree and build an sdist using scikit-build-core.
+
+    Args:
+        project_root: The DUNE module root.
+        output_dir: Directory where the sdist will be written.
+        source_files: ``"archive"`` to use committed ``HEAD`` or ``"tracked"``
+            to use current contents of tracked files.
+        version: Optional package version override.
+        dependency_check: Whether to check dependencies during metadata creation.
+        additional_build_requirements: Extra PEP 517 build requirements.
+
+    Raises:
+        FileNotFoundError: If the backend file is missing.
+        subprocess.CalledProcessError: If Git or the build command fails.
+        ValueError: If ``source_files`` is unsupported or metadata is invalid.
+    """
+
     project_root = project_root.resolve()
     output_dir = output_dir.resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -502,6 +661,8 @@ def build_sdist(
 
 
 def clean_generated_files() -> None:
+    """Remove common local build outputs from the module root."""
+
     for name in ("dist", "_skbuild", "build"):
         path = MODULE_ROOT / name
         if path.is_dir():
@@ -522,6 +683,15 @@ def clean_generated_files() -> None:
 
 
 def upload_sdist(repository: str) -> None:
+    """Upload all ``.tar.gz`` sdists in ``dist/`` with Twine.
+
+    Args:
+        repository: Twine repository alias, such as ``pypi`` or ``testpypi``.
+
+    Raises:
+        FileNotFoundError: If ``dist/`` contains no source distributions.
+    """
+
     archives = sorted((MODULE_ROOT / "dist").glob("*.tar.gz"))
     if not archives:
         raise FileNotFoundError("No source distribution found in dist/")
@@ -540,6 +710,12 @@ def upload_sdist(repository: str) -> None:
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    """Parse command-line arguments.
+
+    ``argv`` is primarily useful for tests; when omitted, arguments are read
+    from the command line.
+    """
+
     parser = argparse.ArgumentParser(
         description="Generate DUNE packaging metadata, build, or upload an sdist."
     )
@@ -580,6 +756,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Run the requested CLI action and return its process exit code.
+
+    Returns 0 on success and 1 for handled packaging, filesystem, or subprocess
+    errors.
+    """
+
     args = parse_args(argv)
 
     try:
