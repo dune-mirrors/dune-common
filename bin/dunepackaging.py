@@ -4,13 +4,12 @@
 
 """Generate DUNE packaging metadata and build or upload a source distribution.
 
-The script supports two modes:
+With no build or upload action, the script prints a generated
+``pyproject.toml`` to stdout without writing it into the project.
 
-* With no build or upload action, it prints a generated ``pyproject.toml`` to
-  stdout. It does not write that file into the project.
-* With ``--onlysdist`` or ``--upload``, it stages a source tree in a temporary
-  directory, generates ``pyproject.toml`` there, copies in the PEP 517 backend,
-  and invokes ``python -m build --sdist --no-isolation``.
+With ``--onlysdist`` or ``--upload``, the script stages a source tree in a
+temporary directory, generates ``pyproject.toml`` there, copies in the PEP 517
+backend, and invokes ``python -m build --sdist --no-isolation``.
 
 By default, the staged tree comes from ``git archive HEAD``; this builds from
 the committed tree and ignores working-tree changes. ``--source-files tracked``
@@ -22,7 +21,8 @@ selecting sdist files.
 Packaging metadata is obtained from DUNE's ``packagemetadata.py``. The
 generated project metadata includes Python dependencies and requirements,
 while CMake arguments are written to the scikit-build-core configuration.
-Wheel data-file settings can be read from ``wheel-data-files.json``.
+Module-specific wheel settings and optional dependencies can be read from
+``dune-packaging.json``.
 
 The script expects to be run from the module root. Building an sdist requires
 the ``build`` package and the build requirements declared in the generated
@@ -44,26 +44,29 @@ Examples::
     python bin/dunepackaging.py --upload
 
 
-Wheel data files (module specific hook)
----------------------------------------
+Module-specific packaging settings
+----------------------------------
 
-A module may provide a ``wheel-data-files.json`` file in its root to configure
-additional scikit-build-core wheel settings. The script currently supports
-``tool.scikit-build.wheel.force-include`` and
-``tool.scikit-build.wheel.exclude``.
-
-For example::
+A module may provide a ``dune-packaging.json`` file in its root. It can define
+scikit-build-core wheel settings and project optional dependencies, for example::
 
     {
+      "project.optional-dependencies": {
+        "docs": ["sphinx>=7"],
+        "test": ["pytest"]
+      },
       "tool.scikit-build.wheel.force-include": {
-        "data/schema.json": "dune/common/data/schema.json",
-        "licenses": "dune/common/licenses"
+        "data/schema.json": "dune/foo/data/schema.json",
+        "licenses": "dune/foo/licenses"
       },
       "tool.scikit-build.wheel.exclude": [
         "**/CMakeLists.txt",
         "**/*.cmake"
       ]
     }
+
+Optional-dependency names defined both by ``packagemetadata.py`` and by this
+manifest are rejected.
 
 Force-include mappings use project-relative source paths and wheel-relative
 POSIX destination paths. A directory source is expanded recursively. Sources
@@ -75,7 +78,6 @@ default ``git archive`` mode, it must be committed to ``HEAD`` to affect the
 sdist; in ``--source-files tracked`` mode, the current contents of a tracked
 manifest are used. Untracked files are not copied into either staged tree.
 """
-
 
 from __future__ import annotations
 
@@ -98,7 +100,7 @@ MODULE_ROOT = Path.cwd().resolve()
 BACKEND_SOURCE = SCRIPT_DIR / "dune_build_backend.py"
 BACKEND = "dune_build_backend"
 LEGACY_BUILD_TOOLS = {"setuptools", "wheel", "scikit-build"}
-WHEEL_CONFIG_MANIFEST = "wheel-data-files.json"
+PACKAGING_CONFIG_MANIFEST = "dune-packaging.json"
 
 # Use packagemetadata from the dune-common checkout when this script is run
 # from its bin/ directory; otherwise fall back to the installed package.
@@ -223,7 +225,7 @@ def _working_directory(path: Path) -> Iterator[None]:
 
 
 def _safe_source_path(source_text: str, manifest: Path) -> Path:
-    """Validate a relative source path from the wheel-data manifest.
+    """Validate a relative source path from the packaging manifest.
 
     Rejects absolute paths, parent-directory traversal, and backslashes.
     """
@@ -357,16 +359,16 @@ def _expand_force_include(
     return dict(sorted(result.items()))
 
 
-def _load_scikit_build_config(project_root: Path) -> dict[str, Any]:
-    """Load supported wheel settings from ``wheel-data-files.json``.
+def _load_packaging_config(project_root: Path) -> dict[str, Any]:
+    """Load supported settings from ``dune-packaging.json``.
 
-    Returns scikit-build-core configuration keys in the format expected by
-    ``render_pyproject``. Missing manifests produce an empty configuration.
+    Supports scikit-build-core wheel settings and project optional
+    dependencies. Missing manifests produce an empty configuration.
     Invalid JSON, unsupported sections, or malformed settings raise
     ``ValueError``.
     """
 
-    manifest = project_root / WHEEL_CONFIG_MANIFEST
+    manifest = project_root / PACKAGING_CONFIG_MANIFEST
     if not manifest.is_file():
         return {}
 
@@ -378,10 +380,11 @@ def _load_scikit_build_config(project_root: Path) -> dict[str, Any]:
     if not isinstance(config, dict):
         raise ValueError(f"{manifest}: expected a JSON object")
 
-    allowed_sections = {
-        "tool.scikit-build.wheel.force-include",
-        "tool.scikit-build.wheel.exclude",
-    }
+    optional_key = "project.optional-dependencies"
+    force_include_key = "tool.scikit-build.wheel.force-include"
+    exclude_key = "tool.scikit-build.wheel.exclude"
+    allowed_sections = {optional_key, force_include_key, exclude_key}
+
     unknown_sections = set(config) - allowed_sections
     if unknown_sections:
         names = ", ".join(sorted(map(str, unknown_sections)))
@@ -391,7 +394,32 @@ def _load_scikit_build_config(project_root: Path) -> dict[str, Any]:
 
     result: dict[str, Any] = {}
 
-    force_include_key = "tool.scikit-build.wheel.force-include"
+    if optional_key in config:
+        optional_dependencies = config[optional_key]
+        if not isinstance(optional_dependencies, dict):
+            raise ValueError(
+                f"{manifest}: {optional_key} must be a JSON object"
+            )
+
+        validated: dict[str, list[str]] = {}
+        for name, requirements in optional_dependencies.items():
+            if (
+                not isinstance(name, str)
+                or not name
+                or not isinstance(requirements, list)
+                or not all(
+                    isinstance(requirement, str) and requirement
+                    for requirement in requirements
+                )
+            ):
+                raise ValueError(
+                    f"{manifest}: {optional_key} must map non-empty names "
+                    "to arrays of non-empty requirement strings"
+                )
+            validated[name] = requirements
+
+        result[optional_key] = validated
+
     if force_include_key in config:
         result["wheel.force-include"] = _expand_force_include(
             project_root,
@@ -399,7 +427,6 @@ def _load_scikit_build_config(project_root: Path) -> dict[str, Any]:
             config[force_include_key],
         )
 
-    exclude_key = "tool.scikit-build.wheel.exclude"
     if exclude_key in config:
         patterns = config[exclude_key]
         if not isinstance(patterns, list) or not all(
@@ -424,8 +451,8 @@ def render_pyproject(
     """Generate a ``pyproject.toml`` string without writing it.
 
     Args:
-        project_root: Module root used to read metadata and the wheel manifest.
-            Defaults to the current working directory.
+        project_root: Module root used to read metadata and the packaging
+            manifest. Defaults to the current working directory.
         version: Optional version override passed to DUNE metadata handling.
         dependency_check: Whether metadata generation should check dependencies.
         additional_build_requirements: Extra PEP 517 build requirements.
@@ -444,7 +471,27 @@ def render_pyproject(
         data,
         additional_build_requirements or [],
     )
-    scikit_build_config = _load_scikit_build_config(root)
+    packaging_config = _load_packaging_config(root)
+
+    manifest_optional_dependencies = packaging_config.pop(
+        "project.optional-dependencies", {}
+    )
+    metadata_optional_dependencies = setup.get("extras_require", {}) or {}
+
+    duplicate_groups = (
+        set(metadata_optional_dependencies) & set(manifest_optional_dependencies)
+    )
+    if duplicate_groups:
+        names = ", ".join(sorted(duplicate_groups))
+        raise ValueError(
+            "Optional dependency group(s) defined in both packagemetadata "
+            f"and {PACKAGING_CONFIG_MANIFEST}: {names}"
+        )
+
+    optional_dependencies = {
+        **metadata_optional_dependencies,
+        **manifest_optional_dependencies,
+    }
 
     project: dict[str, Any] = {
         "name": setup["name"],
@@ -474,7 +521,7 @@ def render_pyproject(
 
     lines = [
         "# DO NOT MODIFY THIS FILE!",
-        "# Generated by bin/duneproject.py.",
+        "# Generated by bin/dunepackaging.py.",
         "",
     ]
     lines += _toml_table(
@@ -487,14 +534,17 @@ def render_pyproject(
     )
     lines += [""] + _toml_table("project", project)
 
+    if optional_dependencies:
+        lines += [""] + _toml_table("project.optional-dependencies", optional_dependencies)
+
     tool_config: dict[str, Any] = {
         "cmake.args": setup.get("cmake_args", []),
         "wheel.packages": ["python/dune"],
     }
-    tool_config.update(scikit_build_config)
+    tool_config.update(packaging_config)
     tool_config.update({"sdist.exclude": ["setup.py"]})
-
     lines += [""] + _toml_table("tool.scikit-build", tool_config)
+
     return "\n".join(lines) + "\n"
 
 
@@ -510,6 +560,7 @@ def _stage_git_archive(project_root: Path, staging_dir: Path) -> None:
 
     Working-tree edits and untracked files are not included.
     """
+
     archive_path = staging_dir.parent / "source.tar"
     _run(
         [
@@ -589,8 +640,9 @@ def build_sdist(
         output_dir: Directory where the sdist will be written.
         source_files: ``"archive"`` to use committed ``HEAD`` or ``"tracked"``
             to use current contents of tracked files.
-        version: Optional package version override.
-        dependency_check: Whether to check dependencies during metadata creation.
+        version: Optional version override.
+        dependency_check: Whether to check dependencies during metadata
+            creation.
         additional_build_requirements: Extra PEP 517 build requirements.
 
     Raises:
@@ -615,11 +667,9 @@ def build_sdist(
         elif source_files == "tracked":
             _stage_tracked_files(project_root, staging_dir)
         else:
-            raise ValueError(
-                f"Unknown source-files mode: {source_files!r}"
-            )
+            raise ValueError(f"Unknown source-files mode: {source_files!r}")
 
-        # Render metadata and read the JSON manifest from the staging tree.
+        # Render metadata and read the JSON manifest from the staged tree.
         # Untracked local files cannot be included through the manifest.
         pyproject_text = render_pyproject(
             project_root=staging_dir,
@@ -747,7 +797,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default="archive",
         help=(
             "Source tree for the sdist: committed HEAD via git archive "
-            "(default), or current contents of git-tracked files via "
+            "(default), or current contents of Git-tracked files via "
             "git ls-files."
         ),
     )
@@ -758,8 +808,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 def main(argv: list[str] | None = None) -> int:
     """Run the requested CLI action and return its process exit code.
 
-    Returns 0 on success and 1 for handled packaging, filesystem, or subprocess
-    errors.
+    Returns 0 on success and 1 for handled packaging, filesystem, or
+    subprocess errors.
     """
 
     args = parse_args(argv)
@@ -812,7 +862,7 @@ def main(argv: list[str] | None = None) -> int:
         subprocess.CalledProcessError,
         tarfile.TarError,
     ) as error:
-        print(f"duneproject: {error}", file=sys.stderr)
+        print(f"dunepackaging: {error}", file=sys.stderr)
         return 1
 
 
