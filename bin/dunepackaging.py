@@ -4,6 +4,12 @@
 
 """Generate DUNE packaging metadata and build or upload a source distribution.
 
+This script implements the new DUNE packaging workflow using
+``scikit-build-core`` instead of the legacy ``scikit-build`` package.
+The previous packaging implementation remains available and can be
+activated by passing ``--old`` on the command line. The legacy packaging is
+also activated if `scikit-build-core` was not found but `scikit-build` is available.
+
 With no build or upload action, the script prints a generated
 ``pyproject.toml`` to stdout without writing it into the project.
 
@@ -179,7 +185,7 @@ def _make_build_requirements(
     """Build the isolated-build requirement list from DUNE metadata.
 
     Legacy build tools are filtered out, scikit-build-core and setuptools are
-    ensured to be present, and duplicate requirements are removed while
+    ensured to be present, and identical requirements are removed while
     preserving order.
     """
 
@@ -811,6 +817,37 @@ def main(argv: list[str] | None = None) -> int:
     Returns 0 on success and 1 for handled packaging, filesystem, or
     subprocess errors.
     """
+    if argv is None:
+        argv = sys.argv[1:]
+
+    use_old = "--old" in argv
+
+    if not use_old:
+        # provide a fallback to the old packaging version if activated
+        # environment contains skbuild but not the scikit_build_core package:
+        from importlib.util import find_spec
+        if ( find_spec("scikit_build_core") is None
+             and find_spec("skbuild") is not None ):
+            print(
+                "scikit-build-core not found, but scikit-build is installed.\n"
+                "Falling back to the legacy packaging implementation.\n"
+                "To use the new packaging workflow, install scikit-build-core.\n"
+                "Alternatively, use --old to explicitly select the legacy implementation.\n"
+                "To update to the new packaging workflow see the description in `dunepackaging.py`\n"
+                "and the MR discussion https://gitlab.dune-project.org/core/dune-common/-/merge_requests/1666/edit"
+            )
+            use_old = True
+
+    if use_old:
+        legacy_argv = [arg for arg in argv if arg != "--old"]
+
+        script_dir = Path(__file__).resolve().parent
+        sys.path.insert(0, str(script_dir))
+
+        from dunepackaging_old import main as oldMain
+
+        result = oldMain(legacy_argv)
+        return result if isinstance(result, int) else 0
 
     args = parse_args(argv)
 
